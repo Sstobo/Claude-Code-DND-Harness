@@ -1,11 +1,9 @@
 ---
 name: gm-combat
-description: D&D-kit combat mechanics — initiative, attack/damage resolution, XP-by-CR awards, combat modifiers, and death saves. Load when a hostile action is declared or combat starts in a campaign whose World Kit is dnd5e. For non-D&D kits, use the generic core (game_core.py) and the active ruleset instead.
+description: D&D 5e combat mechanics — initiative, attack/damage resolution, XP-by-CR awards, combat modifiers, and death saves. Load when a hostile action is declared or combat starts.
 ---
 
-# Combat Mechanics (D&D kit)
-
-**STEP 0 — KIT GUARD.** If the scene-context KIT block is not `dnd5e`, close this skill and resolve the fight through the generic core (`game_core`) and the active ruleset.
+# Combat Mechanics
 
 Persist combat with `bash tools/gm-combat.sh` (start/add-enemy/hp/condition/next-turn/end) so HP and initiative survive resumes.
 
@@ -28,7 +26,7 @@ Persist combat with `bash tools/gm-combat.sh` (start/add-enemy/hp/condition/next
 
 Bonus: clever tactics +25%, creative environment +10-25%, social victory +50%.
 
-**Non-kill wins still earn XP.** When a fight is won WITHOUT a kill — driving the enemy off a ledge, baiting two enemies into each other, an environmental kill, a daring escape from a lethal foe, surviving telegraphed over-CR odds — award it like a kill: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (kit-aware, level-scaled; co-awards followers in DCC). See `gm-craft → Reward the spectacle`. Combat's CR→XP is just one source of XP among many.
+**Non-kill wins still earn XP.** When a fight is won WITHOUT a kill — driving the enemy off a ledge, baiting two enemies into each other, an environmental kill, a daring escape from a lethal foe, surviving telegraphed over-CR odds — award it like a kill: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (level-scaled). See `gm-craft → Reward the spectacle`. Combat's CR→XP is just one source of XP among many.
 
 ## Modifiers
 Advantage = 2d20 keep high; Disadvantage = keep low. Half cover +2 AC; 3/4 cover +5. Flanking = advantage (melee). Prone: advantage melee / disadvantage ranged. Crit (nat 20) = double damage dice then add mods. Nat 1 = auto-miss.

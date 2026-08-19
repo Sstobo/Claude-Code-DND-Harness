@@ -75,32 +75,73 @@ def test_craft_skill_preserves_the_soul():
     assert "Yes, and" in text and "Persist before narrating" in text
 
 
-DND_ONLY_SKILLS = ["gm-combat", "gm-levelup", "gm-spellcasting"]
+# This fork plays D&D 5e only: no kit gates, no generic-core fallback.
+DND_MECHANICS_SKILLS = ["gm-combat", "gm-levelup", "gm-spellcasting"]
+
+KIT_GUARD_PHRASES = [
+    "KIT GUARD",
+    "KIT block",
+    "active kit",
+    "World Kit",
+    "ruleset.json",
+    "non-D&D",
+    "generic core",
+    "kit-aware",
+]
 
 
-def test_dnd_only_skills_carry_the_kit_guard():
-    for name in DND_ONLY_SKILLS:
-        text = (ROOT / ".claude" / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
-        assert "KIT" in text, f"{name} must defer to the scene-context KIT block"
-        assert "dnd5e" in text, f"{name} must check for dnd5e"
-        assert "world_kit.py info" not in text, (
-            f"{name} must not instruct a world_kit.py info call"
-        )
+# The 5e content each skill must still carry. A skill that loses its table, or
+# re-hides it behind a kit gate, fails on the positive anchor as well as the
+# negative one — deletion and re-gating are both caught.
+FIVE_E_ANCHORS = {
+    "gm-combat": [
+        "## XP by Challenge Rating",
+        "death saves (DC 10 Con each turn)",
+        "Damage ≥ max HP = instant death",
+    ],
+    "gm-levelup": ["## XP Thresholds", "| 1→2 | 300 |", "| 3→4 | 2,700 |"],
+    "gm-spellcasting": ["## Spell Slots by Character Level", "| Lvl | 1st | 2nd | 3rd | 4th | 5th |"],
+    "gm-skills": ["Trivial 5 · Easy 10 · Moderate 15 · Hard 20"],
+    "gm-social": ["| Persuasion | 10 / 15 / 20 |"],
+    "gm-conditions": ["| Paralyzed |"],
+}
 
 
-def test_no_skill_instructs_world_kit_info():
+def _skill_text(name):
+    return (ROOT / ".claude" / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+
+
+def test_mechanics_skills_are_unconditionally_active():
+    for name in DND_MECHANICS_SKILLS:
+        text = _skill_text(name)
+        assert "close this skill" not in text, f"{name} must not gate itself shut"
+        for phrase in KIT_GUARD_PHRASES:
+            assert phrase not in text, f"{name} must not carry a kit guard ({phrase!r})"
+
+
+def test_no_skill_carries_kit_guard_language():
     for name in ALL_SKILLS:
-        text = (ROOT / ".claude" / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
+        text = _skill_text(name)
         assert "world_kit.py info" not in text, (
             f"{name} must not instruct world_kit.py info for what context now carries"
         )
+        for phrase in KIT_GUARD_PHRASES:
+            assert phrase not in text, f"{name} must not carry a kit guard ({phrase!r})"
 
 
-def test_judgment_skills_defer_five_e_tables_to_kit_block():
+def test_skills_still_carry_their_five_e_tables():
+    for name, anchors in FIVE_E_ANCHORS.items():
+        text = _skill_text(name)
+        for anchor in anchors:
+            assert anchor in text, f"{name} lost its 5e content: {anchor!r}"
+
+
+def test_judgment_skills_state_five_e_tables_outright():
     for name in ("gm-skills", "gm-social", "gm-conditions"):
-        text = (ROOT / ".claude" / "skills" / name / "SKILL.md").read_text(encoding="utf-8")
-        assert "KIT" in text, f"{name} must defer 5e tables to the KIT block"
-        assert "dnd5e" in text, f"{name} must name dnd5e as the kit that unlocks them"
+        text = _skill_text(name)
+        assert "use them only when" not in text and "apply it only when" not in text, (
+            f"{name} must state its 5e tables unconditionally"
+        )
 
 
 def test_world_kit_exposes_kit_identity():
@@ -111,4 +152,4 @@ def test_world_kit_exposes_kit_identity():
                        capture_output=True, text=True, cwd=str(ROOT))
     assert r.returncode == 0, r.stderr
     data = json.loads(r.stdout)["data"]
-    assert data["kit"] in ("dnd5e", "custom") or isinstance(data["kit"], str)
+    assert data["kit"] == "dnd5e", data

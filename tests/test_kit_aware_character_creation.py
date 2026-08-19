@@ -1,9 +1,8 @@
-"""Tests for kit-aware-character-creation.
+"""Tests for character creation.
 
-The create-character command/agent keep a generic spine and a dnd5e branch. The
-kit is hardcoded 5e now, so the live path is the dnd5e branch — the spine's
-prose is still asserted here because it is what a future non-5e kit would run,
-and because the branch must not leak 5e rules into it.
+This fork plays D&D 5e only. The create-character command/agent carry a single
+5e path — no generic spine, no kit branch — and these tests fail if either
+grows one back.
 """
 
 import json
@@ -29,20 +28,6 @@ def _agent():
     return AGENT.read_text(encoding="utf-8")
 
 
-def _section(text, start, end):
-    i = text.index(start)
-    j = text.index(end, i + len(start))
-    return text[i:j]
-
-
-def _generic(text):
-    return _section(text, "## Generic spine", "## dnd5e branch")
-
-
-def _dnd(text):
-    return text[text.index("## dnd5e branch"):]
-
-
 def _save_json_blobs(text):
     blobs = []
     for m in re.finditer(r"save-json '(\{.*?\})'", text):
@@ -50,47 +35,23 @@ def _save_json_blobs(text):
     return blobs
 
 
-def test_command_and_agent_have_generic_spine_and_dnd5e_branch():
+def test_command_and_agent_carry_no_generic_spine_or_kit_branch():
     for text in (_cmd(), _agent()):
-        assert "## Generic spine" in text
-        assert "## dnd5e branch" in text
-        assert "stat_schema" in _generic(text)
-        assert "attributes" in _generic(text)
-        assert "vitals" in _generic(text)
-        generic = _generic(text).lower()
-        assert "exactly" in generic or "dnd5e" in text.lower()
+        assert "## Generic spine" not in text
+        assert "## dnd5e branch" not in text
+        assert "stat_schema" not in text
+        for phrase in ("Detect the kit", "active kit", "World Kit", "ruleset.json"):
+            assert phrase not in text, phrase
 
 
-def test_generic_spine_never_mentions_5e_races_classes_or_spell_slots():
+def test_creation_walks_the_five_e_path():
     for text in (_cmd(), _agent()):
-        generic = _generic(text).lower()
-        assert "spell slot" not in generic
-        assert "spell slots" not in generic
-        assert "hit die" not in generic
-        assert "get_races.py" not in generic
-        assert "get_classes.py" not in generic
-        assert "get_spells.py" not in generic
-        assert "cantrip" not in generic
-        assert "standard array" not in generic
-        assert "point buy" not in generic
-
-
-def test_dnd5e_branch_keeps_race_class_spells_and_hit_die_hp():
-    for text in (_cmd(), _agent()):
-        dnd = _dnd(text)
-        assert "get_races.py" in dnd
-        assert "get_classes.py" in dnd
-        assert "get_spells.py" in dnd
-        assert "Hit Die max + Constitution" in dnd
-        assert "Step 2 - Race" in dnd
-        assert "Step 3 - Class" in dnd or "Step 4 - Background" in dnd
-
-
-def test_hit_die_hp_is_gated_to_dnd5e_not_the_only_rule():
-    for text in (_cmd(), _agent()):
-        assert "Hit Die max + Constitution" in _dnd(text)
-        assert "Hit Die max + Constitution" not in _generic(text)
-        assert "does not derive HP" in _generic(text) or "Author HP" in _generic(text)
+        assert "get_races.py" in text
+        assert "get_classes.py" in text
+        assert "get_spells.py" in text
+        assert "Hit Die max + Constitution" in text
+        assert "Step 2 - Race" in text
+        assert "Step 3 - Class" in text or "Step 4 - Background" in text
 
 
 def test_no_ascii_art_or_ascii_interface_mandate():
@@ -127,13 +88,13 @@ def test_save_json_examples_include_hp_and_visual_appearance():
                 assert key in va, key
 
 
-def test_claude_md_death_protocol_routes_new_character_kit_aware():
+def test_claude_md_death_protocol_routes_new_character_to_five_e_creation():
     text = (ROOT / "CLAUDE.md").read_text(encoding="utf-8")
     start = text.index("SWAP")
     swap = text[start:text.index("## Action Router", start)]
     assert "create-character" in swap
-    assert "kit-aware" in swap.lower()
-    assert "5e wizard" in swap.lower()
+    assert "5e" in swap
+    assert "kit" not in swap.lower()
 
 
 def test_gm_player_banner_is_kit_neutral():

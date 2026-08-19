@@ -17,7 +17,7 @@ Enter → describe entrance + visible exits → explore (draw a map only when ta
 Validate exit (exists? locked/secret?) → handle obstacle (pick/force/key; find secret via Perception) → set destination discovered/visited → `gm-session.sh move "[Dungeon - Room]"` → describe (2-4 sentences) + list exits + creatures.
 
 ## Reward an exploration win (award spectacle XP)
-An exploration breakthrough EARNS progress like a kill — disarming a deadly trap, finding the secret way, a daring escape, navigating a punishing hazard, an environmental kill. Persist before narrating: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (kit-aware, level-scaled, co-awards followers in DCC). See `gm-craft → Reward the spectacle`.
+An exploration breakthrough EARNS progress like a kill — disarming a deadly trap, finding the secret way, a daring escape, navigating a punishing hazard, an environmental kill. Persist before narrating: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (level-scaled). See `gm-craft → Reward the spectacle`.
 
 ## ASCII map symbols
 `@` current · `+` door · `#` locked door · `△` stairs up · `▽` stairs down · `~` secret (found) · `▓` fog of war.

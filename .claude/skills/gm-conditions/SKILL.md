@@ -5,8 +5,6 @@ description: Status conditions and exhaustion reference (blinded, charmed, frigh
 
 # Conditions
 
-The condition list below is 5e — apply it only when the scene-context KIT block says `dnd5e`.
-
 | Condition | Effect |
 |-----------|--------|
 | Blinded | Can't see; auto-fail sight checks; disadvantage on attacks |
@@ -22,7 +20,7 @@ The condition list below is 5e — apply it only when the scene-context KIT bloc
 | Stunned | Incapacitated; can't move; barely speak |
 | Unconscious | Incapacitated; can't move/speak; unaware; drops prone |
 
-**Unconscious at 0 HP is the dying gate, not death.** It resolves to stable (healed/saves) or dead (kit's death rule). On PC death, persist it and run the Death Protocol (CLAUDE.md).
+**Unconscious at 0 HP is the dying gate, not death.** It resolves to stable (healed/saves) or dead (damage ≥ max HP, or three failed death saves). On PC death, persist it and run the Death Protocol (CLAUDE.md).
 
 ## Exhaustion
 1: disadvantage on ability checks · 2: speed halved · 3: disadvantage on attacks & saves · 4: HP max halved · 5: speed 0 · 6: death.

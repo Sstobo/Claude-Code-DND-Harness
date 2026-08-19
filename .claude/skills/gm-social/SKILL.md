@@ -5,8 +5,6 @@ description: Social / NPC interaction workflow — load NPC context, attitude ch
 
 # Social / NPC Interaction
 
-The DCs below are 5e — use them only when the scene-context KIT block says `dnd5e`.
-
 ## 1. Load NPC context
 `bash tools/gm-context.sh "[npc]"` + `bash tools/gm-npc.sh status "[name]"`. Surface the NPC's `goal`, `current_mood`, secret-EXISTENCE (never the text), `bonds`, and `voice` (`gm-npc.sh voice`). Check prior interactions + active quests.
 
@@ -44,7 +42,7 @@ Decide before rolling what refusal COSTS (never tell the player). On a failed so
 - **Persist the shift** so refusals compound like wins do: `bash tools/gm-npc.sh mood "[name]" "[new mood]"` + `gm-npc.sh set-inner` (goal/attitude), and `gm-npc.sh update "[name]" "[what happened]"`.
 
 ## Reward a social win (award spectacle XP)
-A real social victory — a hard persuasion landed, a daring bluff, turning a hostile NPC, talking your way past a threat — EARNS progress like a kill. Persist it before the payoff: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (kit-aware, level-scaled, co-awards followers in DCC). See `gm-craft → Reward the spectacle`.
+A real social victory — a hard persuasion landed, a daring bluff, turning a hostile NPC, talking your way past a threat — EARNS progress like a kill. Persist it before the payoff: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (level-scaled). See `gm-craft → Reward the spectacle`.
 
 ## Craft (see gm-craft)
 NPCs have agendas, not quests. Don't over-share — secrets revealed slowly are 10x better. NPCs can say no, lie, or give bad advice. End with a conversation-ender if they're done.

@@ -1,11 +1,9 @@
 ---
 name: gm-skills
-description: Skill-check resolution — when to roll, the DC ladder, fail-forward philosophy, and margin-based consequences. Load whenever the player attempts something uncertain ("I try to..."). Resolution runs through the generic core (d20 vs DC); this is the judgment framework for when/how.
+description: Skill-check resolution — when to roll, the DC ladder, fail-forward philosophy, and margin-based consequences. Load whenever the player attempts something uncertain ("I try to..."). Resolution is d20 vs DC; this is the judgment framework for when/how.
 ---
 
 # Skill Checks
-
-The DC ladder below is 5e — use it only when the scene-context KIT block says `dnd5e`.
 
 ## When to roll (dice add fun)
 - Uncertain outcome — could go either way
@@ -26,7 +24,7 @@ Trivial 5 · Easy 10 · Moderate 15 · Hard 20 · Very Hard 25 · Nearly Impossi
 Nat 20 = exceptional flourish · beat by 10+ = looks easy, extra benefit · success = clean · fail by 1-4 = goal still denied, something small but visible is spent · fail by 5+ = clear fail + complication · nat 1 = mishap. **No band is free** — a near-miss costs less, never nothing.
 
 ## Reward a great success (award spectacle XP)
-A clever/effective/unique solve EARNS progress, not just a kill. On a strong success (nat 20, beat-by-10+, or an inventive approach), grant it before narrating: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (kit-aware, level-scaled, co-awards followers in DCC). See `gm-craft → Reward the spectacle`.
+A clever/effective/unique solve EARNS progress, not just a kill. On a strong success (nat 20, beat-by-10+, or an inventive approach), grant it before narrating: `bash tools/gm-player.sh award --tier minor|major|legendary --reason "..."` (level-scaled). See `gm-craft → Reward the spectacle`.
 
 ## Fail Forward (CRITICAL)
 A failed roll NEVER means "nothing happens" — it means "something DIFFERENT happens."
@@ -44,11 +42,11 @@ Framework: (1) what did they try? (2) what was the intent? (3) what goes sideway
 ## Failure consequences (by margin below DC)
 Every band costs. Name the thing that was spent — never "you fail, nothing changes".
 
-- Physical: 1-2 goal denied + a named cost (position lost, footing, noise made, a tool or supply spent) · 3-5 resource spent AND attention drawn · 6-9 minor harm per the active kit's harm model · 10+ real harm. For lethal/telegraphed stakes, a catastrophic margin can mean a death-gate hit (drop to 0 → dying), not just harm. Reserve this for earned, signposted danger.
+- Physical: 1-2 goal denied + a named cost (position lost, footing, noise made, a tool or supply spent) · 3-5 resource spent AND attention drawn · 6-9 minor harm · 10+ real harm. For lethal/telegraphed stakes, a catastrophic margin can mean a death-gate hit (drop to 0 → dying), not just harm. Reserve this for earned, signposted danger.
 - Social: 1-2 refused AND their attitude/standing toward you shifts, or a bystander notices · 3-5 refused, attitude turns negative, and a concrete price is paid (a favor burned, a term worsened, something taken) · 6-9 acts against you · 10+ hostile/spreads word. What "acts against you" looks like comes from the NPC's own goals and power — sometimes that's ugly.
 - Information: 1-2 partial AND misleading in a way that matters · 3-5 nothing usable, and the asking costs — time burned, a lead gone cold, an opportunity closed while you dug · 6-9 a wrong conclusion believed true · 10+ triggers a ward or alerts whoever owns the secret.
 
 Whenever a failure creates ongoing fallout: `bash tools/gm-consequence.sh add "[what happens]" "[when]" [--trigger-type ...]`. Persist the cost (mood, HP, inventory, death) BEFORE narrating it.
 
 ## Common skills by ability
-STR: Athletics · DEX: Acrobatics/Sleight of Hand/Stealth · INT: Arcana/History/Investigation/Nature/Religion · WIS: Animal Handling/Insight/Medicine/Perception/Survival · CHA: Deception/Intimidation/Performance/Persuasion. (A non-D&D kit defines its own skill list in `ruleset.json`.)
+STR: Athletics · DEX: Acrobatics/Sleight of Hand/Stealth · INT: Arcana/History/Investigation/Nature/Religion · WIS: Animal Handling/Insight/Medicine/Perception/Survival · CHA: Deception/Intimidation/Performance/Persuasion.

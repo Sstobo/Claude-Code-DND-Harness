@@ -1,13 +1,11 @@
 ---
 name: gm-levelup
-description: D&D-kit leveling — XP thresholds, the level-up ceremony, hit dice by class, and ASI/feat/subclass handling. Load when gm-player.sh xp reports LEVEL_UP in a dnd5e-kit campaign. Non-D&D kits advance via their ruleset progression model (milestone / resource-axis), not this table.
+description: D&D 5e leveling — XP thresholds, the level-up ceremony, hit dice by class, and ASI/feat/subclass handling. Load when gm-player.sh xp reports LEVEL_UP.
 ---
 
-# Level Up (D&D kit)
+# Level Up
 
-**STEP 0 — KIT GUARD.** If the scene-context KIT block is not `dnd5e`, close this skill and advance through the kit's progression model.
-
-Trigger: when `gm-player.sh xp` outputs **LEVEL_UP**. Note: thresholds are kit-driven (`player_manager._xp_thresholds`); non-D&D kits do not use this 5e table.
+Trigger: when `gm-player.sh xp` outputs **LEVEL_UP**. Thresholds come from `player_manager._xp_thresholds` and match the 5e table below.
 
 ## XP Thresholds
 | Level | XP | Milestone |

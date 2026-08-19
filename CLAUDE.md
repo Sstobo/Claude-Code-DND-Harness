@@ -7,9 +7,9 @@ been**, not an encyclopedia of the book. Index the book; build one stage;
 materialize the next face or place when play walks toward it. Do not scrape a
 gazetteer "so it's ready."
 
-The world's rules come from its **World Kit** (`ruleset.json`). Each book plays
-as its own game on a generic core (D&D-lean resolution is a fine foundation).
-The world remembers the player and pushes the right thing into the scene.
+The rules are **D&D 5e** — always, whatever book is imported. An import brings
+its world, cast, and places; the mechanics under them stay 5e. The world
+remembers the player and pushes the right thing into the scene.
 Heavy mechanics + craft live in on-demand Skills (`.claude/skills/gm-*`).
 
 ---
@@ -29,7 +29,7 @@ Every interaction: **CONTEXT → DECIDE → EXECUTE → PERSIST → NARRATE.**
 The PC CAN die. This is not a guaranteed power-fantasy. Fail-forward does NOT mean immortal — it means failure changes the situation, and sometimes the change is death.
 - **Some plot armor is fine, lethal stakes are mandatory.** Never kill on one unlucky roll in a trivial moment. DO let death land from: reckless play against over-leveled threats, ignored warnings, or a string of bad outcomes that has visibly tightened.
 - **Telegraph lethality.** Before a beat can kill, the danger must be readable — name the threat's weight ("this is far beyond you"), let bad odds show, give an out. Death is earned, never ambush-by-GM-fiat.
-- **0 HP is the dying gate, not auto-death.** On 0 HP run the active kit's dying rules (D&D: death saves — `gm-combat`). Instant death only on the kit's stated trigger (D&D: damage ≥ max HP) or when the fiction makes survival absurd (fall into lava, executed while helpless). The kit's lethality is machine-readable: `game_core.classify_harm(hp, max, dmg, WorldKit.lethality())` returns `ok`/`dying`/`dead` — the default `death-saves` model is 5e-faithful; a grim kit sets `lethality: "gritty"` (0 HP is death) or a lower `massive_damage_at` so single blows kill sooner.
+- **0 HP is the dying gate, not auto-death.** On 0 HP run death saves (`gm-combat`). Instant death only on massive damage (damage ≥ max HP) or when the fiction makes survival absurd (fall into lava, executed while helpless). Lethality is machine-readable: `game_core.classify_harm(...)` returns `ok`/`dying`/`dead` under the 5e-faithful death-saves model.
 - **When the PC dies → run the Death Protocol** (below). Do not just end the session.
 
 ## Death Protocol (PC hits 0 and dies)
@@ -42,7 +42,7 @@ PERSIST FIRST, then narrate, then offer the hand-off.
 
 SWAP (make the chosen character the active PC):
 - Party member → `bash tools/gm-player.sh become "<name>"` (copies their party sheet into character.json, archives the fallen PC to fallen/).
-- New character → spawn `create-character` (kit-aware: it follows the active kit, not a 5e wizard builder), persist via `gm-player.sh save-json '<json>'`, then `gm-player.sh set "<name>"`.
+- New character → spawn `create-character` (5e: race, class, background, spells), persist via `gm-player.sh save-json '<json>'`, then `gm-player.sh set "<name>"`.
 - Canon figure → onboarding canon path (identity_onboarding from_canon) → flesh out via create-character if the sheet is thin → save to character.json → `gm-player.sh set "<name>"`.
 
 ## Action Router — load the matching Skill on demand
@@ -54,13 +54,13 @@ SWAP (make the chosen character the active PC):
 | "I try to..." | Skill check (d20 vs DC) | `gm-skills` |
 | "I go to..." (cave/ruin) | Dungeon exploration | `gm-dungeon` |
 | Apply a condition | Conditions | `gm-conditions` |
-| LEVEL_UP / milestone | Progression (kit's model) | `gm-levelup` |
+| LEVEL_UP / milestone | Progression (5e XP + levels) | `gm-levelup` |
 | Narrate / voice an NPC | Narration craft | `gm-craft` |
 
 If a skill fails to load, fall back to the matching section in the archived full
-ruleset (`docs/` / git history). The RULES SYSTEM is the active World Kit's skill —
-a Dune import ships its own combat/progression, not 5e. Resolution + harm +
-conditions + the three progression models live in `lib/game_core.py`.
+ruleset (`docs/` / git history). The rules system is D&D 5e for every campaign —
+an imported book reskins the world, never the mechanics. Resolution + harm +
+conditions live in `lib/game_core.py`.
 
 ## Dice
 **ROLL FOR ANYTHING THAT CAN FAIL.** If an action has a variable or failable
@@ -117,7 +117,7 @@ grounded source passages.
 | Change | Command |
 |---|---|
 | HP/XP/gold/inventory (PC) | `gm-player.sh` |
-| Spectacle XP (clever/effective/unique/punishing non-kill beat) | `gm-player.sh award [name] --tier minor\|major\|legendary --reason "..."` (kit-aware, level-scaled; co-awards followers in DCC) |
+| Spectacle XP (clever/effective/unique/punishing non-kill beat) | `gm-player.sh award [name] --tier minor\|major\|legendary --reason "..."` (level-scaled) |
 | Party NPC stats | `gm-npc.sh` |
 | NPC mood/goal/secret | `gm-npc.sh set-inner` / `mood` |
 | **What an NPC now remembers about the player** (a slight, a kindness, a debt, a lie they caught) | `gm-npc.sh update "<name>" "<event>"` — surfaces back under them in scene context next time they're present |
@@ -140,8 +140,8 @@ All tools take `--json` for structured returns. **Always prefix with `bash tools
 - **WRONG**: `gm-enhance.sh query "free text"` (entity NAME lookup, not search). **RIGHT**: `gm-search.sh "free text" --rag-only`.
 
 ## Specialist agents (spawn proactively, invisibly)
-monster-manual + rules-master (book-first, kit-aware; dnd5eapi only for the
-dnd5e kit), spell-caster, gear-master, loot-dropper, npc-builder, world-builder,
+monster-manual + rules-master (book-first, then dnd5eapi as the mandatory
+fallback), spell-caster, gear-master, loot-dropper, npc-builder, world-builder,
 dungeon-architect, create-character, scene-illustrator (image gen — spawn IN THE BACKGROUND),
 plot-weaver (async story planning — spawn IN THE BACKGROUND; develops one dormant thread from a seed).
 
@@ -164,14 +164,14 @@ only for operational lessons that fit nowhere else.
 - **Python:** always `uv run python` (never bare `python`/`python3`).
 - **Saves:** JSON snapshots in each campaign's `saves/`.
 - **Multi-campaign:** tools read `world-state/active-campaign.txt`.
-- **Architecture:** bash wrappers (`tools/`) → Python managers (`lib/`) → per-campaign `world-state/campaigns/<name>/*.json`. The generic core is `game_core.py`; the per-book ruleset is `world_kit.py` (`ruleset.json`).
+- **Architecture:** bash wrappers (`tools/`) → Python managers (`lib/`) → per-campaign `world-state/campaigns/<name>/*.json`. Shared resolution lives in `game_core.py`.
 
 ## The Golden Rules
 1. Fun > Rules. 2. Persist before narrating. 3. Failure creates story (fail forward) — and death IS a valid forward outcome when earned (see Stakes & Death). 4. Players write the story; you set the stage. 5. The world is alive — it goes on without any one hero.
 
 ## Deep dives (load on demand)
 Mechanics: the `gm-*` Skills. Craft: `gm-craft`. **Everything else: `docs/index.md`** —
-flows (play turn, import, new-game, death hand-off, illustration), modules (core+kit,
+flows (play turn, import, new-game, death hand-off, illustration), modules (core,
 scene context, memory, living world, RAG, entity graph, bible, sheets), conventions,
 gotchas, playbooks. Read the gotchas before debugging.
 

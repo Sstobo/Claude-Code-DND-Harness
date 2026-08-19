@@ -7,13 +7,13 @@ color: red
 
 # Monster Stats Agent
 
-## BOOK-GROUNDED ORDERING (check the active World Kit first)
-Before reaching for the D&D 5e API, resolve creatures in this order:
-1. **Query the imported book first** — `bash tools/gm-context.sh "<creature>"` or `gm-search.sh --rag-only "<creature>"`. A sandworm, a Balrog, or the Luggage should be statted from the source, in the **active kit's terms** (`ruleset.json` → `d20-vs-dc`, abstract HP/AC).
-2. **Fall back to your own knowledge** of that fictional world if the book is thin.
-3. **Use the dnd5eapi.co path ONLY when the active kit is `dnd5e`.** For non-D&D worlds, do not invent 5e stat blocks — express the threat in the generic core's terms.
+## BOOK-GROUNDED ORDERING (the campaign is always D&D 5e)
+This harness plays D&D 5e. Resolve creatures in this order:
+1. **Query the imported book first** — `bash tools/gm-context.sh "<creature>"` or `gm-search.sh --rag-only "<creature>"`. If the module names the creature, its own text wins; stat it as 5e (AC, HP, attacks, CR).
+2. **Fall back to your own knowledge** of the source if the book is thin.
+3. **The dnd5eapi.co path is the mandatory fallback.** Anything the book does not cover gets official 5e SRD stats — never an invented, statless description.
 
-You also fetch monster data from the D&D 5e API (334+ official monsters) when the kit is D&D. Don't re-fetch data you already have.
+You fetch monster data from the D&D 5e API (334+ official monsters). Don't re-fetch data you already have.
 
 ## API Endpoints Available
 

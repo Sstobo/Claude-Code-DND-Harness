@@ -1,14 +1,15 @@
 ---
 type: Convention
 title: Lean core, skills on demand
-description: Why CLAUDE.md stays thin, what the router is allowed to keep inline, and the kit-awareness trap in three of the eight skills.
+description: Why CLAUDE.md stays thin, what the router is allowed to keep inline, and why no skill carries a kit guard in this 5e-only fork.
 sources:
   - { resource: /tests/test_lean_core.py }
   - { resource: /.claude/skills/gm-combat/SKILL.md }
   - { resource: /.claude/skills/gm-skills/SKILL.md }
   - { resource: /.claude/skills/gm-craft/SKILL.md }
   - { resource: /lib/session_manager.py }
-generated: { by: cursor-grok-4.6, at: 2026-08-14T19:24:32Z }
+  - { resource: /lib/world_kit.py }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:31:39Z }
 verified: { by: cursor-grok-4.6, at: 2026-08-14T18:59:59Z }
 ---
 
@@ -47,30 +48,32 @@ exactly that reason.
 Adding a skill without adding it to `ALL_SKILLS` and the router leaves it unroutable and
 untested.
 
-## Three of the eight skills are D&D-only; STEP-0 defers to the KIT block
+## Every skill is unconditionally 5e — the kit guard is gone by design
 
-`gm-combat`, `gm-levelup`, and `gm-spellcasting` encode 5e — hit dice, spell slots, an XP
-table, death saves. Each opens with a **one-line STEP 0**: read the scene-context KIT
-block, and unless it is `dnd5e`, close the skill and use the generic core + the active
-ruleset. That is context deference, not a tool call — no skill instructs
-`world_kit.py info` for what the brief now carries. Enforcement:
-`test_dnd_only_skills_carry_the_kit_guard` asserts KIT-block / `dnd5e` deference and
-forbids the old info-call. `WorldKit.kit()` still supplies the identity —
-`ruleset.json`'s `kit` field, defaulting to `"custom"` when absent, so a legacy or
-bespoke world can never accidentally qualify as D&D. A campaign that *wants* the 5e
-machinery declares `"kit": "dnd5e"` in its ruleset.
+This fork plays D&D 5e and nothing else. `lib/world_kit.py` is hardcoded: `WorldKit.kit()`
+always returns `"dnd5e"`, there is no `ruleset.json`, no custom kits, and no generic-core
+fallback for mechanics. Skills therefore carry no gate: `gm-combat`, `gm-levelup`, and
+`gm-spellcasting` open straight into hit dice, spell slots, the XP table, and death saves,
+and `gm-skills`, `gm-social`, and `gm-conditions` state their DC ladders and condition
+lists outright.
 
-(Until 2026-08-13 nothing enforced the split, and loading `gm-combat` in a Dune campaign
-silently imported 5e rules — the failure read as "the world isn't distinctive", not as an
-error. Until the KIT block landed, the guard paid a STEP-0 tool call to re-derive what
-context now prints.)
+Enforcement inverted with the fork. `test_mechanics_skills_are_unconditionally_active` and
+`test_no_skill_carries_kit_guard_language` fail if any skill reintroduces "KIT GUARD",
+"active kit", "World Kit", `ruleset.json`, "non-D&D", "generic core", or "kit-aware", and
+`test_judgment_skills_state_five_e_tables_outright` fails on the old conditional phrasings.
+The same rule reaches the API-backed agents: their book-grounded ordering survives, so an
+imported module's own text still beats generic SRD data, but the dnd5eapi fallback is
+stated as mandatory rather than kit-conditional.
 
-The guard is still an instruction a model follows, not a hard interlock — the honest
-enforcement tier is "tested prompt", one step below "lint rule".
+(History, for anyone reading a stale branch: an earlier design let each book ship its own
+rules on a generic core, and three skills opened with a STEP-0 read of the scene-context
+KIT block that closed the skill unless the kit was `dnd5e`. That guard was an instruction a
+model follows, not an interlock, and it is now removed rather than merely unused — a
+lingering guard would tell the model to close a skill on a condition that can never be
+true.)
 
-`gm-skills`, `gm-social`, and `gm-conditions` load freely as judgment frameworks, but
-their DC ladders and 5e condition lists apply only when the KIT block says `dnd5e`.
-`gm-dungeon` and `gm-craft` stay kit-agnostic.
+`gm-dungeon` and `gm-craft` were never rules-bearing and are unaffected beyond dropped
+kit-awareness phrasing.
 
 ## Related
 
