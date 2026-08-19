@@ -1,3 +1,4 @@
+- 2026-08-19T21:00Z  done: e2e-whispering-wood — module imported and playable  [ss-imod01]
 - 2026-08-19T20:25Z  done: extractor-ordering-hardening — retraction findings fixed, 61 tests  [ss-imod01]
 - 2026-08-19T20:10Z  in-review: extractor-ordering-hardening — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T19:55Z  done: import-module-command — command + converter agent + SRD resolver  [ss-imod01]
