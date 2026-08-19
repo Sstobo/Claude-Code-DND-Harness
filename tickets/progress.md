@@ -1,3 +1,4 @@
+- 2026-08-19T18:40Z  done: module-text-spine — row-walking extraction + spine slicer, 48 tests, 4 review rounds  [ss-imod01]
 - 2026-08-19T16:45Z  done: adventure-scene-context — ADVENTURE block in scene context  [ss-imod01]
 - 2026-08-19T16:35Z  in-review: adventure-scene-context — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T16:10Z  done: adventure-store — adventure.json manager + gm-adventure.sh, 34 tests  [ss-imod01]
