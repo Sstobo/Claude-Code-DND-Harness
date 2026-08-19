@@ -11,6 +11,7 @@ never calls `start` still works; this is for fights worth tracking.
 Harm/conditions go through the generic game_core (no 5e assumptions).
 """
 
+import math
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -30,6 +31,57 @@ def _ac_value(raw: Any) -> Optional[int]:
     return int(raw) if isinstance(raw, (int, float)) else None
 
 
+def _pick(block: Dict[str, Any], *keys: str) -> Any:
+    """First key holding a non-null value.
+
+    Homebrew-adapted blocks carry explicit nulls (`"hit_points": null`) where the
+    SRD would omit the key, so a plain `.get(a, .get(b))` would take the null and
+    drop the sibling that actually has the number.
+    """
+    for k in keys:
+        v = block.get(k)
+        if v is not None:
+            return v
+    return None
+
+
+def _pick_populated(block: Dict[str, Any], *keys: str) -> Any:
+    """Like `_pick`, but an empty/zero primary also yields to a populated sibling.
+
+    An adapted block that zeroes `hit_points` or empties `actions` while carrying
+    the real value under the sibling key would otherwise arrive dead on arrival
+    (0 HP) or unarmed. Only for fields where empty is never meaningful — `xp` 0
+    and `cr` 0 ARE meaningful, so those keep plain `_pick`.
+    """
+    for k in keys:
+        if block.get(k):
+            return block[k]
+    return _pick(block, *keys)
+
+
+def _coerce_xp(raw: Any) -> Optional[int]:
+    """XP is summed at `end()`; anything unsummable is rejected on the way in.
+
+    A homebrew `"xp": "1,100"` used to persist fine and then crash the end-of-fight
+    summary, losing it after the fight was already over. `json.loads` also accepts
+    bare `Infinity`/`NaN`, which `int()` refuses with OverflowError/ValueError.
+    """
+    if raw is None or isinstance(raw, bool):
+        return None
+    if isinstance(raw, int):
+        return raw
+    if isinstance(raw, float):
+        if not math.isfinite(raw):
+            raise ValueError(f"stat block xp must be a finite number ({raw!r})")
+        return int(raw)
+    if isinstance(raw, str):
+        try:
+            return int(raw.replace(',', '').strip())
+        except ValueError:
+            pass
+    raise ValueError(f"stat block xp must be a number ({raw!r})")
+
+
 def _from_stat_block(block: Dict[str, Any]) -> Dict[str, Any]:
     """Map a fetched SRD monster block onto enemy-record fields.
 
@@ -41,11 +93,14 @@ def _from_stat_block(block: Dict[str, Any]) -> Dict[str, Any]:
         raise ValueError("stat block must be a JSON object")
     out = {
         'name': block.get('name'),
-        'hp': block.get('hit_points', block.get('hp')),
-        'ac': _ac_value(block.get('armor_class', block.get('ac'))),
-        'xp': block.get('xp'),
-        'cr': block.get('challenge_rating', block.get('cr')),
-        'attacks': block.get('actions', block.get('attacks')),
+        'hp': _pick_populated(block, 'hit_points', 'hp'),
+        # Per candidate, not per key: `armor_class` can be present yet unreadable
+        # (`[]`, `"17 (natural armor)"`), and the `ac` sibling must still be tried.
+        'ac': next((v for v in (_ac_value(block.get('armor_class')),
+                                _ac_value(block.get('ac'))) if v is not None), None),
+        'xp': _coerce_xp(block.get('xp')),
+        'cr': _pick(block, 'challenge_rating', 'cr'),
+        'attacks': _pick_populated(block, 'actions', 'attacks'),
         'source': 'srd',
     }
     return {k: v for k, v in out.items() if v is not None}
@@ -157,15 +212,32 @@ class CombatManager(EntityManager):
     def end(self) -> Dict[str, Any]:
         data = self._load()
         defeated = [c for c in data.get('combatants', []) if c.get('hp_current', 1) <= 0]
+        # Kill XP comes from the fetched block when the enemy carried one, so the
+        # award matches the SRD rather than a retyped CR-table lookup. Saves written
+        # before xp was validated may hold junk; those are reported by name rather
+        # than crashing the summary of a fight that is already over — silently
+        # dropping them would short-change the player, and `_save({})` below
+        # destroys the evidence.
+        awarded, unreadable = {}, []
+        for c in defeated:
+            try:
+                xp = _coerce_xp(c.get('xp'))
+            except (ValueError, OverflowError, TypeError):
+                unreadable.append(c['name'])
+                continue
+            if xp is not None:
+                awarded[c['name']] = xp
         summary = {
             'rounds': data.get('round', 1),
             'combatants': [c['name'] for c in data.get('combatants', [])],
             'defeated': [c['name'] for c in defeated],
             # Kill XP comes from the fetched block when the enemy carried one, so
             # the award matches the SRD rather than a retyped CR-table lookup.
-            'xp_awarded': sum(int(c['xp']) for c in defeated if c.get('xp') is not None),
-            'xp_by_enemy': {c['name']: int(c['xp']) for c in defeated if c.get('xp') is not None},
+            'xp_awarded': sum(awarded.values()),
+            'xp_by_enemy': awarded,
         }
+        if unreadable:
+            summary['xp_unreadable'] = unreadable
         self._save({})  # clear — combat is over
         return summary
 
@@ -226,7 +298,7 @@ def main():
                     raise ValueError(f"stat block is not valid JSON ({e})")
             out = m.add_combatant(args.name, args.hp, ac=args.ac,
                                   initiative=args.init, stat_block=block)
-        except (ValueError, OSError) as e:
+        except (ValueError, OverflowError, TypeError, OSError) as e:
             if json_mode:
                 sys.exit(emit_error(str(e), json_mode=True))
             print(f"[ERROR] {e}", file=sys.stderr); sys.exit(1)

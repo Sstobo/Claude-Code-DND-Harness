@@ -57,6 +57,9 @@ runs — need no budget. Only encounters intended as combat go through the build
    `gm-combat.sh end` returns `xp_awarded` — the sum of the defeated enemies' **fetched**
    XP. Award that (`gm-player.sh xp "<pc>" +<xp_awarded>`) rather than re-deriving from
    the CR table below; the table is for creatures that entered without a block.
+   If the summary also carries `xp_unreadable`, those enemies' XP could not be read from
+   their stored block — say so to the player and award them from the CR table (or your
+   judgment) on top of `xp_awarded`.
 
 ## XP by Challenge Rating
 | CR | XP | CR | XP | CR | XP |

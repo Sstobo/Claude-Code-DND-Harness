@@ -185,6 +185,119 @@ def test_good_stat_block_file_via_cli(dcc_world, tmp_path):
     assert (data["name"], data["ac"], data["hp_max"], data["xp"]) == ("Goblin", 15, 7, 50)
 
 
+def test_null_primary_keys_fall_back_to_the_sibling(dcc_world):
+    """Homebrew-adapted blocks carry explicit nulls where the SRD omits the key."""
+    m = CombatManager(dcc_world)
+    m.start()
+    c = m.add_combatant(stat_block={
+        "name": "Null-HP Horror",
+        "armor_class": [{"value": 17}], "hit_points": None, "hp": 30,
+    })
+    assert c["hp_max"] == 30 and c["hp_current"] == 30, "null hit_points must fall back to hp"
+    assert c["ac"] == 17
+    c = m.add_combatant(stat_block={
+        "name": "Null-AC Horror", "hp": 12,
+        "armor_class": None, "ac": 17,
+        "challenge_rating": None, "cr": 2,
+        "actions": None, "attacks": [{"name": "Claw"}],
+    })
+    assert c["ac"] == 17, "null armor_class must fall back to ac, not default to 10"
+    assert c["cr"] == 2
+    assert c["attacks"][0]["name"] == "Claw"
+
+
+@pytest.mark.parametrize("armor_class", [[], "17 (natural armor)", {}, None])
+def test_unreadable_armor_class_still_falls_back_to_ac(dcc_world, armor_class):
+    """A present-but-unreadable armor_class must not shadow the `ac` sibling."""
+    m = CombatManager(dcc_world)
+    m.start()
+    c = m.add_combatant(stat_block={
+        "name": "Adapted Brute", "hp": 12, "armor_class": armor_class, "ac": 17,
+    })
+    assert c["ac"] == 17, f"armor_class={armor_class!r} should fall through to ac"
+
+
+def test_empty_or_zero_primaries_yield_to_populated_siblings(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    c = m.add_combatant(stat_block={
+        "name": "Zero-HP Brute", "hit_points": 0, "hp": 30,
+        "actions": [], "attacks": [{"name": "Slam"}],
+    })
+    assert c["hp_max"] == 30 and c["hp_current"] == 30, "0 hit_points must not arrive dead"
+    assert c["attacks"] == [{"name": "Slam"}], "empty actions must not shadow attacks"
+
+
+def test_zero_xp_and_cr_are_kept_as_written(dcc_world):
+    """Empty is meaningful for xp/cr, so those keep the plain non-null fallback."""
+    m = CombatManager(dcc_world)
+    m.start()
+    c = m.add_combatant(stat_block={"name": "Harmless Rat", "hp": 1, "xp": 0, "cr": 0})
+    assert c["xp"] == 0 and c["cr"] == 0
+
+
+def test_comma_formatted_xp_is_coerced(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    c = m.add_combatant(stat_block={"name": "Homebrew Wyrm", "hp": 40, "xp": "1,100"})
+    assert c["xp"] == 1100
+    m.modify_hp("Homebrew Wyrm", -100)
+    assert m.end()["xp_awarded"] == 1100
+
+
+def test_non_numeric_xp_is_refused(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    with pytest.raises(ValueError):
+        m.add_combatant(stat_block={"name": "Vague Beast", "hp": 10, "xp": "lots"})
+
+
+def test_non_numeric_xp_returns_the_error_envelope_via_cli(dcc_world, tmp_path):
+    block = tmp_path / "vague.json"
+    block.write_text(json.dumps({"name": "Vague Beast", "hp": 10, "xp": "lots"}), encoding="utf-8")
+    r = _add_enemy_cli(dcc_world, "--stat-block-file", str(block))
+    assert r.returncode == 1
+    assert json.loads(r.stdout or r.stderr)["ok"] is False
+
+
+def test_non_finite_xp_returns_the_error_envelope_via_cli(dcc_world, tmp_path):
+    """`json.loads` accepts bare Infinity, and `int(inf)` raises OverflowError."""
+    block = tmp_path / "endless.json"
+    block.write_text('{"name": "Endless Horror", "hp": 10, "xp": Infinity}', encoding="utf-8")
+    r = _add_enemy_cli(dcc_world, "--stat-block-file", str(block))
+    assert r.returncode == 1
+    assert json.loads(r.stdout or r.stderr)["ok"] is False
+
+
+def test_end_survives_a_legacy_save_with_unvalidated_xp(dcc_world):
+    """Saves written before xp validation may hold junk; the summary must still land."""
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Old Save Ghoul", hp=10)
+    m.add_combatant("Good Ghoul", hp=10)
+    data = m._load()
+    m._find(data, "Old Save Ghoul")["xp"] = "lots"
+    m._find(data, "Good Ghoul")["xp"] = "1,100"
+    m._save(data)
+    m.modify_hp("Old Save Ghoul", -50)
+    m.modify_hp("Good Ghoul", -50)
+    summary = m.end()
+    assert summary["xp_awarded"] == 1100
+    assert summary["xp_by_enemy"] == {"Good Ghoul": 1100}
+    assert set(summary["defeated"]) == {"Old Save Ghoul", "Good Ghoul"}
+    # Named, not silently dropped: end() clears the state, so this is the only
+    # chance the GM has to notice the award is short.
+    assert summary["xp_unreadable"] == ["Old Save Ghoul"]
+
+
+def test_clean_end_reports_no_unreadable_xp(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant(stat_block=GOBLIN_SRD)
+    m.modify_hp("Goblin", -20)
+    assert "xp_unreadable" not in m.end()
+
+
 def test_combatant_without_name_or_hp_is_refused(dcc_world):
     m = CombatManager(dcc_world)
     m.start()
