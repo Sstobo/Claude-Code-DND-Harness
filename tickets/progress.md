@@ -2,6 +2,7 @@
 - 2026-08-19T16:35Z  in-review: adventure-scene-context — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T16:10Z  done: adventure-store — adventure.json manager + gm-adventure.sh, 34 tests  [ss-imod01]
 - 2026-08-19T15:35Z  in-review: module-text-spine — verified, reviewer dispatched  [ss-imod01]
+- 2026-08-19T16:41:05Z  done: monsters-source-of-truth — fetched blocks mandatory in combat, review perfect round 2  [ss-5efork]
 - 2026-08-19T15:35Z  in-review: adventure-store — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T15:13Z  prd: import-module — structured adventure import, 5 tickets → ready  [ship-it]
 - 2026-08-19T16:19:31Z  done: remove-kit-drafting — 5e from creation, no kit ceremony, review perfect round 2  [ss-5efork]

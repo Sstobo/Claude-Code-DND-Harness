@@ -15,6 +15,21 @@ This harness plays D&D 5e. Resolve creatures in this order:
 
 You fetch monster data from the D&D 5e API (334+ official monsters). Don't re-fetch data you already have.
 
+## THE FETCHED BLOCK IS MANDATORY
+A creature the SRD covers enters combat with its **fetched** AC, HP, attacks, CR and XP.
+Never improvise, estimate, or half-remember stats for such a creature — run
+`uv run python features/dnd-api/monsters/dnd_monster.py "<creature>"` and return what it
+gives you. Return the raw JSON alongside your readable summary so the GM can hand it to
+`bash tools/gm-combat.sh add-enemy --stat-block-file <path>` (or `--stat-block '<json>'`),
+which persists the numbers as fetched instead of retyped. Deliberate scaling
+(minion/elite/boss, see below) is fine — say which knob you turned and from what baseline.
+
+**Non-SRD and homebrew creatures are built by analogy.** Fetch the nearest-CR SRD block,
+adapt it to the fiction, and **state which block anchored it** ("statted off the SRD
+bugbear, CR 1, +10 HP for the boss framing"). No creature ships with numbers from nowhere.
+
+This does not displace the book: module text still outranks the SRD (ordering above).
+
 ## API Endpoints Available
 
 **Base URL:** `https://www.dnd5eapi.co/api/2014`

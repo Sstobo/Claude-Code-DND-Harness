@@ -7,11 +7,40 @@ description: D&D 5e combat mechanics — initiative, attack/damage resolution, X
 
 Persist combat with `bash tools/gm-combat.sh` (start/add-enemy/hp/condition/next-turn/end) so HP and initiative survive resumes.
 
+## Stat blocks are fetched, never improvised
+**If the SRD has the creature, its fetched block IS its stats.** Spawn `monster-manual`
+or run `uv run python features/dnd-api/monsters/dnd_monster.py "<creature>"` and use
+the AC / HP / attacks / CR / XP it returns. Never invent numbers for a creature the SRD
+covers, and never round a fetched value "for feel" — scale it explicitly (minion/elite/boss)
+and say so.
+
+Feed the fetched JSON straight into combat so the numbers persist as fetched:
+```bash
+uv run python features/dnd-api/monsters/dnd_monster.py goblin > /tmp/gob.json
+bash tools/gm-combat.sh add-enemy --stat-block-file /tmp/gob.json --init 14
+```
+AC/HP/XP/CR/actions land on the enemy record from the block. `--ac`, `--init` and a
+name argument override it (scaled elite, named boss). The manual form
+(`add-enemy "Orc Warrior" 22 --ac 17`) still works for creatures with no block.
+Add the same creature four times and they come back as "Goblin", "Goblin 2", "Goblin 3",
+"Goblin 4" — each one takes damage separately, so use those names with `gm-combat.sh hp`.
+
+**Book text still wins.** Ordering is unchanged: imported module text first, then your
+knowledge of the source, then the SRD. When the module names a creature, stat it from
+the module; the SRD only fills what the book leaves open.
+
+**Non-SRD / homebrew creatures are built by analogy.** Fetch the nearest-CR SRD block,
+adapt it, and **state which block anchored it** ("statted off the SRD bugbear, CR 1").
+No creature enters combat with numbers pulled from nowhere.
+
 ## Flow
-1. Get enemy stats (`features/dnd-api/monsters/dnd_monster.py "[creature]" --combat` or quick: AC 13, HP 15, +3, 1d6+1).
+1. Get enemy stats — fetched block per above (`--combat` for the condensed view).
 2. Initiative: `uv run python lib/dice.py "1d20+[dex]"` per combatant; order high→low.
 3. Each turn: attack `1d20+bonus` vs AC; on hit roll damage; update HP via `gm-combat.sh hp`.
 4. Resolution: award XP, handle loot (persist BEFORE narrating), advance time.
+   `gm-combat.sh end` returns `xp_awarded` — the sum of the defeated enemies' **fetched**
+   XP. Award that (`gm-player.sh xp "<pc>" +<xp_awarded>`) rather than re-deriving from
+   the CR table below; the table is for creatures that entered without a block.
 
 ## XP by Challenge Rating
 | CR | XP | CR | XP | CR | XP |

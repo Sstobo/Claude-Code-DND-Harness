@@ -21,6 +21,36 @@ from entity_manager import EntityManager
 from game_core import apply_harm, heal, add_condition, remove_condition
 
 
+def _ac_value(raw: Any) -> Optional[int]:
+    """SRD armour_class is a list of {type, value}; the --combat view uses `ac`."""
+    if isinstance(raw, list):
+        raw = raw[0] if raw else None
+    if isinstance(raw, dict):
+        raw = raw.get('value')
+    return int(raw) if isinstance(raw, (int, float)) else None
+
+
+def _from_stat_block(block: Dict[str, Any]) -> Dict[str, Any]:
+    """Map a fetched SRD monster block onto enemy-record fields.
+
+    Accepts both shapes `features/dnd-api/monsters/dnd_monster.py` prints: the
+    full block (`armor_class`, `hit_points`, `challenge_rating`, `actions`) and
+    the `--combat` view (`ac`, `hp`, `cr`, `attacks`).
+    """
+    if not isinstance(block, dict):
+        raise ValueError("stat block must be a JSON object")
+    out = {
+        'name': block.get('name'),
+        'hp': block.get('hit_points', block.get('hp')),
+        'ac': _ac_value(block.get('armor_class', block.get('ac'))),
+        'xp': block.get('xp'),
+        'cr': block.get('challenge_rating', block.get('cr')),
+        'attacks': block.get('actions', block.get('attacks')),
+        'source': 'srd',
+    }
+    return {k: v for k, v in out.items() if v is not None}
+
+
 class CombatManager(EntityManager):
     def __init__(self, world_state_dir: str = None):
         super().__init__(world_state_dir)
@@ -40,19 +70,50 @@ class CombatManager(EntityManager):
         self._save(data)
         return data
 
-    def add_combatant(self, name: str, hp: int, ac: int = 10,
-                      initiative: int = 0, side: str = 'enemy') -> Dict[str, Any]:
+    def add_combatant(self, name: str = None, hp: int = None, ac: int = None,
+                      initiative: int = 0, side: str = 'enemy',
+                      stat_block: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Add a combatant, either from manual numbers or a fetched SRD stat block.
+
+        A `stat_block` (the JSON `dnd_monster.py` prints, full or `--combat`) is
+        authoritative: its AC/HP/XP/CR/actions land on the record as fetched so
+        nobody retypes them. Explicit args still win where passed (a scaled
+        elite, a named boss).
+        """
+        fetched = _from_stat_block(stat_block) if stat_block else {}
+        name = name or fetched.get('name')
+        hp = hp if hp is not None else fetched.get('hp')
+        if not name or hp is None:
+            raise ValueError("combatant needs a name and HP (pass them, or a stat block carrying them)")
         data = self._load()
         if not data.get('active'):
             data = self.start()
+        name = self._unique_name(data, name)
         combatant = {
             'name': name, 'hp_current': int(hp), 'hp_max': int(hp),
-            'ac': int(ac), 'conditions': [], 'initiative': int(initiative), 'side': side,
+            'ac': int(ac if ac is not None else fetched.get('ac', 10)),
+            'conditions': [], 'initiative': int(initiative), 'side': side,
         }
+        if fetched:
+            combatant.update({k: fetched[k] for k in ('xp', 'cr', 'attacks', 'source')
+                              if fetched.get(k) is not None})
         data.setdefault('combatants', []).append(combatant)
         data['combatants'].sort(key=lambda c: c.get('initiative', 0), reverse=True)
         self._save(data)
         return combatant
+
+    def _unique_name(self, data, name: str) -> str:
+        """Four goblins are four combatants: "Goblin", "Goblin 2", "Goblin 3"...
+
+        `_find` matches by name, so a duplicate would shadow its twins and leave
+        them undamageable. Suffix on the way in instead.
+        """
+        if self._find(data, name) is None:
+            return name
+        n = 2
+        while self._find(data, f"{name} {n}") is not None:
+            n += 1
+        return f"{name} {n}"
 
     def _find(self, data, name):
         for c in data.get('combatants', []):
@@ -95,10 +156,15 @@ class CombatManager(EntityManager):
 
     def end(self) -> Dict[str, Any]:
         data = self._load()
+        defeated = [c for c in data.get('combatants', []) if c.get('hp_current', 1) <= 0]
         summary = {
             'rounds': data.get('round', 1),
             'combatants': [c['name'] for c in data.get('combatants', [])],
-            'defeated': [c['name'] for c in data.get('combatants', []) if c.get('hp_current', 1) <= 0],
+            'defeated': [c['name'] for c in defeated],
+            # Kill XP comes from the fetched block when the enemy carried one, so
+            # the award matches the SRD rather than a retyped CR-table lookup.
+            'xp_awarded': sum(int(c['xp']) for c in defeated if c.get('xp') is not None),
+            'xp_by_enemy': {c['name']: int(c['xp']) for c in defeated if c.get('xp') is not None},
         }
         self._save({})  # clear — combat is over
         return summary
@@ -124,8 +190,10 @@ def main():
     parser = argparse.ArgumentParser(description="Persisted combat state")
     sub = parser.add_subparsers(dest='action')
     sub.add_parser('start')
-    p = sub.add_parser('add-enemy'); p.add_argument('name'); p.add_argument('hp', type=int)
-    p.add_argument('--ac', type=int, default=10); p.add_argument('--init', type=int, default=0)
+    p = sub.add_parser('add-enemy'); p.add_argument('name', nargs='?'); p.add_argument('hp', nargs='?', type=int)
+    p.add_argument('--ac', type=int); p.add_argument('--init', type=int, default=0)
+    p.add_argument('--stat-block', help="fetched SRD monster JSON (dnd_monster.py output)")
+    p.add_argument('--stat-block-file', help="path to a file holding that JSON ('-' for stdin)")
     p = sub.add_parser('hp'); p.add_argument('name'); p.add_argument('delta', type=int)
     p = sub.add_parser('condition'); p.add_argument('name'); p.add_argument('op', choices=['add', 'remove']); p.add_argument('condition')
     sub.add_parser('next-turn')
@@ -143,7 +211,25 @@ def main():
     if args.action == 'start':
         out = m.start()
     elif args.action == 'add-enemy':
-        out = m.add_combatant(args.name, args.hp, ac=args.ac, initiative=args.init)
+        try:
+            block = None
+            raw = None
+            if args.stat_block_file:
+                raw = (sys.stdin.read() if args.stat_block_file == '-'
+                       else Path(args.stat_block_file).read_text())
+            elif args.stat_block:
+                raw = args.stat_block
+            if raw is not None:
+                try:
+                    block = json.loads(raw)
+                except json.JSONDecodeError as e:
+                    raise ValueError(f"stat block is not valid JSON ({e})")
+            out = m.add_combatant(args.name, args.hp, ac=args.ac,
+                                  initiative=args.init, stat_block=block)
+        except (ValueError, OSError) as e:
+            if json_mode:
+                sys.exit(emit_error(str(e), json_mode=True))
+            print(f"[ERROR] {e}", file=sys.stderr); sys.exit(1)
     elif args.action == 'hp':
         out = m.modify_hp(args.name, args.delta)
     elif args.action == 'condition':
