@@ -1,0 +1,138 @@
+{
+  "active": [
+    {
+      "id": "b5aeefab",
+      "consequence": "Squeeks may spread word of the party's heroism to other dungeon NPCs",
+      "trigger": "When party encounters friendly NPCs",
+      "created": "2026-01-28T22:46:26.793274+00:00",
+      "trigger_type": "on_npc",
+      "match": "friendly"
+    },
+    {
+      "id": "a36a02f6",
+      "consequence": "Nightstalker hunting party may track the party's scent to the village",
+      "trigger": "If party stays in village for more than 2 days, or leaves at night again",
+      "created": "2026-01-30T01:33:34.417203+00:00",
+      "trigger_type": "on_time",
+      "match": "night"
+    },
+    {
+      "id": "c3e61742",
+      "consequence": "Sheol Glass Reaper Case inside Tandy's stomach - unstable WMD absorbing magic pulses internally. Unknown side effects.",
+      "trigger": "Ongoing - each magic pulse, and when party reaches Floor 4",
+      "created": "2026-02-08T13:28:33.332706+00:00",
+      "trigger_type": "on_location",
+      "match": "Floor 4"
+    }
+  ],
+  "resolved": [
+    {
+      "id": "db6a2966",
+      "consequence": "Deadline: 18 hours to reach Floor 2 stairs or face termination",
+      "trigger": "When timer expires",
+      "created": "2026-01-28T22:46:26.012788+00:00",
+      "resolved": "2026-01-29T00:46:43.324028+00:00"
+    },
+    {
+      "id": "fe02a25b",
+      "consequence": "Mongo's crew may become allies or rivals depending on how negotiations go",
+      "trigger": "When party leaves safe room or makes demands",
+      "created": "2026-01-29T00:46:44.005184+00:00",
+      "resolved": "2026-01-29T01:30:31.922810+00:00"
+    },
+    {
+      "id": "3a989011",
+      "consequence": "Imani's alliance decision pending - will become allies or go separate ways",
+      "trigger": "When party responds to alliance offer",
+      "created": "2026-01-29T01:29:57.745193+00:00",
+      "resolved": "2026-01-29T01:39:50.844652+00:00"
+    },
+    {
+      "id": "301880e3",
+      "consequence": "Brennan needs extended rest or healing - cannot travel quickly",
+      "trigger": "When party tries to move fast or enter combat",
+      "created": "2026-01-29T01:29:58.379837+00:00",
+      "resolved": "2026-01-29T01:39:51.297715+00:00"
+    },
+    {
+      "id": "8a7b7184",
+      "consequence": "Brennan needs rest or healing before he can travel on his own",
+      "trigger": "When party needs to move quickly or enter combat",
+      "created": "2026-01-29T01:39:40.104396+00:00",
+      "resolved": "2026-01-29T18:43:05.357683+00:00"
+    },
+    {
+      "id": "ce5c2bdc",
+      "consequence": "The 5 surviving crawlers from Hive Mother fight may seek to join Tandy's crew permanently or go their own way",
+      "trigger": "When party discusses next steps at the inn",
+      "created": "2026-01-30T01:33:35.997317+00:00",
+      "resolved": "2026-01-30T01:38:47.438023+00:00"
+    },
+    {
+      "id": "1ce8f376",
+      "consequence": "Circus creatures may be on high alert",
+      "trigger": "Next visit to Grimaldi's Circus",
+      "created": "2026-01-30T21:20:56.787232+00:00",
+      "resolved": "2026-02-01T22:50:31.658267+00:00"
+    },
+    {
+      "id": "a62a7e18",
+      "consequence": "Prometheus may attract attention from other factions",
+      "trigger": "When party travels openly with dragon",
+      "created": "2026-02-01T23:20:19.128410+00:00",
+      "resolved": "2026-02-02T12:53:07.122212+00:00"
+    },
+    {
+      "id": "976261c3",
+      "consequence": "The Mating Dance of Doom goes viral with viewers",
+      "trigger": "Next interview or broadcast interaction",
+      "created": "2026-02-01T23:20:20.523002+00:00",
+      "resolved": "2026-02-02T12:57:59.294315+00:00"
+    },
+    {
+      "id": "3f2f9d7f",
+      "consequence": "Viewers react to Tandy's transformation",
+      "trigger": "Next interview or public appearance",
+      "created": "2026-01-30T21:20:57.685513+00:00",
+      "resolved": "2026-02-02T14:14:02.603046+00:00"
+    },
+    {
+      "id": "660c09a9",
+      "consequence": "Grimaldi will resurrect and seek revenge",
+      "trigger": "Next encounter with circus remnants",
+      "created": "2026-02-01T23:16:51.917593+00:00",
+      "resolved": "2026-02-02T17:56:05.732108+00:00"
+    },
+    {
+      "id": "871e2056",
+      "consequence": "Swordsmen below warehouse stirring - stealth check failed on roof landing. May fully activate if party makes more noise.",
+      "trigger": "Next visit to warehouse or loud action in upper floor",
+      "created": "2026-02-05T22:29:05.865620+00:00",
+      "resolved": "2026-02-05T23:34:14.824490+00:00"
+    },
+    {
+      "id": "b54f948e",
+      "consequence": "Swordsmen army deactivated across the warehouse district. Power source destroyed.",
+      "trigger": "immediate",
+      "created": "2026-02-05T23:25:25.076336+00:00",
+      "resolved": "2026-02-05T23:34:15.555253+00:00"
+    }
+  ],
+  "pending": [
+    {
+      "id": "mongo-frenzy",
+      "consequence": "Mongo may go into uncontrollable frenzy if enemies appear suddenly",
+      "trigger": "When combat begins unexpectedly",
+      "created": "2026-01-29T01:10:00.000000+00:00",
+      "trigger_type": "on_event",
+      "match": "combat",
+      "expiry": "Floor 4"
+    },
+    {
+      "id": "mongo-training",
+      "consequence": "Mongo's bond with Donut grows stronger through combat victories",
+      "trigger": "After Mongo participates in a kill",
+      "created": "2026-01-29T01:10:00.000000+00:00"
+    }
+  ]
+}

@@ -1,0 +1,442 @@
+{
+  "The Eight Day Countdown": {
+    "name": "The Eight Day Countdown",
+    "description": "The third floor has only eight days before it collapses. Crawlers must find stairwells and descend to the fourth floor before time runs out. The countdown began when the second floor collapsed, and the system announced over 700,000 crawlers remaining.",
+    "type": "main",
+    "npcs": [
+      "Mordecai"
+    ],
+    "locations": [
+      "Over City",
+      "Stairwells"
+    ],
+    "objectives": [
+      "Find a stairwell entrance",
+      "Survive until floor collapse",
+      "Reach the fourth floor before deadline"
+    ],
+    "consequences": "Death if not descended before timer expires. The floor literally collapses.",
+    "source": "carl-book-2",
+    "events": [
+      {
+        "event": "Party reached Floor 3",
+        "timestamp": "2026-01-30T11:17:57.508433+00:00"
+      },
+      {
+        "event": "Day 4: Party positioned at warehouse stairwell. Awaiting first magic pulse to activate handle.",
+        "timestamp": "2026-02-06T23:45:16.833577+00:00"
+      }
+    ],
+    "status": "active"
+  },
+  "Race and Class Selection": {
+    "name": "Race and Class Selection",
+    "description": "Upon entering Floor 3, crawlers must choose a race and class. Races include Primal (ancient, mysterious beings), while classes like Compensated Anarchist, Bomb Squad Tech, and Prize Fighter are available based on achievements and view counts. The Desperado Club tattoo excludes Cleric/Paladin classes.",
+    "type": "main",
+    "npcs": [
+      "Mordecai",
+      "Zev"
+    ],
+    "locations": [
+      "Safe Room"
+    ],
+    "objectives": [
+      "Review available races and classes",
+      "Select based on achievements earned",
+      "Consider viewer popularity bonuses"
+    ],
+    "consequences": "Class choice affects all future abilities and playstyle. Cannot be changed.",
+    "source": "carl-book-2"
+  },
+  "The Volcano World Mythology": {
+    "name": "The Volcano World Mythology",
+    "description": "Floor 3 is set in 'The Over City' - the ruins of a magical civilization that existed inside a dormant volcano. Six layers exist within the volcano. A great monster at the bottom breathed poison gas, killing or transforming 90% of the population. Survivors live in villages while monsters roam the ruins.",
+    "type": "mystery",
+    "npcs": [
+      "Village Guards",
+      "Skyfowl"
+    ],
+    "locations": [
+      "Over City",
+      "Village",
+      "Ruins",
+      "Hunting Grounds"
+    ],
+    "objectives": [
+      "Explore the ruins for loot and experience",
+      "Avoid village guards at night",
+      "Understand the cataclysm backstory"
+    ],
+    "consequences": "Breaking village rules means death penalty with no jail - permanent exile to the ruins.",
+    "source": "carl-book-2"
+  },
+  "Grimaldi's Traveling Circus": {
+    "name": "Grimaldi's Traveling Circus",
+    "description": "A legendary circus transformed by the cataclysm. Ringmaster Redstone Grimaldi became a Level 85 City Boss - a Pestiferous Vine that keeps resurrecting his circus family forever. No crawler has survived fighting a city boss. The circus contains clowns, lemurs, ogres, and other transformed performers.",
+    "type": "threat",
+    "npcs": [
+      "Ringmaster Grimaldi",
+      "Apollon the Mighty",
+      "The Clammy Clown"
+    ],
+    "locations": [
+      "Grimaldi's Circus Tent"
+    ],
+    "objectives": [
+      "Discover the circus location",
+      "Decide whether to engage or flee",
+      "Find a way to defeat the city boss (if possible)"
+    ],
+    "consequences": "City boss fights have zero survivor rate. Grimaldi resurrects his family regardless of how many times they die.",
+    "source": "carl-book-2",
+    "events": [
+      {
+        "event": "Freed Prometheus the dragon from captivity. Burned down the Big Top. Grimaldi wounded but will resurrect - he remains a threat.",
+        "timestamp": "2026-02-01T23:16:56.442174+00:00"
+      }
+    ],
+    "status": "active"
+  },
+  "The Murder Mystery Quest": {
+    "name": "The Murder Mystery Quest",
+    "description": "Prostitutes from outside the city are falling from the sky, twisted to death with talon wounds on their shoulders - suggesting skyfowl involvement. GumGum the orc gave Carl this quest before being killed by krasue (ghost ladies with exposed guts). The 201st Security Group may be involved.",
+    "type": "side",
+    "npcs": [
+      "GumGum",
+      "Signet",
+      "201st Security Group",
+      "Krasue"
+    ],
+    "locations": [
+      "Over City streets",
+      "Apito Education Center"
+    ],
+    "objectives": [
+      "Investigate the falling bodies",
+      "Discover who is killing prostitutes",
+      "Avenge GumGum's death",
+      "Expose the 201st Security Group conspiracy"
+    ],
+    "consequences": "GumGum died for asking questions. The killers know Carl and Donut are investigating.",
+    "source": "carl-book-2"
+  },
+  "The Apito Doomsday Cult": {
+    "name": "The Apito Doomsday Cult",
+    "description": "A sect of banished elves worship the Oak Mother Apito, goddess of all gods. They believe skyfowl are 'blessed angels' whose protection maintains the path to heaven. They hunt the 'Oak Fell' (their antichrist) and believe Carl is it. They tortured GumGum for information and operate through the 201st Security Group.",
+    "type": "mystery",
+    "npcs": [
+      "Salvatore",
+      "Carmine",
+      "City Elves",
+      "Root Druids",
+      "Wind Mages"
+    ],
+    "locations": [
+      "Apito Education Center",
+      "Corrupt Temple"
+    ],
+    "objectives": [
+      "Learn about the Oak Fell prophecy",
+      "Survive the cult's attempts to kill Carl",
+      "Understand the connection to Floor 12 events"
+    ],
+    "consequences": "The cult believes killing Carl will prevent the end of all worlds. They will not stop hunting him.",
+    "source": "carl-book-2"
+  },
+  "The Skull Empire Conflict": {
+    "name": "The Skull Empire Conflict",
+    "description": "A galactic political struggle between the Skull Empire, Valtay Corporation, and Borant Syndicate. The Valtay destroyed a Skull Empire royal yacht, killing Queen Consort Ugloo and the Maestro. This weakens alliances and affects the bankruptcy action against Earth's dungeon.",
+    "type": "main",
+    "npcs": [
+      "Prince Stalwart",
+      "Queen Consort Ugloo",
+      "Maestro",
+      "Manasa",
+      "Princess D'nadia"
+    ],
+    "locations": [
+      "Production Trailers",
+      "Earth Orbit"
+    ],
+    "objectives": [
+      "Navigate galactic politics",
+      "Understand faction relationships",
+      "Leverage conflicts for survival advantages"
+    ],
+    "consequences": "Galactic politics directly affect dungeon rules and crawler survival rates.",
+    "source": "carl-book-2"
+  },
+  "The Remex Soul Crystal Explosion": {
+    "name": "The Remex Soul Crystal Explosion",
+    "description": "Remex contains an overloaded soul crystal that creates a city-destroying explosion when combined with a Sheol Glass Reaper Case. Carl contained one explosion in his inventory (3/1x10^7 power) but Remex still has a 20-minute timer to a second, larger explosion that will kill everyone in the area.",
+    "type": "threat",
+    "npcs": [
+      "Remex",
+      "Katia"
+    ],
+    "locations": [
+      "Warehouse",
+      "Stairwell"
+    ],
+    "objectives": [
+      "Survive the soul crystal detonation",
+      "Find a way to contain or escape the blast",
+      "Get to the stairwell before explosion"
+    ],
+    "consequences": "City-leveling explosion. Magic pulses disable equipment before the final blast.",
+    "source": "carl-book-2"
+  },
+  "Magic Pulse Cascade": {
+    "name": "Magic Pulse Cascade",
+    "description": "Before the floor collapse, magic pulses sweep through the area at intervals. First pulse disables stat buffs. Second pulse activates all equipped magical weapons. Third pulse destroys any still-equipped armor. Fourth pulse triggers first two items in everyone's hotlist automatically. Items in inventory become inaccessible.",
+    "type": "threat",
+    "npcs": [],
+    "locations": [
+      "Over City",
+      "Warehouse"
+    ],
+    "objectives": [
+      "Remove equipment before pulses hit",
+      "Manage hotlist carefully",
+      "Prepare for loss of magical items"
+    ],
+    "consequences": "Complete loss of magical gear. Random activation can heal or harm. Armor destroyed. Chaos ensues.",
+    "source": "carl-book-2",
+    "events": [
+      {
+        "event": "Party preparing: magical weapons/armor stowed in inventory. Mordecai identified risk — second pulse may activate Sheol Glass case. Two contingencies: stairwell shielding or Tandy body-absorbs the pulse.",
+        "timestamp": "2026-02-06T23:45:20.520461+00:00"
+      }
+    ],
+    "status": "active"
+  },
+  "The Desperado Club": {
+    "name": "The Desperado Club",
+    "description": "A members-only criminal organization accessible via secret tattoo. The club exists on a separate dimensional plane - entering any location takes you to the same room. Contains: Bitches (female brothel), Penis Parade (male brothel), Jobs (assassination/theft quests), Silk Road (marketplace), Guild-O-Rama (rogue guilds). Stairs lead to Hunting Grounds (accessible from Floor 6).",
+    "type": "side",
+    "npcs": [
+      "Quint the Pharmacist",
+      "Pustule the Hobgoblin"
+    ],
+    "locations": [
+      "Desperado Club",
+      "Silk Road",
+      "Guild-O-Rama"
+    ],
+    "objectives": [
+      "Access the club via tattoo",
+      "Purchase supplies at Silk Road",
+      "Accept Jobs for gold",
+      "Avoid the dangerous sections"
+    ],
+    "consequences": "Crawlers who enter Bitches/Penis Parade get shanked and ridiculed by viewers. Jobs quests are morally questionable.",
+    "source": "carl-book-2"
+  },
+  "The Skyfowl Magistrate": {
+    "name": "The Skyfowl Magistrate",
+    "description": "Magistrate Featherfall rules the eagle-controlled villages from a position above a high-end shopping mall. Skyfowl view flightless creatures as servants. The bureaucracy includes human and elf clerks who are verbally abused. Getting an audience requires navigating guards, shops, and a reception desk with a Beanie Baby-obsessed secretary.",
+    "type": "side",
+    "npcs": [
+      "Magistrate Featherfall",
+      "Burgundy",
+      "Chickadees"
+    ],
+    "locations": [
+      "Administrative Building",
+      "Shopping Mall",
+      "Reception Area"
+    ],
+    "objectives": [
+      "Navigate skyfowl bureaucracy",
+      "Gain audience with the magistrate",
+      "Obtain information or resources"
+    ],
+    "consequences": "Skyfowl are arrogant and dismissive. Violence against them triggers the Apito cult response.",
+    "source": "carl-book-2"
+  },
+  "Crawler Alliance Formation": {
+    "name": "Crawler Alliance Formation",
+    "description": "Hekla leads Brynhild's Daughters, an all-female Icelandic crawler team. She achieved Level 25 early and has an automatic magical crossbow. Her team was scattered on Floor 3 but regrouped to take down an owlbear borough boss. She sent a friend to find Carl and Donut at the One-Eyed Narwhal tavern.",
+    "type": "side",
+    "npcs": [
+      "Hekla",
+      "Katia",
+      "Brynhild's Daughters"
+    ],
+    "locations": [
+      "One-Eyed Narwhal Tavern"
+    ],
+    "objectives": [
+      "Meet with Hekla's contact",
+      "Consider alliance benefits",
+      "Coordinate strategies against common threats"
+    ],
+    "consequences": "Alliances provide safety in numbers but also make you a bigger target. Viewer dynamics change with team composition.",
+    "source": "carl-book-2"
+  },
+  "The Quest Completion System": {
+    "name": "The Quest Completion System",
+    "description": "Quests reward Gold/Platinum Quest Boxes upon completion. Completing quests in unusual ways triggers the 'Hadji' achievement, upgrading boxes. A double upgrade exists beyond Hadji. The 'Johnny Quest' achievement marks quest locations on your map. The system mocks crawlers with insulting achievement descriptions.",
+    "type": "main",
+    "npcs": [
+      "Mordecai"
+    ],
+    "locations": [
+      "Throughout Floor 3"
+    ],
+    "objectives": [
+      "Complete quests for rewards",
+      "Find creative solutions for Hadji upgrades",
+      "Unlock quest location markers"
+    ],
+    "consequences": "Better completion methods yield better rewards. Standard completion gets mocked by the system.",
+    "source": "carl-book-2"
+  },
+  "The Hobgoblin Explosives Trade": {
+    "name": "The Hobgoblin Explosives Trade",
+    "description": "Pustule the hobgoblin sells explosives at the Silk Road. Hobgoblin dynamite is significantly more powerful than goblin explosives. Available items include: hob-lobbers (impact-detonated), hobgoblin smoke curtains (superior to goblin smoke bombs), and magical detonators with 10km range. Carl's explosives handling skill affects yield.",
+    "type": "side",
+    "npcs": [
+      "Pustule"
+    ],
+    "locations": [
+      "Silk Road",
+      "Desperado Club"
+    ],
+    "objectives": [
+      "Purchase explosives supplies",
+      "Improve explosives handling skills",
+      "Use dynamite strategically against bosses"
+    ],
+    "consequences": "Hobgoblin dynamite can kill most anything, but even a case wouldn't scratch a divine guardian.",
+    "source": "carl-book-2"
+  },
+  "NPCs as Former Crawlers": {
+    "name": "NPCs as Former Crawlers",
+    "description": "Some NPCs like Remex were once crawlers who became trapped in the dungeon system. Mordecai will be freed once crawlers reach Floor 4 and the dungeon ends. Donut expressed fear of becoming an NPC herself. NPCs remember their past lives but are bound to their roles.",
+    "type": "mystery",
+    "npcs": [
+      "Mordecai",
+      "Remex"
+    ],
+    "locations": [
+      "Throughout Floor 3"
+    ],
+    "objectives": [
+      "Learn which NPCs were former crawlers",
+      "Understand the NPC binding system",
+      "Help Mordecai achieve freedom"
+    ],
+    "consequences": "Crawlers can become trapped as NPCs. Death is not the worst fate in the dungeon.",
+    "source": "carl-book-2"
+  },
+  "The Odette Interview Show": {
+    "name": "The Odette Interview Show",
+    "description": "Crawlers participate in televised interviews between floors. The show includes crawler celebrities, galactic guests, and 'Danger Zone' segments. Production trailers float in Earth orbit and can be attacked. Viewer ratings affect crawler privileges and bonuses. Embarrassing moments (like Carl's nudity) are broadcast to the universe.",
+    "type": "side",
+    "npcs": [
+      "Odette",
+      "Ripper",
+      "Tucker",
+      "Princess D'nadia",
+      "Donna (robot)"
+    ],
+    "locations": [
+      "Production Trailer",
+      "Interview Studio"
+    ],
+    "objectives": [
+      "Maintain viewer popularity",
+      "Navigate interview politics",
+      "Avoid embarrassment on live television"
+    ],
+    "consequences": "High ratings unlock better classes and rewards. Low ratings mean death. Everything is broadcast.",
+    "source": "carl-book-2"
+  },
+  "Floor Rules and Survival": {
+    "name": "Floor Rules and Survival",
+    "description": "Village guards only operate during daylight. Night brings greater danger. The ruins contain 'Corrupt Temples' where mobs spawn. Don't attack NPCs, rob stores, or get drunk in streets - only death penalty exists. Guards are slow but numerous. Running into ruins provides escape but permanent exile from that village.",
+    "type": "main",
+    "npcs": [
+      "Village Guards"
+    ],
+    "locations": [
+      "Villages",
+      "Ruins",
+      "Corrupt Temples"
+    ],
+    "objectives": [
+      "Learn village rules",
+      "Plan activities around day/night cycle",
+      "Identify safe zones and danger areas"
+    ],
+    "consequences": "Rule violations mean death or permanent exile. No second chances.",
+    "source": "carl-book-2"
+  },
+  "The Jai-Alai Xistera": {
+    "name": "The Jai-Alai Xistera",
+    "description": "Carl received a xistera (jai-alai throwing scoop) as a prize, along with the Cesta Punta skill from an Earth Hobby Potion. The basket appears wicker but is lightweight metal. Jai-alai balls can knock heads off. The skill allows throwing objects at incredible speed and accuracy.",
+    "type": "side",
+    "npcs": [
+      "Fitz the Barkeeper"
+    ],
+    "locations": [
+      "One-Eyed Narwhal Tavern"
+    ],
+    "objectives": [
+      "Master the xistera for combat",
+      "Find appropriate projectiles",
+      "Develop throwing techniques"
+    ],
+    "consequences": "Unique ranged weapon capability. Skill knowledge from Earth hobbies can provide unexpected advantages.",
+    "source": "carl-book-2"
+  },
+  "The Ricky Joe Subplot": {
+    "name": "The Ricky Joe Subplot",
+    "description": "Ricky Joe is a one-armed dwarven child whose mother is perpetually pregnant. His large family of 15+ siblings lives next to the Apito Education Center. He got involved when Carl and Donut were fighting the 201st Security Group, carrying a severed arm and salamander corpse. His mother was in labor during the confrontation.",
+    "type": "side",
+    "npcs": [
+      "Ricky Joe",
+      "Ricky Joe's Mother"
+    ],
+    "locations": [
+      "Dwarf Residence",
+      "Near Apito Education Center"
+    ],
+    "objectives": [
+      "Protect innocent NPCs from crossfire",
+      "Navigate around civilian areas",
+      "Consider consequences of combat near families"
+    ],
+    "consequences": "Combat in residential areas risks harming innocents. NPCs have their own lives and concerns.",
+    "source": "carl-book-2"
+  },
+  "The Stairwell Escape": {
+    "name": "The Stairwell Escape",
+    "description": "The floor ends when crawlers pull the handle at the bottom of the stairwell. The door features oversized kua-tin carvings. Reaching the stairwell before the final explosion requires navigating magic pulses that disable equipment, running without pants (Carl's armor was destroyed), and timing the descent with the warehouse bomb.",
+    "type": "main",
+    "npcs": [
+      "Katia",
+      "Donut",
+      "Mongo"
+    ],
+    "locations": [
+      "Stairwell",
+      "Warehouse"
+    ],
+    "objectives": [
+      "Reach stairwell before explosion",
+      "Time descent with bomb detonation",
+      "Survive final magic pulse chaos"
+    ],
+    "consequences": "Pulling the handle ends Floor 3. Anyone not through dies. The transition is instantaneous.",
+    "source": "carl-book-2",
+    "events": [
+      {
+        "event": "Party on warehouse rooftop with Prometheus. Crowd below pacified. Katia present. Gear stowed for pulse prep. Plan: sprint inside on first pulse, shield case from second pulse.",
+        "timestamp": "2026-02-06T23:45:18.326004+00:00"
+      }
+    ],
+    "status": "active"
+  }
+}

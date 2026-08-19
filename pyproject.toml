@@ -1,0 +1,101 @@
+[project]
+name = "gm-claude"
+version = "0.2.0"
+description = "AI-powered D&D Game Master assistant for running campaigns with Claude Code"
+authors = [
+    { name = "Sean Stobo" }
+]
+readme = "README.md"
+license = { text = "CC-BY-NC-SA-4.0" }
+requires-python = ">=3.11"
+keywords = ["dnd", "dungeons-and-dragons", "claude", "ai", "dm", "dungeon-master"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: Other/Proprietary License",
+    "Natural Language :: English",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Games/Entertainment :: Role-Playing",
+]
+
+# Core dependencies only - minimal for basic functionality
+dependencies = [
+    "anthropic>=0.76.0",
+    "pdfplumber>=0.11.9",
+    "pypdf2>=3.0.1",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+# Voice features (ElevenLabs TTS)
+voice = [
+    "elevenlabs>=2.8.1",
+]
+
+# RAG-based document extraction
+rag = [
+    "sentence-transformers>=2.2.0",
+    "chromadb>=0.4.0",
+]
+
+# Full installation (all features)
+full = [
+    "gm-claude[voice]",
+    "gm-claude[rag]",
+]
+
+# Development dependencies
+dev = [
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
+    "pytest>=8.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/Sstobo/Claude-Code-Game-Master"
+Documentation = "https://github.com/Sstobo/Claude-Code-Game-Master/wiki"
+Repository = "https://github.com/Sstobo/Claude-Code-Game-Master"
+Issues = "https://github.com/Sstobo/Claude-Code-Game-Master/issues"
+Author = "https://www.linkedin.com/in/sean-stobo/"
+
+[build-system]
+requires = ["setuptools>=68.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "."}
+packages = ["lib", "features"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.md", "*.txt"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "C90", "I", "N", "UP", "B", "A", "C4", "SIM", "RET"]
+ignore = ["E501"]  # Line too long - handled by black
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

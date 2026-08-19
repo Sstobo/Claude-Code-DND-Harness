@@ -1,0 +1,267 @@
+{
+  "Tutorial Guild Hall": {
+    "position": "A cavernous underground chamber serving as the Tutorial Guild Hall. Stone walls arch overhead, lit by flickering torches. The hall contains various tutorial stations and information boards. This is where new crawlers receive their initial orientation to the dungeon.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-28T21:41:24.992910+00:00"
+  },
+  "First Junction": {
+    "position": "A T-intersection in the dungeon corridors outside the Tutorial Guild Hall. Left passage has dripping water and clicking sounds. Right passage is silent with a copper-blood smell.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-28T22:01:48.213887+00:00"
+  },
+  "Cricket Nest": {
+    "position": "A thirty-foot chamber infested with Giant Cave Crickets. Littered with bones, torn cloth, and debris. Connected to the First Junction via the left passage.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-28T22:09:41.794151+00:00"
+  },
+  "Fungal Corridor": {
+    "position": "A passage between the Cricket Nest and Bone Garden, filled with strange glowing fungi.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-28T22:46:33.593122+00:00"
+  },
+  "Bone Garden": {
+    "position": "A large chamber before the stairs. Three paths lead to the exit: LEFT (trapped Crawler Corpse Alley), CENTER (The Butcher's patrol), RIGHT (unknown - nobody returns).",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-28T22:46:34.279502+00:00"
+  },
+  "Floor 1 Stairs": {
+    "position": "The exit from Floor 1 to Floor 2. Guarded by three approach paths.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-28T22:46:34.937146+00:00"
+  },
+  "Floor 2 - The Warrens": {
+    "position": "Below Floor 1. A maze of tunnels, monster dens, and scattered safe rooms. More dangerous than the tutorial floor.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-29T00:30:31.631725+00:00"
+  },
+  "Floor 2 Junction": {
+    "position": "Central hub of Floor 2: The Warrens. Five tunnels branch off - North (water/safe room), East (screaming), West (chittering), South (stairs to Floor 1), and Down (narrow crack with warm air).",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-29T00:46:42.738083+00:00",
+    "context": [
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "those regarding AIs. These biologically printed mobs and NPCs are not\nallowed to exist outside of a Syndicate-monitored production. Using them\nfor any purpose other than sanctioned entertainment is highly illegal. It’s\nbasically considered a war crime.”\n“So, there are no intergalactic brothels filled with genetically-\nengineered women?”\nMordecai grimaced. “Not legal ones. But there is one place where such\nthings do exist legally.” He pointed down.\n“But you said…” The realization struck me. “Oh, ",
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "“Hey,” I asked the kid, indicating the burnt-out husk of the temple. The\nchild’s own home, which was attached to the building, had also burned to\nthe ground. “Did you ever see anything unusual coming in and out of there?\nOr hear anything weird?”\n“Weird?” he asked. “They were always weird. One of them would cry\nfor his mama every morning. We could hear it through the walls, we did.\nThere were a lot of weird smells, too. My brother, Bubba Lane, said he saw\nsomething fly from the roof a couple nigh",
+      "The two circled a few times and then flew off.\nI kept an eye out for mobs as we cautiously approached the hole. We\nlooked down into what had once been the magistrate’s quarters. The\nepicenter of the explosion was still another 50 feet ahead. Through the hole\nin the roof, I could see all the way to the ground far below. Half of the\nmagistrate’s home and front office were just gone, along with the entire\nsouth end of the building. The floor of the mall level was also a massive\nhole. And below that"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T13:22:44.829238+00:00"
+  },
+  "North Tunnel Safe Room": {
+    "position": "Floor 2, North Tunnel. A water-worn cavern with an underground stream, barricaded entrance, and claimed by Mongo's Crew. Has bedrolls, firepit, and fresh water.",
+    "connections": [],
+    "description": "Floor 2, North Tunnel. A water-worn cavern with an underground stream, barricaded entrance, and scattered bedrolls. A temporary camp for crawlers passing through.",
+    "discovered": "2026-01-29T00:46:33.145135+00:00"
+  },
+  "East Tunnel Stalker Den": {
+    "position": "Floor 2, East Tunnel. Site of cave stalker ambush. Bodies of Imani's fallen crew. Rescued survivors here.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-29T01:29:57.120098+00:00"
+  },
+  "Floor 3 - The Frozen Depths": {
+    "position": "Below Floor 2. An arctic nightmare of ice caverns, frozen corridors, and deadly cold. Temperature drops rapidly. New threats await.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-30T01:25:09.105653+00:00"
+  },
+  "Floor 3 - The Over City": {
+    "position": "A massive expanse of ancient ruins the size of Arizona, set under a fake starlit sky. Crumbling stone buildings overgrown with vines stretch to the horizon. Villages dot the landscape with shops and guilds. A volcano smolders somewhere beneath. Day/night cycle - monsters are more dangerous at night. NPCs of many races dwell here: orcs, humans, elves, skyfowl.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-30T01:27:09.231928+00:00"
+  },
+  "Over City Village": {
+    "position": "A walled settlement in the Over City ruins. Has the Broken Column Inn, pubs, shops, and a branch of the Desperado Club. Guarded by orc warriors during the day. Safe haven from night creatures.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-30T01:33:41.939185+00:00",
+    "context": [
+      "Village Guards are tasked with protecting the population centers of\nthe third floor from the creatures who roam the Over City Ruins. They\nare only on duty when the sun is up, so don’t go whining to them for\nhelp when it’s dark.\nThe guard was unmoving. He stood there like a statue.\n“He’s kind of scary,” Donut said as we paused at the gate.\n“Don’t mess with the guards,” Mordecai said. “Don’t attack the NPCs.\nDon’t try to rob the stores. Don’t get drunk and pass out in the streets.\nThere is no jail",
+      "Mordecai and Katia discussing the idea of a lich in town. Even though it\nwas the equivalent of 3:30 AM, he’d rushed out, shouting that the “night\npatrol” needed to defend the city. Since half the town was already wide-\nawake with the collapse of the municipal building, it didn’t take long for a\ncrowd to form.\nBefore we knew it, we had a group of NPCs gathering around the\nwarehouse. They ranged from orcs to humans to elves to dozens of other,\nmore obscure races. But no skyfowl or the smaller chic",
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "Clan targeted the Blood Sultanate once you hit the ninth floor. I don’t\nthink that’s going to be an issue now. Let’s just hope he’s not too mad\nat you two.\nCarl: Why? What can he do to us here?\nMordecai: Besides assassinating you while you’re on the surface?\nNothing yet. That’s going to change very soon. We’ll deal with it when\nit happens.\n“Well, there’s nothing we can do about any of this now, is there?” I said\nout loud. “We still have daylight, and we have a ton to do. We need to get\nback into"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T14:06:43.992969+00:00"
+  },
+  "The Broken Column Inn": {
+    "position": "Inside Over City Village - a two-story stone inn built around a massive broken Roman column. Serves as tavern, rooms for rent, and safe haven for crawlers.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-30T01:39:00.518482+00:00",
+    "context": [
+      "A handful of crawlers watched while the other NPCs went about their\nbusiness, pretending like there was nothing on the screen.\n“You two go ahead,” Mordecai said, eying the bar. “I’ll catch up in a\nbit.”\n“You’ll catch up whether you want to or not as soon as we get back to\nthe inn,” I said.\n“I know,” he said. “I just don’t like missing any of the show. Sometimes\nthey hide important stuff in there. I’ll see you back at the inn. Go straight\nthere.”\nWe stepped out into the night. Darkness had descen",
+      "CARL’S DOOMSDAY SCENARIO\nDUNGEON \u0000RAWLER \u0000ARL, BOO\u0000 II\nMATT DINNIMAN\nDANDY HOUSE\nCopyright © 2021 by Matt Dinniman\nAll rights reserved.\nNo part of this book may be reproduced in any form or by any electronic or mechanical means,\nincluding information storage and retrieval systems, without written permission from the author,\nexcept for the use of brief quotations in a book review. Permission will be granted in exchange for\nnoodz or gift certificates to Panda Express.\nEDITED BY Cheryl Dyson\nhttp:/",
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "Epilogue\nIt’s that time again.\nAbout the Author\nMailing List! Patreon!\nAlso by Matt Dinniman\nThe page where we tout Facebook groups so they let us spam them about this book\nOne More!\n[ 1 ]\nW , C .\nELCOME RAWLER TO THE THIRD FLOOR\nThe previous level will collapse in 3 hours and 35 minutes.\nWe teleported straight from the green room to a long, golden hallway\nreminiscent of the first hallway we entered.\n“Carl, look! We’re outside!” Donut said, looking up into the air.\nSure enough, a dark sky rose a"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T14:20:16.174159+00:00"
+  },
+  "The Desperado Club": {
+    "position": "A six-story Art Deco building that looks like 1920s New York dropped into ancient ruins. Glowing neon knife logo spins above. Rock monster bouncer at the door. Public area open to all crawlers; members-only section requires tattoo or pass. Inside: Jobs board, Silk Road marketplace, Guild-O-Rama, and other services. Like Las Vegas mixed with Mardi Gras and 1970s disco.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-30T01:41:38.500220+00:00",
+    "context": [
+      "[ 15 ]\nEntering the Desperado Club\nT , D C\nHE FIRST ROOM OF THE LOUD GARISH ESPERADO LUB WAS OPEN TO THE\ngeneral public. It was packed.\nThe exterior of the building looked straight out of 1920s New York City.\nIt was all square, concrete columns with a semi-circular relief punctuated\nby triangular, sun-like rays, similar to the construction style of the top of the\nEmpire State Building. The club took up an entire street and rose a good six\nstories into the air. The glowing, neon knife logo spun a",
+      "This late in the evening, the entire town was asleep. The pubs were all\nclosed. Nobody walked the main streets. The only light was from the sign\nof the Desperado Club a few streets over, towering over the city. An eerie\nsilence punctuated the night, broken occasionally by horrific, unearthly\nscreams that seemed to come from everywhere.\nIn order to break into the magistrate’s home, we first needed to get into\nan alleyway, scale the exterior of a small building we’d scoped out earlier,\nand then us",
+      "bewildered-looking crawlers wandering about. My map also showed the\ndistinctive white dot with a cross, indicating a few elites that trawled the\ndance floor.\n“This room,” Mordecai continued, “exists on a different plane as the\noutside of the club. It’s the same thing as my guildhall. The moment you\ncome into the members-only area, you are in the same room as everyone in\nall the club locations throughout the entire level. So these crawlers you see\ncome from all corners of the Over City. But when ",
+      "level, I’m gonna want my legs covered.”\n“Also, we want to go to the club,” Donut said. “Is it only open at\nnight?”\n“The Desperado Club will always be open,” Mordecai said. “It won’t be\ntoo hopping on this floor. On the sixth and ninth floors is where it gets\nreally interesting. I’ll tell you guys about it tomorrow. Don’t go tonight.\nCarl needs rest. For now, open your boxes, and then you need to find a pub\nwith open rooms. You can’t sleep here. You’ll want to watch the recap\nepisode. You missed ",
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T13:21:54.318901+00:00"
+  },
+  "Grimaldi's Circus Perimeter": {
+    "position": "Outer ring of the cursed circus in the Over City ruins. Patrolled by skull-masked lemurs and Terror Clowns. Big Top visible from here.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-01-30T21:20:38.708410+00:00",
+    "context": [
+      "Before the cataclysm, if you asked any child of the sprawling Over\nCity what their favorite activity was, a good number of them would\nhappily tell you of the great and wonderful Grimaldi’s Traveling\nCircus. Children dreamed of walking outside and seeing the long line of\ncircus carts rumbling through the streets, of the tents being erected in\ntheir local park. Circus night was a holiday. A time of joy.\nTo Redstone Grimaldi, nothing was more important than his family.\nHe loved each and every one o",
+      "My first impression was Slender Man. Slender Man dressed as a clown.\nHoly shit.\nDonut’s missile flew low, but I realized that was on purpose. She hit it\nin the leg, and it toppled over. As the clown creature fell, its description\npopped up.\nTerror the Clown – Level 10\nIt’s okay if you just pissed yourself. You wouldn’t be the first.\nStanding just over 11 feet tall, the clown-on-stilts was always a\nfavorite amongst the snot-nosed kiddos visiting Grimaldi’s three-ring\ncircus. Now, ravaged by time ",
+      "“So, what happened?”\n“You have to understand how horrible it was, the cataclysm.\nScolopendra’s poison cloud was a Nine Tier attack. It attacked you in nine\ndifferent ways. The lucky ones simply died. The others were transformed,\nall in different ways.”\nThis was the second time I’d heard that name, Scolopendra. It sounded\nlike this was the monster at the bottom of the volcano. I filed that\ninformation away.\nShe continued. “Grimaldi was more than just the owner. He was also the\ncircus’s ringleader",
+      "grease paint seemed overly thick, like the frosting on a cake. The clown’s\nstomach made a rumbling noise, and his entire belly shifted, like his flesh\nwas alive.\nThe stilt clowns were armed with butcher knives. These guys just had\nlong, yellowed fingernails, like the claws of a badger.\nClammy the Clown – Level 9\nWith a face not even a mother could love, the circus was the perfect\nescape for the young, portly boy who would grow to become Clammy\nthe Clown. An expert at tumbling and with a solid wo",
+      "of mobs, including a group of short, fat clowns and a large, ogre-like\ncreature wearing a leopard-skin leotard. The ogre had a tentacle sprouting\nfrom the side of his neck.\nOne of the tents was flanked by a massive, faded sign that read\n“Grimaldi’s World O’ Freaks, Admission One Gold Coin. No children or\nthose with weak constitutions allowed.” A line of illustrated, ten-foot-tall\nimages stood on either side of the sign, showing the freaks and other\nattractions within the tent. One of them was th"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T14:28:06.272802+00:00"
+  },
+  "Circus Outskirts": {
+    "position": "The smoldering remains of Grimaldi's Circus in the Over City ruins. The Big Top collapsed in flames. Dragon scorch marks everywhere. Floor 3.",
+    "connections": [],
+    "description": "",
+    "discovered": "2026-02-01T23:20:05.990552+00:00",
+    "context": [
+      "Before the cataclysm, if you asked any child of the sprawling Over\nCity what their favorite activity was, a good number of them would\nhappily tell you of the great and wonderful Grimaldi’s Traveling\nCircus. Children dreamed of walking outside and seeing the long line of\ncircus carts rumbling through the streets, of the tents being erected in\ntheir local park. Circus night was a holiday. A time of joy.\nTo Redstone Grimaldi, nothing was more important than his family.\nHe loved each and every one o",
+      "My first impression was Slender Man. Slender Man dressed as a clown.\nHoly shit.\nDonut’s missile flew low, but I realized that was on purpose. She hit it\nin the leg, and it toppled over. As the clown creature fell, its description\npopped up.\nTerror the Clown – Level 10\nIt’s okay if you just pissed yourself. You wouldn’t be the first.\nStanding just over 11 feet tall, the clown-on-stilts was always a\nfavorite amongst the snot-nosed kiddos visiting Grimaldi’s three-ring\ncircus. Now, ravaged by time ",
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "Most of these memories came back to me, years later, from photos. I’d\nfound the shoebox with those pictures more than a decade later, hidden\nunder my parents’ bed. This was after another birthday of mine, the one\nwhen I was left alone in the world. The box had been my mother’s. Her\nsecret, filled to the brim with photographs and ticket stubs and a deflated\nballoon. The items were only of that time, the few weeks of our lives when\nshe’d run away.\nBut of all my patchy, incomplete recollections of ",
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T14:05:54.847315+00:00"
+  },
+  "The Laughing Crypt": {
+    "position": "Underground tunnels beneath Grimaldi's Circus where failed performers were kept. Painted clown faces line the walls, their smiles cracked and peeling. The air smells of greasepaint and old death.",
+    "connections": [],
+    "description": "Two-level crypt where Grimaldi regenerates his circus family. Bodies arranged in ritual patterns around a central pit.",
+    "internal_layout": "UPPER: Entry Chamber (bodies around pit, double doors to surface) → DOWN: Resurrection Pit (Grimaldi's chamber). EAST: Trophy Alcove (circus memorabilia, failed performer remains).",
+    "current_area": "Entry Chamber",
+    "areas_visited": [
+      "Entry Chamber"
+    ],
+    "notes": "Grimaldi wounded from Big Top battle, regenerating below. Headless bodies are fresh sacrifices powering his resurrection. Purple energy = recharging.",
+    "discovered": "2026-02-02T14:29:49.853046+00:00",
+    "context": [
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "“Hey,” I asked the kid, indicating the burnt-out husk of the temple. The\nchild’s own home, which was attached to the building, had also burned to\nthe ground. “Did you ever see anything unusual coming in and out of there?\nOr hear anything weird?”\n“Weird?” he asked. “They were always weird. One of them would cry\nfor his mama every morning. We could hear it through the walls, we did.\nThere were a lot of weird smells, too. My brother, Bubba Lane, said he saw\nsomething fly from the roof a couple nigh",
+      "of mobs, including a group of short, fat clowns and a large, ogre-like\ncreature wearing a leopard-skin leotard. The ogre had a tentacle sprouting\nfrom the side of his neck.\nOne of the tents was flanked by a massive, faded sign that read\n“Grimaldi’s World O’ Freaks, Admission One Gold Coin. No children or\nthose with weak constitutions allowed.” A line of illustrated, ten-foot-tall\nimages stood on either side of the sign, showing the freaks and other\nattractions within the tent. One of them was th",
+      "A handful of crawlers watched while the other NPCs went about their\nbusiness, pretending like there was nothing on the screen.\n“You two go ahead,” Mordecai said, eying the bar. “I’ll catch up in a\nbit.”\n“You’ll catch up whether you want to or not as soon as we get back to\nthe inn,” I said.\n“I know,” he said. “I just don’t like missing any of the show. Sometimes\nthey hide important stuff in there. I’ll see you back at the inn. Go straight\nthere.”\nWe stepped out into the night. Darkness had descen",
+      "missing their heads. The others, at least thirty of them, still had all their\nparts, but the heads were detached, hanging a good six inches below the\nneck, with only the white of bone and straw-like arteries keeping them\nattached. It appeared as if someone had grabbed their heads, given it good\nyank, and then left them there, bobble-heading. Wisps of purple energy\nswirled around the red-dotted ones, like they were being recharged.\nThey all appeared to be asleep. Their eyes remained closed.\nThe h"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-02T14:29:56.727015+00:00"
+  },
+  "Mordecai's Guildhall": {
+    "position": "unknown",
+    "connections": [
+      {
+        "to": "Warehouse District (Airborne)",
+        "path": "traveled"
+      }
+    ],
+    "description": "",
+    "discovered": "2026-02-05 23:58:11 UTC",
+    "context": [
+      "poked from the rear of his tuxedo. A pair of black, bat-like wings sat folded\ntightly against his back.\n“Hello, Mordecai,” I said, examining his new form. “Jesus, dude.\nLooking good.”\n“Wow,” Donut said, looking him up and down. “I wouldn’t kick you out\nof bed for eating crackers.”\nEven Mongo’s customary screech sounded as if he was in awe.\nMordecai – Incubus. Level 50.\nGuildmaster of this guildhall.\nThis is a Non-Combatant NPC.\nAlso known as the Gigachad of the Over City, Incubi are the male\ncou",
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "now delivers devastation and pain. Their cotton candy is probably\nreally gross by now, too. Find out why this circus still exists and put an\nend to its reign of terror.\nReward: You will receive a Gold Quest Box.\n“What the fuck is this?” I said. “A quest?” Mordecai had mentioned\nquests once or twice, but we’d never talked about them.\nCarl: Mordecai. We just walked into a quest. Should we stay here\nand try to figure it out?\nMordecai: You should try to figure out your face.\nCarl: What?\nMordecai: Mo",
+      "[ 3 ]\n“T O C ,” M\nHIS IS CALLED THE VER ITY ORDECAI SAID AS WE WALKED ALONG\nthe wooden street. My minimap was awash in the white dots of NPCs.\nMordecai’s dot had turned to a yellow star. A few blue dots of other\ncrawlers were scattered about, but not many. “Where you exited the second\nfloor has no bearing on where you enter this floor. It is completely random,\nso you will now be mixed in with crawlers from around the world.”\n“So Brandon and crew could be anywhere?” I asked. “How big is this\nplac",
+      "always have elaborate, grandiose plans. That’s why I think you should just\nblow the building and take a chance at losing the quest.”\nThis was earlier, when we still thought that Featherfall was the lich and\nthat his lair was in that building. But since then, Mordecai had changed his\nmind. He seemed to think that because we’d killed most of Remex’s support\nsystem, he would be vulnerable. It was now worth the risk to approach him.\nMordecai also said that it made sense that he’d hide above the ware"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-05T23:58:17.773736+00:00"
+  },
+  "Warehouse District (Airborne)": {
+    "position": "unknown",
+    "connections": [
+      {
+        "to": "Mordecai's Guildhall",
+        "path": "traveled"
+      },
+      {
+        "to": "Warehouse Rooftop",
+        "path": "traveled"
+      }
+    ],
+    "description": "",
+    "discovered": "2026-02-06 20:34:49 UTC",
+    "context": [
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "“Hey,” I asked the kid, indicating the burnt-out husk of the temple. The\nchild’s own home, which was attached to the building, had also burned to\nthe ground. “Did you ever see anything unusual coming in and out of there?\nOr hear anything weird?”\n“Weird?” he asked. “They were always weird. One of them would cry\nfor his mama every morning. We could hear it through the walls, we did.\nThere were a lot of weird smells, too. My brother, Bubba Lane, said he saw\nsomething fly from the roof a couple nigh",
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "those regarding AIs. These biologically printed mobs and NPCs are not\nallowed to exist outside of a Syndicate-monitored production. Using them\nfor any purpose other than sanctioned entertainment is highly illegal. It’s\nbasically considered a war crime.”\n“So, there are no intergalactic brothels filled with genetically-\nengineered women?”\nMordecai grimaced. “Not legal ones. But there is one place where such\nthings do exist legally.” He pointed down.\n“But you said…” The realization struck me. “Oh, ",
+      "Mordecai and Katia discussing the idea of a lich in town. Even though it\nwas the equivalent of 3:30 AM, he’d rushed out, shouting that the “night\npatrol” needed to defend the city. Since half the town was already wide-\nawake with the collapse of the municipal building, it didn’t take long for a\ncrowd to form.\nBefore we knew it, we had a group of NPCs gathering around the\nwarehouse. They ranged from orcs to humans to elves to dozens of other,\nmore obscure races. But no skyfowl or the smaller chic"
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-06T20:34:56.100984+00:00"
+  },
+  "Warehouse Rooftop": {
+    "position": "unknown",
+    "connections": [
+      {
+        "to": "Warehouse District (Airborne)",
+        "path": "traveled"
+      },
+      {
+        "to": "Warehouse Street Level",
+        "path": "traveled"
+      }
+    ],
+    "description": "",
+    "discovered": "2026-02-06 20:42:13 UTC",
+    "context": [
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "“Hey,” I asked the kid, indicating the burnt-out husk of the temple. The\nchild’s own home, which was attached to the building, had also burned to\nthe ground. “Did you ever see anything unusual coming in and out of there?\nOr hear anything weird?”\n“Weird?” he asked. “They were always weird. One of them would cry\nfor his mama every morning. We could hear it through the walls, we did.\nThere were a lot of weird smells, too. My brother, Bubba Lane, said he saw\nsomething fly from the roof a couple nigh",
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "Mordecai and Katia discussing the idea of a lich in town. Even though it\nwas the equivalent of 3:30 AM, he’d rushed out, shouting that the “night\npatrol” needed to defend the city. Since half the town was already wide-\nawake with the collapse of the municipal building, it didn’t take long for a\ncrowd to form.\nBefore we knew it, we had a group of NPCs gathering around the\nwarehouse. They ranged from orcs to humans to elves to dozens of other,\nmore obscure races. But no skyfowl or the smaller chic",
+      "when she tried to have them arrest me, and it hadn’t worked. Something\ntold me I was going to be chased out of my own town the moment they\nwoke up no matter what I did.\nRemex the lich had been quiet this whole time. Donut braved jumping\nto the roof, and she managed to get a hit on her map. She said it was\nsomething regular sized, like a normal skyfowl. She said it hadn’t been\nmoving, and she didn’t see anything else in the room. Her map’s ability to\nsense mobs was better than my own, but it was "
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-06T20:42:20.117171+00:00"
+  },
+  "Warehouse Street Level": {
+    "position": "unknown",
+    "connections": [
+      {
+        "to": "Warehouse Rooftop",
+        "path": "traveled"
+      }
+    ],
+    "description": "",
+    "discovered": "2026-02-08 13:28:38 UTC",
+    "context": [
+      "rickety ground. “Most of this is just window dressing. You’re still below the\nsurface of your planet. That isn’t really the sky of some distant world. There\nisn’t really a massive volcano under our feet.”\n“Volcano?” I asked, looking down.\n“We’ll get to that. Think of this as a stage set for the benefit of the\nviewers. This and all the following floors will be significantly smaller than\nthe first two, with the exception of the ninth floor. This one is probably\nabout the size of the state of Arizo",
+      "Mordecai and Katia discussing the idea of a lich in town. Even though it\nwas the equivalent of 3:30 AM, he’d rushed out, shouting that the “night\npatrol” needed to defend the city. Since half the town was already wide-\nawake with the collapse of the municipal building, it didn’t take long for a\ncrowd to form.\nBefore we knew it, we had a group of NPCs gathering around the\nwarehouse. They ranged from orcs to humans to elves to dozens of other,\nmore obscure races. But no skyfowl or the smaller chic",
+      "was a simple, square, two-level building. There were no lights with only a\nlarge pair of double doors at the entrance. I could sense him there, on the\nsecond floor. Remex. “If we want to finish this, we need to go into that\nbuilding. That’s the quest.”\nA crowd of NPCs watched the municipal building and mall collapse\nfrom a short distance away. I looked about in the air, but I didn’t see any\nskyfowl. There had been dozens of them out earlier, but they were all gone.\nI had the impression they didn",
+      "those regarding AIs. These biologically printed mobs and NPCs are not\nallowed to exist outside of a Syndicate-monitored production. Using them\nfor any purpose other than sanctioned entertainment is highly illegal. It’s\nbasically considered a war crime.”\n“So, there are no intergalactic brothels filled with genetically-\nengineered women?”\nMordecai grimaced. “Not legal ones. But there is one place where such\nthings do exist legally.” He pointed down.\n“But you said…” The realization struck me. “Oh, ",
+      "bewildered-looking crawlers wandering about. My map also showed the\ndistinctive white dot with a cross, indicating a few elites that trawled the\ndance floor.\n“This room,” Mordecai continued, “exists on a different plane as the\noutside of the club. It’s the same thing as my guildhall. The moment you\ncome into the members-only area, you are in the same room as everyone in\nall the club locations throughout the entire level. So these crawlers you see\ncome from all corners of the Over City. But when "
+    ],
+    "enhanced": true,
+    "enhanced_at": "2026-02-08T13:28:49.339341+00:00"
+  }
+}

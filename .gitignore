@@ -1,0 +1,91 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+
+# Package Managers
+.pnpm-store/
+
+# Campaign Data (Personal/Runtime)
+world-state/campaigns/*
+!world-state/campaigns/.gitkeep
+world-state/active-campaign.txt
+
+# Source Material (User-provided documents for import)
+source-material/*
+!source-material/.gitkeep
+
+# API Keys & Secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Claude Code Local Settings
+.claude/settings.local.json
+
+# Third-party skill installs (per-user, not project code)
+.agents/
+.codex/
+.opencode/
+
+# IDE & Editors
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+# Temporary
+*.tmp
+*.temp
+/tmp/
+*.log
+
+# Coverage & Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+docs/production/
+
+# mypy
+.mypy_cache/
+
+# ship-it scratch
+.ship-it/
+
+# extracted book content (personal use, keep repo clean)
+world-state/campaigns/*/source-material/
+source-material/*.txt
+**/current-document.txt
+index.html
+
+# Remotion demo video (local build workspace — entire folder ignored)
+video/
+world-state/archive/
