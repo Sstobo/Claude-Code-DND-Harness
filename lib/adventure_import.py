@@ -88,28 +88,42 @@ def is_listing_page(lines) -> bool:
     return bare > len(at) / 2
 
 
-def _match_header(line: str):
-    """Return (key, title) if the line is a scene or chapter header, else None."""
+def _header_shaped(line: str):
+    """Return (key, title) for a line SHAPED like a header, before the quality gates."""
     if DOT_LEADER.search(line):
         return None
     m = KEYED_HEADER.match(line.strip())
     if m:
-        key, title = m.group(1), m.group(2).strip()
-    else:
-        m = CHAPTER_HEADER.match(line.strip())
-        if not m:
-            return None
-        key = re.sub(r'\s+', '-', m.group(1).lower())
-        title = m.group(2).strip()
-    # A heading is not a sentence. Body text that happens to start a line with a
-    # cross-reference ("proceed to section\n3.13 below.") is prose, not a header.
-    # A one-letter title is extraction debris, not a heading: decorative drop
-    # caps come out of a PDF as scattered single characters.
-    if len(title) < MIN_TITLE_CHARS or len(title.split()) > MAX_TITLE_WORDS:
+        return m.group(1), m.group(2).strip()
+    m = CHAPTER_HEADER.match(line.strip())
+    if not m:
         return None
+    return re.sub(r'\s+', '-', m.group(1).lower()), m.group(2).strip()
+
+
+def _title_flaw(title: str):
+    """Why `title` cannot be a heading, or None if it can.
+
+    A heading is not a sentence. Body text that happens to start a line with a
+    cross-reference ("proceed to section\\n3.13 below.") is prose, not a header.
+    A one-letter title is extraction debris, not a heading: decorative drop caps
+    come out of a PDF as scattered single characters.
+    """
+    if len(title) < MIN_TITLE_CHARS:
+        return f"title under {MIN_TITLE_CHARS} characters"
+    if len(title.split()) > MAX_TITLE_WORDS:
+        return f"title over {MAX_TITLE_WORDS} words"
     if title.endswith(('.', ',')):
+        return "title ends in sentence punctuation"
+    return None
+
+
+def _match_header(line: str):
+    """Return (key, title) if the line is a scene or chapter header, else None."""
+    hit = _header_shaped(line)
+    if not hit or _title_flaw(hit[1]):
         return None
-    return key, title
+    return hit
 
 
 def detect_headers(text: str):
@@ -120,7 +134,7 @@ def detect_headers(text: str):
     break, and honouring them would cut a scene in half.
     """
     lines = text.splitlines()
-    headers, seen = [], set()
+    headers, seen, noted = [], set(), set()
     for page, start, end in _page_spans(lines):
         page_lines = lines[start:end]
         if is_listing_page(page_lines):
@@ -131,7 +145,19 @@ def detect_headers(text: str):
             continue
         for offset, line in enumerate(page_lines):
             hit = _match_header(line)
-            if not hit or hit[0] in seen:
+            if not hit:
+                # A line the regex liked and the quality gates threw out is
+                # either prose that opens with a cross-reference or a heading
+                # this pass has mis-shaped. Only one of those is harmless, and
+                # from the outside they are indistinguishable unless said aloud.
+                shaped = _header_shaped(line)
+                if shaped and line.strip() not in noted:
+                    noted.add(line.strip())
+                    print(f"Note: page {page} — not treating {shaped[0]!r} as a "
+                          f"header ({_title_flaw(shaped[1])}): {line.strip()[:70]!r}",
+                          file=sys.stderr)
+                continue
+            if hit[0] in seen:
                 continue
             seen.add(hit[0])
             headers.append({
@@ -162,16 +188,18 @@ def slice_scenes(text: str):
     headers = detect_headers(text)
 
     front_end = headers[0]["line"] if headers else len(lines)
-    front = '\n'.join(lines[:front_end]).strip()
+    front = '\n'.join(_drop_trailing_marker(lines[:front_end])).strip()
 
     scenes = []
     for i, header in enumerate(headers):
         end = headers[i + 1]["line"] if i + 1 < len(headers) else len(lines)
-        body = lines[header["line"]:end]
-        pages = [header["page"]] if header["page"] is not None else []
         # A scene that runs to a page break ends with the next page's marker and
-        # no text under it. That page belongs to the following scene.
-        for line in _drop_trailing_marker(body):
+        # no text under it. That page belongs to the following scene — and so
+        # does the marker itself, which otherwise closes this slice with a line
+        # announcing a page the slice does not contain.
+        body = _drop_trailing_marker(lines[header["line"]:end])
+        pages = [header["page"]] if header["page"] is not None else []
+        for line in body:
             m = PAGE_MARKER.match(line)
             if m and int(m.group(1)) not in pages:
                 pages.append(int(m.group(1)))

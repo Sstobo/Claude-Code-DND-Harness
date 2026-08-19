@@ -23,6 +23,12 @@ MIN_COLUMN_SHARE = 0.15
 # Titles, footers and wide tables cross both columns. They are a minority of the
 # rows on a two-column page; past this share the page is simply full-width.
 MAX_SPANNING_ROWS = 0.25
+# A share measured over a handful of rows is noise: an art page carrying a title,
+# a caption and a page number is two thirds "spanning" and still has columns
+# under it. Below this many rows the share is not evidence, and the checks that
+# follow it — enough words, a wide enough gap, both sides populated — are what
+# decide. Above it, a page that is mostly full-width rows is full-width.
+MIN_ROWS_TO_VETO = 8
 GAP_OUTLIER_ROWS = 0.05
 # Trimming votes off a handful of rows manufactures a gap out of nothing, so a
 # page has to have this many rows before any are discarded as outliers.
@@ -30,6 +36,10 @@ MIN_ROWS_TO_TRIM = 8
 # Two boxes overlapping by this much of the shorter one are the same printed
 # line.
 ROW_OVERLAP_SHARE = 0.8
+# Boxes that touch are measured at 0.000 to -0.001pt, so the "gap" at a seam can
+# come out very slightly negative. That is float noise in the layout, not two
+# words sharing ink; anything past it overlaps for real.
+SEAM_MIN = -0.01
 # How far apart two word boxes may sit and still be halves of one word. A seam
 # opens where the extractor split a word at a change of font, so the two halves
 # TOUCH: every one in the sample book measures 0.000 to 0.001pt. A real space is
@@ -100,7 +110,7 @@ def gutter_from_rows(rows, lo: float, hi: float) -> Optional[float]:
     candidates = [lo + i * GUTTER_PROBE_STEP for i in range(steps)]
     center = (lo + hi) / 2
     probe = min(candidates, key=lambda x: (crossings(x), abs(x - center)))
-    if crossings(probe) > MAX_SPANNING_ROWS * len(rows):
+    if len(rows) >= MIN_ROWS_TO_VETO and crossings(probe) > MAX_SPANNING_ROWS * len(rows):
         return None
 
     kept_rows = [r for r in rows if not any(w['x0'] < probe < w['x1'] for w in r[2])]
@@ -112,7 +122,15 @@ def gutter_from_rows(rows, lo: float, hi: float) -> Optional[float]:
     if end - start < MIN_GUTTER:
         return None
 
-    split = (start + end) / 2
+    # The gap above was measured with the most intrusive votes discarded, so its
+    # midpoint can land inside a word that was trimmed away — and a kept row with
+    # a word across the split is read into BOTH columns, which cuts a paragraph
+    # in half around the whole of the other column. The split is therefore pulled
+    # back into the untrimmed clearing around the probe, which by construction no
+    # kept row crosses.
+    split = min(max((start + end) / 2,
+                    max((w['x1'] for w in kept if w['x1'] <= probe), default=probe)),
+                min((w['x0'] for w in kept if w['x0'] >= probe), default=probe))
     left = sum(1 for w in kept if w['x1'] <= split)
     right = sum(1 for w in kept if w['x0'] >= split)
     if min(left, right) < MIN_COLUMN_SHARE * len(kept):
@@ -219,8 +237,14 @@ def words_are_glued(left, right) -> bool:
     negative gap means the row is out of reading order, and joining there would
     invent a token ("Whisperscity") that appears in no printed line. A row
     grouped wrongly therefore degrades to spaced words, never to a new one.
+
+    The overlap test is signed, not absolute. Italic and tightly kerned type
+    comes out of pdfplumber with boxes that overlap by a fraction of a point,
+    and reading a fraction of a point of overlap as "touching" welds two real
+    words ("meleecombat"). Only the float noise at a true seam is forgiven.
     """
-    return abs(right['x0'] - left['x1']) <= SEAM_MAX
+    gap = right['x0'] - left['x1']
+    return SEAM_MIN <= gap <= SEAM_MAX
 
 
 def page_text_by_rows(page, gutter: Optional[float] = None, rows=None) -> str:
@@ -320,8 +344,11 @@ class PDFExtractor:
         if column_aware:
             if self.pdfplumber_available:
                 try:
-                    text = self._extract_columns_with_pdfplumber(filepath)
-                    self.last_mode = 'columns'
+                    text, degraded = self._extract_columns_with_pdfplumber(filepath)
+                    # Every page falling through to a plain read leaves the
+                    # caller holding exactly the interleaved text the flag was
+                    # meant to avoid, so it is reported as the plain read it is.
+                    self.last_mode = 'plain' if degraded else 'columns'
                     return text
                 except Exception as e:
                     # A PDF pdfplumber cannot open should come back as text
@@ -371,17 +398,23 @@ class PDFExtractor:
 
         return ''.join(text)
 
-    def _extract_columns_with_pdfplumber(self, filepath: str) -> str:
+    def _extract_columns_with_pdfplumber(self, filepath: str):
         """Extract text page by page, splitting two-column pages at the gutter.
 
         Adventure modules are laid out in two columns; a straight extract reads
         across the page and shuffles the two columns together sentence by
         sentence. Here each page is measured for a vertical whitespace band near
         its middle, and when one is found the page is read column by column.
+
+        Returns `(text, degraded)`. A page the row reader chokes on falls back to
+        a plain read one page at a time, and enough of those is a book that was
+        not read in columns at all — which the caller has to be able to say.
         """
         text = []
+        pages_read = fell_back = 0
         with self.pdfplumber.open(filepath) as pdf:
             for page_num, page in enumerate(pdf.pages, 1):
+                pages_read += 1
                 try:
                     rows = text_rows(page.extract_words())
                     gutter = find_column_gutter(page, rows)
@@ -391,6 +424,7 @@ class PDFExtractor:
                     # every later scene cites, so fall back to a plain read
                     # rather than dropping it.
                     print(f"Error reading columns on page {page_num}: {e}")
+                    fell_back += 1
                     try:
                         page_text = page.extract_text()
                     except Exception as inner:
@@ -401,7 +435,7 @@ class PDFExtractor:
                     text.append(page_text)
                     text.append("\n\n")
 
-        return ''.join(text)
+        return ''.join(text), bool(fell_back) and fell_back * 2 >= pages_read
 
     def _extract_with_pypdf2(self, filepath: str) -> str:
         """Extract text using PyPDF2."""

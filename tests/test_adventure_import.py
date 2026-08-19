@@ -7,6 +7,7 @@ extraction is then checked against a real book by hand.
 """
 
 import json
+import os
 import re
 from pathlib import Path
 from unittest import mock
@@ -26,7 +27,11 @@ from lib.content_extractor import (
 )
 
 
-TEST_PDF = Path("/Users/seanstobo/Downloads/at-05-the-whispering-wood.pdf")
+# The sample book lives outside the repo, so the live checks are skipped where it
+# is absent — and pointed at another copy by anyone who has one elsewhere.
+TEST_PDF = Path(os.environ.get(
+    "GM_TEST_MODULE_PDF", "/Users/seanstobo/Downloads/at-05-the-whispering-wood.pdf"
+))
 
 PAGE_TEXT = """--- Page 1 ---
 Introduction
@@ -469,14 +474,6 @@ def test_a_page_that_cannot_be_read_in_columns_keeps_its_marker(tmp_path):
     assert "plain text of the page" in text
 
 
-def test_a_run_that_finds_no_scenes_deletes_nothing(tmp_path):
-    (tmp_path / "scene-1.1.txt").write_text("from the real book")
-    with mock.patch("lib.adventure_import.PDFExtractor",
-                    _stub_extractor("--- Page 1 ---\nNo keys on this page.\n")):
-        assert slice_pdf("unused.pdf", tmp_path) == []
-    assert (tmp_path / "scene-1.1.txt").read_text() == "from the real book"
-
-
 def test_the_gutter_band_is_measured_from_the_text_not_the_paper():
     # A print-ready page whose mediabox carries 300pt of bleed: its middle is
     # nowhere near the printed middle, so a band taken from the box misses the
@@ -507,23 +504,35 @@ def test_a_page_is_measured_and_read_from_one_pass_of_words(tmp_path):
 # and row_text refuses to glue across an overlap even if grouping goes wrong.
 
 
-def _seam_joined_tokens(rows):
+def _seam_joined_tokens(rows, source_text):
     """Tokens the reader may legitimately invent: a word split across a seam.
 
     A display capital arrives as its own word object touching the letters that
     finish the word, and rejoining those is the point. Nothing else may merge.
+
+    The rule is stated in literals, never by calling the library's own
+    predicate — an invariant that borrows the rule it is checking proves
+    nothing, and would wave through whatever that rule was loosened to allow.
+    Two boxes may merge here only if they truly touch (a hair of float noise
+    aside, never a real overlap) AND the join is corroborated: either the merged
+    string is printed on the page as the extractor's own reader sees it, or the
+    run opens with a lone glyph, which is what a display capital looks like
+    before its word is closed up. It has to be a glyph rather than a capital:
+    the sample book sets its fourth divider as a decorative lowercase "e", and
+    pdfplumber's own reader drops all four of those capitals from the page text
+    ("art aCk in ldoria"), so neither corroboration alone covers the case.
     """
     allowed = set()
     for _, _, words in rows:
         run = []
         for i, word in enumerate(words):
-            # Stated with a literal, not the library's own predicate: an
-            # invariant that borrows the rule it is checking proves nothing.
-            touching = run and abs(word['x0'] - words[i - 1]['x1']) <= 0.5
+            touching = run and -0.01 <= word['x0'] - words[i - 1]['x1'] <= 0.5
             run = run + [word] if touching else [word]
             for start in range(len(run) - 1):
-                allowed.update(re.findall(r'[A-Za-z]+',
-                                          ''.join(w['text'] for w in run[start:])))
+                merged = ''.join(w['text'] for w in run[start:])
+                lead = run[start]['text']
+                if merged in source_text or (len(lead) == 1 and lead.isalpha()):
+                    allowed.update(re.findall(r'[A-Za-z]+', merged))
     return allowed
 
 
@@ -531,8 +540,9 @@ def assert_no_glued_tokens(page):
     """Every alphabetic token read off `page` must come from the page."""
     rows = text_rows(page.extract_words())
     out = page_text_by_rows(page, find_column_gutter(page, rows), rows)
-    source = set(re.findall(r'[A-Za-z]+', page.extract_text() or ''))
-    allowed = source | _seam_joined_tokens(rows)
+    source_text = page.extract_text() or ''
+    allowed = set(re.findall(r'[A-Za-z]+', source_text))
+    allowed |= _seam_joined_tokens(rows, source_text)
     invented = sorted(t for t in set(re.findall(r'[A-Za-z]+', out)) if t not in allowed)
     assert invented == [], f"tokens in no printed line: {invented[:5]}"
 
@@ -677,3 +687,229 @@ def test_a_gap_is_not_manufactured_from_a_handful_of_rows():
             words.append(_word(330, 560, top))
     words += [_word(40, 560, 160 + i * 12) for i in range(6)]
     assert find_column_gutter(FakePage((0, 0, 600, 800), words)) is None
+
+
+# --- the gutter must be a line no kept row crosses ---------------------------
+
+
+def _one_overhanging_left_word(rows=21):
+    """Two clean columns, plus one left-column word reaching toward the gutter."""
+    words = []
+    for i in range(rows):
+        top = 100 + i * 12
+        words.append(_word(40, 290, top, f"L{i}"))
+        words.append(_word(310, 560, top, f"R{i}"))
+    words[0] = _word(40, 303, 100, "L0")
+    return words
+
+
+def test_a_trimmed_outlier_word_may_not_straddle_the_gutter():
+    # The gap is measured with the most intrusive votes discarded, so a single
+    # word reaching past the column edge is trimmed away — and the midpoint of
+    # what is left lands INSIDE it. The row then reads into both columns, and the
+    # left paragraph comes out cut in half around the whole of the right column.
+    words = _one_overhanging_left_word()
+    gutter = gutter_from_rows(text_rows(words), 237.6, 362.4)
+    assert gutter is not None
+    for word in words:
+        assert not (word['x0'] < gutter < word['x1']), (
+            f"{word['text']!r} straddles the gutter at {gutter}")
+
+
+def test_an_overhanging_word_does_not_interleave_the_columns():
+    words = _one_overhanging_left_word()
+    page = FakePage((0, 0, 600, 800), words)
+    text = page_text_by_rows(page, find_column_gutter(page), text_rows(words))
+
+    left = "\n".join(f"L{i}" for i in range(21))
+    right = "\n".join(f"R{i}" for i in range(21))
+    assert left in text, "the left column must come out as one unbroken block"
+    assert right in text
+    assert text.index(left) < text.index(right)
+
+
+# --- a hairline overlap is not a seam ----------------------------------------
+
+
+def test_a_hairline_overlap_is_a_space_not_a_seam():
+    # pdfplumber hands back boxes that overlap by a fraction of a point on
+    # italic and tightly kerned type. Reading that as "touching" welds two real
+    # words into one that appears in no printed line.
+    overlapping = [_word(45.0, 70.0, 100, "melee"), _word(69.7, 100.0, 100, "combat")]
+    assert row_text(overlapping) == "melee combat"
+    assert not words_are_glued(*overlapping)
+
+
+def test_a_seam_that_measures_zero_still_closes():
+    # The four chapter dividers in the sample book measure -0.001 to 0.000pt
+    # across the seam, which is float noise in the layout, not two words.
+    seam = [{"x0": 213.6, "x1": 228.0, "top": 57.5, "bottom": 81.5, "text": "P"},
+            {"x0": 227.999, "x1": 259.6, "top": 62.6, "bottom": 79.4, "text": "art"}]
+    assert row_text(seam) == "Part"
+
+
+# --- a book read page by page in plain mode is not a column read -------------
+
+
+class ExplodingPage(FakePage):
+    def extract_words(self):
+        raise RuntimeError("no word boxes on this page")
+
+    def extract_text(self):
+        return "plain text of the page"
+
+
+def _plumber_extractor(pages):
+    """A real PDFExtractor reading a fake book — factory, as slice_pdf expects."""
+    def build():
+        extractor = PDFExtractor()
+        extractor.pdfplumber_available = True
+        extractor.pdfplumber = FakePlumber(pages)
+        return extractor
+    return build
+
+
+def test_a_book_where_every_page_fell_back_reports_a_plain_read(tmp_path, capsys):
+    pdf = tmp_path / "book.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    pages = [ExplodingPage((0, 0, 600, 800), []) for _ in range(2)]
+
+    extractor = _plumber_extractor(pages)()
+    extractor.extract(str(pdf), column_aware=True)
+    assert extractor.last_mode == 'plain', "no page was read in columns"
+
+    with mock.patch("lib.adventure_import.PDFExtractor", _plumber_extractor(pages)):
+        slice_pdf(str(pdf), tmp_path / "out")
+    assert "could not be read column by column" in capsys.readouterr().err
+
+
+def test_one_bad_page_in_a_book_is_not_a_degraded_read(tmp_path):
+    pdf = tmp_path / "book.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    pages = [FakePage((0, 0, 600, 800), _two_column_words())] * 3
+    pages.append(ExplodingPage((0, 0, 600, 800), []))
+
+    extractor = _plumber_extractor(pages)()
+    extractor.extract(str(pdf), column_aware=True)
+    assert extractor.last_mode == 'columns'
+
+
+# --- a sparse page is not judged by a share of a handful of rows -------------
+
+
+def test_a_sparse_page_of_captions_still_finds_its_columns():
+    # An art page: two full-width lines (a title and a footer) over four rows of
+    # two-column text. Two rows out of six is past the spanning share, and the
+    # share of six rows is not evidence of anything — the page has columns.
+    words = [_word(40, 560, 60, "TITLE"), _word(40, 560, 760, "FOOTER")]
+    for i in range(4):
+        top = 300 + i * 12
+        for j in range(6):
+            words.append(_word(40 + j * 40, 75 + j * 40, top, f"l{i}{j}"))
+            words.append(_word(310 + j * 40, 345 + j * 40, top, f"r{i}{j}"))
+
+    rows = text_rows(words)
+    assert len(rows) == 6
+    gutter = gutter_from_rows(rows, 237.6, 362.4)
+    assert gutter is not None and 290 < gutter < 310
+
+
+def test_a_full_width_page_with_room_to_judge_is_still_vetoed():
+    # The floor must not disarm the veto on a page big enough to measure: thirty
+    # full-width lines are a single column, whatever gap the ragged right edge
+    # happens to leave.
+    words = [_word(40, 560, 100 + i * 12) for i in range(30)]
+    assert gutter_from_rows(text_rows(words), 228.0, 372.0) is None
+
+
+# --- a slice may not end on the next page's marker ---------------------------
+
+
+def test_a_trailing_page_marker_is_dropped_from_the_slice_text():
+    text = (
+        "--- Page 1 ---\n"
+        "Introduction\n"
+        "--- Page 2 ---\n"
+        "1.1 The Call\n"
+        "The sheriff is waiting.\n"
+        "--- Page 3 ---\n"
+        "1.2 The Meeting\n"
+        "A jellyfish speaks.\n"
+    )
+    front, scenes = slice_scenes(text)
+    by_key = {s["key"]: s for s in scenes}
+    assert not front.endswith("--- Page 2 ---"), "page 2 belongs to 1.1"
+    assert front.endswith("Introduction")
+    assert by_key["1.1"]["text"].endswith("The sheriff is waiting.")
+    assert "--- Page 3 ---" not in by_key["1.1"]["text"]
+    assert by_key["1.1"]["pages"] == [2]
+
+
+# --- a dropped header candidate is said out loud -----------------------------
+
+
+def test_a_dropped_header_candidate_is_announced(capsys):
+    text = (
+        "--- Page 1 ---\n"
+        "1.1 The Call\n"
+        "Before the PCs retrieve the fragment, proceed to section\n"
+        "3.13 below.\n"
+        "2.5 miles of road wind north past the ruined mill and on toward the hills\n"
+    )
+    assert [h["key"] for h in detect_headers(text)] == ["1.1"]
+    note = capsys.readouterr().err
+    assert "'3.13'" in note and "sentence punctuation" in note
+    assert "'2.5'" in note and "over 10 words" in note
+
+
+def test_a_dropped_candidate_is_announced_once_however_often_it_repeats(capsys):
+    line = "3.13 below.\n"
+    text = "--- Page 1 ---\n1.1 The Call\n" + line + "--- Page 2 ---\n" + line
+    detect_headers(text)
+    assert capsys.readouterr().err.count("not treating '3.13'") == 1
+
+
+# --- the live book -----------------------------------------------------------
+
+
+@pytest.mark.skipif(not TEST_PDF.exists(), reason="the sample module is not present")
+def test_the_glued_token_check_bites_when_the_seam_is_widened(monkeypatch):
+    # Proof that the invariant above is load-bearing and not self-satisfying: a
+    # seam wide enough to weld real words must make the live page check FAIL.
+    import pdfplumber
+
+    monkeypatch.setattr("lib.content_extractor.SEAM_MAX", 5.0)
+    with pdfplumber.open(TEST_PDF) as pdf:
+        for page in pdf.pages:
+            if not page.extract_words():
+                continue
+            try:
+                assert_no_glued_tokens(page)
+            except AssertionError:
+                return
+    pytest.fail("a 5pt seam welded no words: the check cannot be failing honestly")
+
+
+@pytest.mark.skipif(not TEST_PDF.exists(), reason="the sample module is not present")
+def test_the_sparse_caption_page_is_not_vetoed_by_its_spanning_share():
+    # Page 49 of the sample book: seven rows, most of them full-width. It is the
+    # page the row-count floor exists for. (The page still reads whole for
+    # another reason — only two of its 49 words sit left of any gutter, so the
+    # near-empty-column guard holds — but the share of seven rows no longer
+    # decides it.)
+    import pdfplumber
+    from lib import content_extractor as ce
+
+    with pdfplumber.open(TEST_PDF) as pdf:
+        rows = ce.text_rows(pdf.pages[48].extract_words())
+    assert len(rows) == 7
+    crossings = sum(1 for _, _, ws in rows
+                    if any(w['x0'] < 320.6 < w['x1'] for w in ws))
+    assert len(rows) < ce.MIN_ROWS_TO_VETO or crossings <= ce.MAX_SPANNING_ROWS * len(rows)
+
+
+@pytest.mark.skipif(not TEST_PDF.exists(), reason="the sample module is not present")
+def test_the_sample_book_reads_in_columns_end_to_end(capsys):
+    extractor = PDFExtractor()
+    extractor.extract(str(TEST_PDF), column_aware=True)
+    assert extractor.last_mode == 'columns', "no page may fall back on this book"

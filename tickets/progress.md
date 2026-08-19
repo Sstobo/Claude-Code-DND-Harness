@@ -1,3 +1,5 @@
+- 2026-08-19T20:25Z  done: extractor-ordering-hardening — retraction findings fixed, 61 tests  [ss-imod01]
+- 2026-08-19T20:10Z  in-review: extractor-ordering-hardening — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T19:55Z  done: import-module-command — command + converter agent + SRD resolver  [ss-imod01]
 - 2026-08-19T19:15Z  in-review: import-module-command — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T18:40Z  done: module-text-spine — row-walking extraction + spine slicer, 48 tests, 4 review rounds  [ss-imod01]
