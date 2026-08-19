@@ -8,35 +8,26 @@ Example: uv run python dnd_encounter_v2.py --cr 2 --count 3
 import sys
 import argparse
 import random
-import json
-import urllib.request
-import urllib.error
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from dnd_api_core import fetch, output, error_output
 
-BASE_URL = "https://www.dnd5eapi.co"
-
 def get_monsters_by_cr(target_cr):
     """Get all monsters of a specific CR using API filtering"""
-    url = f"{BASE_URL}/api/2014/monsters?challenge_rating={target_cr}"
-    
-    try:
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read().decode())
-            if "results" in data:
-                # Extract monster indices from URLs
-                return [m["url"].split("/")[-1] for m in data["results"]]
-            return []
-    except urllib.error.HTTPError as e:
-        if e.code == 429:
+    data = fetch(f"/monsters?challenge_rating={target_cr}")
+
+    if "error" in data:
+        if data["error"] == "HTTP 429":
             error_output("Rate limited. Please wait a moment and try again.")
+        elif data["error"].startswith("HTTP "):
+            error_output(f"{data['error']}: {data['message']}")
         else:
-            error_output(f"HTTP {e.code}: {e.reason}")
-    except Exception as e:
-        error_output(str(e))
-    
+            error_output(data["message"])
+
+    if "results" in data:
+        # Extract monster indices from URLs
+        return [m["url"].split("/")[-1] for m in data["results"]]
     return []
 
 def main():

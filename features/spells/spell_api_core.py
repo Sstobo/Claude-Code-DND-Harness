@@ -4,33 +4,12 @@ D&D 5e Spell API Core - Simple request wrapper
 Just makes requests and returns JSON. Nothing fancy.
 """
 
-import json
 import sys
-import urllib.request
-import urllib.error
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent / "dnd-api"))
 
-BASE_URL = "https://www.dnd5eapi.co"
-
-def fetch(endpoint):
-    """Fetch data from D&D 5e API and return as dict"""
-    url = f"{BASE_URL}{endpoint}"
-    
-    try:
-        with urllib.request.urlopen(url, timeout=10) as response:
-            return json.loads(response.read().decode())
-    except urllib.error.HTTPError as e:
-        return {"error": f"HTTP {e.code}", "message": e.reason}
-    except Exception as e:
-        return {"error": "Request failed", "message": str(e)}
-
-def output(data):
-    """Output data as JSON to stdout"""
-    print(json.dumps(data, indent=2))
-
-def error_output(message):
-    """Output error in consistent format"""
-    output({"error": message})
-    sys.exit(1)
+# Cached core. Callers here pass full /api/2014/... paths, which fetch() handles.
+from dnd_api_core import API_HOST as BASE_URL, fetch, output, error_output
 
 def format_spell_index(spell_name):
     """Convert spell name to API index format"""

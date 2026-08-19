@@ -7,12 +7,11 @@ This replaces the slow local filtering approach.
 import argparse
 import json
 import sys
+from pathlib import Path
 from typing import List, Dict, Any, Optional
-import urllib.parse
-import urllib.request
-import urllib.error
+sys.path.append(str(Path(__file__).parent.parent))
 
-BASE_URL = "https://www.dnd5eapi.co"
+from dnd_api_core import fetch
 
 
 def fetch_monsters(
@@ -31,43 +30,42 @@ def fetch_monsters(
     Returns:
         API response containing monster list
     """
-    url = f"{BASE_URL}/api/2014/monsters"
+    endpoint = "/monsters"
     params = []
-    
+
     # Add challenge_rating query parameter
     if challenge_ratings:
         # API expects comma-separated values
         cr_param = ",".join(str(cr) for cr in challenge_ratings)
         params.append(f"challenge_rating={cr_param}")
-    
-    # Build final URL with parameters
-    if params:
-        url += "?" + "&".join(params)
-    
-    try:
-        with urllib.request.urlopen(url, timeout=10) as response:
-            data = json.loads(response.read().decode())
 
-            # Apply search filter if provided
-            if search and "results" in data:
-                search_lower = search.lower()
-                data["results"] = [
-                    m for m in data["results"]
-                    if search_lower in m["name"].lower()
-                ]
-                data["count"] = len(data["results"])
-            
-            # Apply limit if provided
-            if limit and "results" in data:
-                data["results"] = data["results"][:limit]
-            
-            return data
-    except urllib.error.HTTPError as e:
-        if e.code == 429:
+    # Build final endpoint with parameters
+    if params:
+        endpoint += "?" + "&".join(params)
+
+    data = fetch(endpoint)
+
+    if "error" in data:
+        if data["error"] == "HTTP 429":
             return {"error": "Rate limited. Please wait a moment and try again."}
-        return {"error": f"HTTP {e.code}: {e.reason}"}
-    except Exception as e:
-        return {"error": str(e)}
+        if data["error"].startswith("HTTP "):
+            return {"error": f"{data['error']}: {data['message']}"}
+        return {"error": data["message"]}
+
+    # Apply search filter if provided
+    if search and "results" in data:
+        search_lower = search.lower()
+        data["results"] = [
+            m for m in data["results"]
+            if search_lower in m["name"].lower()
+        ]
+        data["count"] = len(data["results"])
+
+    # Apply limit if provided
+    if limit and "results" in data:
+        data["results"] = data["results"][:limit]
+
+    return data
 
 
 def format_monster_list(monsters: List[Dict[str, Any]]) -> None:

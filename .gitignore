@@ -60,6 +60,9 @@ source-material/*
 Thumbs.db
 ehthumbs.db
 
+# Cached D&D 5e API responses
+features/dnd-api/cache/
+
 # Temporary
 *.tmp
 *.temp
