@@ -767,6 +767,9 @@ class SessionManager(EntityManager):
             lines.append("--- WORLD INDEX (named things that exist; scan before inventing a name) ---")
             lines.extend(index_lines)
 
+        # --- Adventure (only when this campaign is running a converted module) ---
+        lines.extend(self._adventure_block(full))
+
         # --- Previously On (story spine: resume story-aware, not stat-amnesiac) ---
         # Bounded by item COUNT, never by chopping a single entry. --full shows all.
         all_summaries = self._recent_session_summaries(n=None)
@@ -1082,6 +1085,66 @@ class SessionManager(EntityManager):
         return context
 
     # ==================== Private Helpers ====================
+
+    def _adventure_block(self, full: bool = False) -> List[str]:
+        """The ADVENTURE block: where the table is in a converted module.
+
+        Empty list when the campaign has no adventure.json — or when reading it
+        fails for any reason. A half-written module must not cost the brief.
+        Schema knowledge stays in lib/adventure.py; this only renders.
+        """
+        try:
+            from adventure import AdventureManager
+            manager = AdventureManager(self._wsd)
+            if manager.campaign_dir is None or not manager.exists():
+                return []
+            adv = manager.load()
+            status = manager.status()
+            scene = manager._scene(adv, status.get('current_scene')) or {}
+        except Exception:
+            return []
+
+        if not scene:
+            return []
+
+        out = ["", "--- ADVENTURE"
+               + (f": {status['title']}" if status.get('title') else "")
+               + " (the book's spine — you are running a converted module) ---"]
+
+        title = f"{scene.get('key', '')} {scene.get('title', '')}".strip()
+        out.append(f"Current scene: {title}")
+        if scene.get('location'):
+            out.append(f"Location: {scene['location']}")
+        if scene.get('gm_notes'):
+            out.append(f"GM notes: {self._truncate(str(scene['gm_notes']), 600, full)}")
+        if scene.get('read_aloud'):
+            out.append("READ-ALOUD (the book's boxed text — read or paraphrase it in voice):")
+            out.append(f"  | {self._truncate(str(scene['read_aloud']), 800, full)}")
+
+        for enc in scene.get('encounters') or []:
+            if not isinstance(enc, dict):
+                continue
+            monsters = ", ".join(
+                f"{m.get('name', '?')} x{m.get('count', 1)}"
+                for m in (enc.get('monsters') or []) if isinstance(m, dict))
+            name = enc.get('name') or 'Encounter'
+            out.append(f"Encounter: {name}" + (f" — {monsters}" if monsters else ""))
+
+        for check in scene.get('checks') or []:
+            if not isinstance(check, dict):
+                continue
+            label = str(check.get('skill') or 'check')
+            if check.get('dc') is not None:
+                label += f" DC {check['dc']}"
+            what = check.get('what') or ''
+            out.append(f"Check: {label}" + (f" — {what}" if what else ""))
+
+        if status.get('next_scene'):
+            out.append(f"Next per the book: {status['next_scene']} "
+                       f"{status.get('next_title') or ''}".rstrip())
+        out.append("The pointer moves with `bash tools/gm-adventure.sh advance` "
+                   "(or `jump <key>`) — the book is a spine, not a rail.")
+        return out
 
     def _system_summary(self, system):
         """One-line render of an instantiated signature system for the brief."""

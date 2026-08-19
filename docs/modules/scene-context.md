@@ -10,7 +10,8 @@ sources:
   - { resource: /lib/entity_manager.py }
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T14:29:08Z }
+  - { resource: /lib/adventure.py }
+generated: { by: claude-fable-5, at: 2026-08-19T16:19:16Z }
 verified: { by: claude-fable-5, at: 2026-08-14T12:19:52Z }
 ---
 
@@ -33,13 +34,14 @@ no history, threads, clocks, voice, or rules. Narrating a scene generally wants 
 
 `get_full_context` (`lib/session_manager.py:592`) assembles, in order: header (campaign, session #, location, time) ·
 **KIT** · **PRIMER** (play pack, when set) · play style (pacing, action menu, player-rolls dice, RAG inspiration) · **failure (one informing sentence)** · scene-image gate + chronicler · **narrative voice** · **world index** ·
+**adventure** (only when the campaign has an `adventure.json`) ·
 **previously on** + where-we-paused + open threads · **the world remembers** · story threads · **ready threads** (dormant seeded plots whose linked NPC/place is now present, or whose clock matured) · key facts · threat
 clocks · character · party members · **NPC voices** · pending consequences · **your
 world's rules**. A further block for executable kit primitives (`WorldKit.systems()`,
 rendered "ROLL these") is still coded at `lib/session_manager.py:1057`, but the 5e kit
 declares none, so it never renders.
 
-Eight of those blocks carry design decisions that are not obvious from reading them:
+Nine of those blocks carry design decisions that are not obvious from reading them:
 
 - **KIT is ambient so skills do not re-derive it.** It sits right under the campaign
   header and names kit identity, resolution, progression, vitals, and skills, loaded
@@ -70,6 +72,14 @@ Eight of those blocks carry design decisions that are not obvious from reading t
   bible's `index` (`npcs`/`locations`/`items`/`monsters`), it lists `name — note` lines
   grouped by non-empty bucket. It is emitted only when at least one bucket has an entry;
   an absent or all-empty `index` prints no header at all.
+- **ADVENTURE is only for a campaign running a converted module.** `_adventure_block`
+  (`lib/session_manager.py:1089`) renders the current scene from `adventure.json` — title,
+  location, GM notes, boxed read-aloud, encounters, checks — plus one `Next per the book:`
+  line and the reminder that `gm-adventure.sh advance|jump` moves the pointer. Schema
+  knowledge stays in `lib/adventure.py`; the brief only renders what
+  `AdventureManager.status()` and the scene body already say. A campaign with no
+  `adventure.json` — or one whose file will not load — gets no block and the brief it had
+  before, so a half-converted book cannot break play.
 - **NPC secrets are surfaced by existence only.** `lib/session_manager.py:932` prints
   `"has a secret"` and never the secret text, so a secret can sit in `npcs.json` without
   leaking into narration the moment its owner walks on stage.
