@@ -9,8 +9,8 @@ sources:
   - { resource: /.claude/skills/gm-craft/SKILL.md }
   - { resource: /lib/session_manager.py }
   - { resource: /lib/world_kit.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:31:39Z }
-verified: { by: cursor-grok-4.6, at: 2026-08-14T18:59:59Z }
+generated: { by: claude-opus-5, at: 2026-08-19T17:48:27Z }
+verified: { by: claude-opus-5, at: 2026-08-19T17:55:42Z }
 ---
 
 # Lean core, skills on demand
@@ -30,7 +30,7 @@ These are needed *every* turn or needed to decide *which* skill to load.
 slots, condition tables, XP thresholds, dungeon procedure, narration craft.
 
 The practical test is the one the router itself fails first: **an XP-by-CR table inline in
-`CLAUDE.md` is the smell.** `test_lean_core.py:34` asserts `"25,000" not in text` for
+`CLAUDE.md` is the smell.** `test_lean_core.py:35` asserts `"25,000" not in text` for
 exactly that reason.
 
 ## Enforcement point

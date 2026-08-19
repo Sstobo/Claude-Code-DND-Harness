@@ -2,6 +2,7 @@
 - 2026-08-19T16:45Z  done: adventure-scene-context — ADVENTURE block in scene context  [ss-imod01]
 - 2026-08-19T16:35Z  in-review: adventure-scene-context — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T16:10Z  done: adventure-store — adventure.json manager + gm-adventure.sh, 34 tests  [ss-imod01]
+- 2026-08-19T18:02:59Z  done: encounter-cr-budgets — DMG budget mode, review perfect round 2; PRD 5e-native-fork complete  [ss-5efork]
 - 2026-08-19T15:35Z  in-review: module-text-spine — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T16:41:05Z  done: monsters-source-of-truth — fetched blocks mandatory in combat, review perfect round 2  [ss-5efork]
 - 2026-08-19T15:35Z  in-review: adventure-store — verified, reviewer dispatched  [ss-imod01]

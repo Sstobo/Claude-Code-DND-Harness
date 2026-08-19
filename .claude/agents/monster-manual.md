@@ -141,20 +141,38 @@ High CR monsters (now works!):
 uv run python features/dnd-api/monsters/dnd_monsters_api_filter.py --cr 10 --cr 15 --cr 20
 ```
 
-### 3. dnd_encounter_v2.py - Enhanced Encounter Generator
+### 3. dnd_encounter_v2.py - Encounter Builder
 
-**Purpose**: Generate random encounters based on challenge rating using dynamic API filtering.
+**Purpose**: Build an encounter either to a DMG XP budget (preferred for fights meant to be
+fought) or by picking monsters at a flat challenge rating.
 
-**Basic Usage**:
+**XP-budget mode — use this whenever the encounter is intended as combat**:
+```bash
+uv run python features/dnd-api/monsters/dnd_encounter_v2.py \
+  --party-level 3 --party-size 4 --difficulty hard [--cr 2]
+```
+- `--party-level <1-20>` - the party's level; enables budget mode
+- `--party-size <n>` - number of characters (default 4; also drives the multiplier shift)
+- `--difficulty easy|medium|hard|deadly` - the band you are aiming for (default medium)
+- `--cr <rating>` - optional hint when the fiction demands a creature tier
+
+Budget mode sizes the encounter itself, so `--count` and `--quick` are flat-CR-mode only.
+Returns the budget, `raw_xp`, `multiplier`, `adjusted_xp`, the band it actually landed in,
+and the monsters as SRD indexes plus combat fields — hand each index to `dnd_monster.py`
+and the block to `gm-combat.sh add-enemy --stat-block-file`. Creatures that are pure
+set-dressing (rats, crows, a barking dog) need no budget; only real fights go through it.
+A `warnings` field means the build bent: the planned CR had no SRD monsters and it fell back
+to another, a stat block failed to fetch, or no combination could land in the band you asked
+for (a solo level 1 character has nothing between medium and hard, for instance) and the
+warning names the band it landed in instead. Read it before you run the fight — the rating is
+always computed on the monsters actually returned, not the ones planned.
+
+**Flat-CR mode** (a fight you have already cast):
 ```bash
 uv run python features/dnd-api/monsters/dnd_encounter_v2.py --cr <rating> --count <number>
 ```
-
-**Required Options**:
 - `--cr <rating>` - Target challenge rating for the encounter
 - `--count <number>` - Number of monsters to generate
-
-**Optional Options**:
 - `--quick` - Display only monster names (no stats)
 
 **Examples**:
@@ -187,7 +205,7 @@ uv run python features/dnd-api/monsters/dnd_encounter_v2.py --cr 20 --count 1
 1. Browse available monsters: `uv run python features/dnd-api/monsters/dnd_monsters.py --limit 20`
 2. Find thematic monsters: `uv run python features/dnd-api/monsters/dnd_monsters.py --search undead`
 3. Filter by CR efficiently: `uv run python features/dnd-api/monsters/dnd_monsters_api_filter.py --cr 2 --cr 3 --limit 10`
-4. Build balanced encounters: `uv run python features/dnd-api/monsters/dnd_encounter_v2.py --cr 2 --count 3`
+4. Build to a budget: `uv run python features/dnd-api/monsters/dnd_encounter_v2.py --party-level 3 --difficulty hard`
 
 ### For Reference
 1. Full monster details: `uv run python features/dnd-api/monsters/dnd_monster.py "ancient gold dragon"`
@@ -270,11 +288,9 @@ Add these for memorable boss fights:
 | 13-14 | CR 12-15 | CR 17-19 |
 | 15+ | CR 15+ | CR 20+ |
 
-**Encounter Multipliers (Multiple Monsters):**
-- 2 monsters: x1.5 XP budget
-- 3-6 monsters: x2 XP budget
-- 7-10 monsters: x2.5 XP budget
-- 11+ monsters: x3 XP budget
+**Encounter Multipliers (Multiple Monsters)** — the builder applies these for you:
+- 1 monster: x1 · 2 monsters: x1.5 · 3-6: x2 · 7-10: x2.5 · 11-14: x3 · 15+: x4
+- Party of 1-2 shifts one step up the ladder (0.5/1/1.5/2/2.5/3/4); a party of 6+ shifts one step down.
 
 ### On-the-Fly Adjustments
 

@@ -33,6 +33,22 @@ the module; the SRD only fills what the book leaves open.
 adapt it, and **state which block anchored it** ("statted off the SRD bugbear, CR 1").
 No creature enters combat with numbers pulled from nowhere.
 
+## Encounters meant to be fought are built to a budget
+A fight you intend to run is designed, not guessed. Pick the difficulty the beat wants
+(easy / medium / hard / deadly), then run the builder with the party's level and size:
+```bash
+uv run python features/dnd-api/monsters/dnd_encounter_v2.py \
+  --party-level 3 --party-size 4 --difficulty hard [--cr 2]
+```
+It returns the XP budget, the raw and adjusted XP, the multiplier, the difficulty band it
+actually landed in, and the monsters as SRD indexes — feed each one to
+`dnd_monster.py <index>` and `gm-combat.sh add-enemy --stat-block-file`. `--cr` is a hint
+when the fiction demands a particular creature tier; leave it off and the builder picks.
+The old `--cr N --count N` form still works for a fight you have already cast.
+
+Creatures that are scenery — rats in the alley, crows on the gibbet, a dog that barks and
+runs — need no budget. Only encounters intended as combat go through the builder.
+
 ## Flow
 1. Get enemy stats — fetched block per above (`--combat` for the condensed view).
 2. Initiative: `uv run python lib/dice.py "1d20+[dex]"` per combatant; order high→low.
