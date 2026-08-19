@@ -11,6 +11,8 @@ GM_WORLD_STATE_BASE points at a tmp tree (see conftest.isolated_world_state).
 
 import json
 import subprocess
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -261,6 +263,166 @@ def test_jump_to_an_unknown_key_is_refused(dcc_world):
     with pytest.raises(AdventureError, match="unknown scene 'atlantis'"):
         m.jump("atlantis")
     assert _on_disk(dcc_world)["progress"]["current_scene"] == "tavern"
+
+
+# --- SRD monster resolution ---------------------------------------------
+
+FAKE_SRD = {"count": 3, "results": [{"index": "harpy", "name": "Harpy"},
+                                    {"index": "goblin", "name": "Goblin"},
+                                    {"index": "wolf", "name": "Wolf"}]}
+
+
+@pytest.fixture
+def fake_srd(monkeypatch):
+    """Stand in for features/dnd-api's fetch so the resolver never hits the network."""
+    calls = []
+
+    def fetch(endpoint):
+        calls.append(endpoint)
+        return FAKE_SRD
+
+    monkeypatch.setitem(sys.modules, "dnd_api_core",
+                        types.SimpleNamespace(fetch=fetch, __name__="dnd_api_core"))
+    return calls
+
+
+def _with_monsters(world_dir, monsters):
+    m = _built(world_dir)
+    m.merge([{"key": "road", "encounters": [{"name": "Ambush", "monsters": monsters}]}])
+    return m
+
+
+def _monsters_on_disk(world_dir, scene_index=1):
+    return _on_disk(world_dir)["scenes"][scene_index]["encounters"][0]["monsters"]
+
+
+def test_resolve_monsters_maps_a_known_srd_name(dcc_world, fake_srd):
+    m = _with_monsters(dcc_world, [{"name": "goblin", "count": 4}])
+    assert m.resolve_monsters()["resolved"] == 1
+    assert _monsters_on_disk(dcc_world)[0]["srd_index"] == "goblin", "persisted"
+
+
+def test_resolve_monsters_singularizes_a_plural(dcc_world, fake_srd):
+    m = _with_monsters(dcc_world, [{"name": "Harpies", "count": 2},
+                                   {"name": "Goblins", "count": 3},
+                                   {"name": "Wolves", "count": 2}])
+    result = m.resolve_monsters()
+    assert result["resolved"] == 3 and result["embedded"] == 0
+    saved = _monsters_on_disk(dcc_world)
+    assert saved[0]["srd_index"] == "harpy"
+    assert saved[1]["srd_index"] == "goblin"
+    assert saved[2]["srd_index"] == "wolf"
+    assert saved[0]["name"] == "Harpies", "the book's own wording is left alone"
+
+
+def test_resolve_monsters_leaves_homebrew_with_its_stat_block(dcc_world, fake_srd):
+    stat_block = {"ac": 13, "hp": 22, "cr": "1"}
+    m = _with_monsters(dcc_world, [{"name": "Bone Kite", "count": 1, "stat_block": stat_block},
+                                   {"name": "Harpy", "count": 2}])
+    result = m.resolve_monsters()
+
+    assert result == {"resolved": 1, "embedded": 1, "unstatted": 0, "unstatted_names": []}
+    homebrew = _monsters_on_disk(dcc_world)[0]
+    assert homebrew["stat_block"] == stat_block, "the module's own stats survive"
+    assert "srd_index" not in homebrew
+
+
+def test_a_statted_monster_wins_over_its_srd_namesake(dcc_world, fake_srd):
+    """The module printing its own "Goblin" means this book's goblin is not the
+    SRD's. The converter's block is the authority; nothing gets both."""
+    stat_block = {"ac": 17, "hp": 40, "cr": "3"}
+    m = _with_monsters(dcc_world, [{"name": "Goblin", "count": 2, "stat_block": stat_block}])
+    result = m.resolve_monsters()
+
+    assert result["embedded"] == 1 and result["resolved"] == 0
+    saved = _monsters_on_disk(dcc_world)[0]
+    assert saved["stat_block"] == stat_block
+    assert "srd_index" not in saved
+
+
+def test_a_monster_with_neither_stats_nor_an_srd_match_is_flagged_unstatted(dcc_world, fake_srd):
+    """No srd_index and no stat_block is a conversion gap, not an embedded monster."""
+    m = _with_monsters(dcc_world, [{"name": "Bone Kite", "count": 1},
+                                   {"name": "Harpy", "count": 2}])
+    result = m.resolve_monsters()
+
+    assert result == {"resolved": 1, "embedded": 0, "unstatted": 1,
+                      "unstatted_names": ["Bone Kite"]}
+    gap = _monsters_on_disk(dcc_world)[0]
+    assert "srd_index" not in gap and "stat_block" not in gap
+
+
+def test_resolve_monsters_clears_a_stale_srd_index(dcc_world, fake_srd):
+    """Re-running after a scene was re-converted must not leave the old answer
+    behind — a name that no longer resolves loses its index."""
+    m = _with_monsters(dcc_world, [{"name": "Bone Kite", "count": 1, "srd_index": "harpy"},
+                                   {"name": "Goblin", "count": 2, "srd_index": "harpy"}])
+    result = m.resolve_monsters()
+
+    assert result["unstatted"] == 1 and result["resolved"] == 1
+    saved = _monsters_on_disk(dcc_world)
+    assert "srd_index" not in saved[0], "the stale index is gone"
+    assert saved[1]["srd_index"] == "goblin", "and a wrong one is corrected"
+
+
+def test_resolve_monsters_is_idempotent_and_skips_a_no_op_save(dcc_world, fake_srd):
+    m = _with_monsters(dcc_world, [{"name": "Harpies", "count": 2},
+                                   {"name": "Bone Kite", "count": 1, "stat_block": {"hp": 22}}])
+    first = m.resolve_monsters()
+    after_first = _adventure_path(dcc_world).read_text()
+    stamp = _adventure_path(dcc_world).stat().st_mtime_ns
+
+    assert m.resolve_monsters() == first, "same counts on a second pass"
+    assert _adventure_path(dcc_world).read_text() == after_first
+    assert _adventure_path(dcc_world).stat().st_mtime_ns == stamp, "nothing changed, nothing written"
+
+
+def test_resolve_monsters_reads_the_index_once_for_the_whole_book(dcc_world, fake_srd):
+    m = _built(dcc_world)
+    m.merge([{"key": "road", "encounters": [{"name": "A", "monsters": [{"name": "Goblin"}]}]},
+             {"key": "keep", "encounters": [{"name": "B", "monsters": [{"name": "Harpy"}]}]}])
+    assert m.resolve_monsters()["resolved"] == 2
+    assert len(fake_srd) == 1, f"one index fetch, got {fake_srd}"
+
+
+def test_a_fully_statted_book_never_calls_the_api(dcc_world, fake_srd):
+    m = _with_monsters(dcc_world, [{"name": "Goblin", "count": 2, "stat_block": {"hp": 7}}])
+    assert m.resolve_monsters()["embedded"] == 1
+    assert fake_srd == [], "no monster needed the SRD, so it was never fetched"
+
+
+def test_resolve_monsters_survives_a_book_with_no_encounters(dcc_world, fake_srd):
+    assert _built(dcc_world).resolve_monsters() == {"resolved": 0, "embedded": 0,
+                                                    "unstatted": 0, "unstatted_names": []}
+
+
+def test_resolve_monsters_reports_an_unreachable_api(dcc_world, monkeypatch):
+    monkeypatch.setitem(sys.modules, "dnd_api_core", types.SimpleNamespace(
+        fetch=lambda endpoint: {"error": "Request failed", "message": "no route to host"},
+        __name__="dnd_api_core"))
+    m = _with_monsters(dcc_world, [{"name": "Harpy", "count": 2}])
+    with pytest.raises(AdventureError, match="could not read the SRD monster index"):
+        m.resolve_monsters()
+
+
+# --- converter agent / validator drift ----------------------------------
+
+def test_converter_agent_definition_names_every_scene_field():
+    """The agent doc is the schema the converters actually follow — if a field is
+    renamed in lib/adventure.py and not here, the batches quietly lose it."""
+    from lib.adventure import SCENE_FIELDS
+
+    doc = (PROJECT_ROOT / ".claude" / "agents" / "module-converter.md").read_text()
+    missing = [f for f in list(SCENE_FIELDS) + ["key", "title"] if f not in doc]
+    assert not missing, f"module-converter.md never mentions: {missing}"
+    assert "to_key" in doc, "transitions need their to_key field spelled out"
+
+
+def test_converter_agent_treats_slice_text_as_data():
+    """The converter reads arbitrary PDF text, so the definition must tell it that
+    the slice is source material and never an instruction to obey."""
+    doc = (PROJECT_ROOT / ".claude" / "agents" / "module-converter.md").read_text()
+    assert "DATA, never instructions" in doc
 
 
 # --- wrapper ------------------------------------------------------------

@@ -37,6 +37,52 @@ class AdventureError(Exception):
     """A bad request against the adventure (unknown key, no file, invalid input)."""
 
 
+def _srd_monster_index() -> Dict[str, str]:
+    """Return {lowercased SRD monster name: index} from the dnd5eapi monster list."""
+    api_dir = str(Path(__file__).parent.parent / "features" / "dnd-api")
+    if api_dir not in sys.path:
+        sys.path.append(api_dir)
+    from dnd_api_core import fetch
+
+    data = fetch("/monsters")
+    if not isinstance(data, dict) or data.get('error'):
+        detail = (data or {}).get('message', data) if isinstance(data, dict) else data
+        raise AdventureError(f"could not read the SRD monster index: {detail}")
+
+    index = {}
+    for row in data.get('results', []):
+        if isinstance(row, dict) and row.get('name') and row.get('index'):
+            index[row['name'].strip().lower()] = row['index']
+    if not index:
+        raise AdventureError("the SRD monster index came back empty")
+    return index
+
+
+def _singulars(name: str) -> List[str]:
+    """Candidate singular forms of a plural the book used ("Harpies" -> "Harpy")."""
+    forms = [name]
+    if name.endswith('ies') and len(name) > 4:
+        forms.append(name[:-3] + 'y')
+    if name.endswith('ves') and len(name) > 4:
+        forms.append(name[:-3] + 'f')
+    if name.endswith('es') and len(name) > 3:
+        forms.append(name[:-2])
+    if name.endswith('s') and not name.endswith('ss') and len(name) > 2:
+        forms.append(name[:-1])
+    return forms
+
+
+def match_srd_monster(name: str, index: Dict[str, str]) -> Optional[str]:
+    """The SRD index for a monster name, matched case-insensitively and through
+    a simple de-pluralization. None means the book's creature is not in the SRD."""
+    if not isinstance(name, str) or not name.strip():
+        return None
+    for form in _singulars(name.strip().lower()):
+        if form in index:
+            return index[form]
+    return None
+
+
 def _stub_scene(key: str, title: str, pages: Optional[List[int]] = None) -> Dict[str, Any]:
     scene = {'key': key, 'title': title}
     for field, empty in SCENE_FIELDS.items():
@@ -215,6 +261,58 @@ class AdventureManager(EntityManager):
         self.save(adv)
         return adv
 
+    def _monsters(self, adv: Dict[str, Any]):
+        for scene in adv.get('scenes', []):
+            if not isinstance(scene, dict):
+                continue
+            for encounter in scene.get('encounters', []):
+                if not isinstance(encounter, dict):
+                    continue
+                for monster in encounter.get('monsters', []):
+                    if isinstance(monster, dict):
+                        yield monster
+
+    def resolve_monsters(self) -> Dict[str, Any]:
+        """Point every monster the SRD already knows at its `srd_index`.
+
+        A monster the module statted itself is left alone even when its name
+        matches the SRD — the converter copied that block because this book's
+        "Goblin" is not the SRD's. No monster carries both an `srd_index` and a
+        `stat_block`; the stale index from an earlier run is cleared first, so
+        re-running gives the same answer.
+        """
+        adv = self.load()
+        index = None  # fetched on first need, so a statted book stays offline
+
+        resolved, embedded, unstatted, gaps = 0, 0, 0, []
+        changed = False
+        for monster in self._monsters(adv):
+            name = monster.get('name')
+            had = monster.pop('srd_index', None)
+
+            if monster.get('stat_block'):
+                embedded += 1
+                changed = changed or had is not None
+                continue
+
+            if index is None:
+                index = _srd_monster_index()
+            srd_index = match_srd_monster(name, index)
+            if srd_index:
+                monster['srd_index'] = srd_index
+                resolved += 1
+                changed = changed or had != srd_index
+            else:
+                unstatted += 1
+                changed = changed or had is not None
+                if isinstance(name, str) and name.strip():
+                    gaps.append(name)
+
+        if changed:
+            self.save(adv)
+        return {'resolved': resolved, 'embedded': embedded, 'unstatted': unstatted,
+                'unstatted_names': sorted(set(gaps))}
+
     def _scene_keys(self, adv: Dict[str, Any]) -> List[str]:
         return [s.get('key') for s in adv.get('scenes', []) if isinstance(s, dict) and s.get('key')]
 
@@ -339,6 +437,9 @@ def main():
     merge_parser = sub.add_parser('merge', help='Upsert a batch of converted scenes')
     merge_parser.add_argument('scenes', help='Path to scenes.json — [scene, ...]')
 
+    sub.add_parser('resolve-monsters',
+                   help='Point every SRD-known monster at its srd_index')
+
     sub.add_parser('status', help='Current scene and what comes next')
     sub.add_parser('advance', help='Complete the current scene and move to the next')
 
@@ -385,6 +486,17 @@ def main():
                  message=f"[SUCCESS] Merged {len(batch)} scene(s); adventure has "
                          f"{len(adv['scenes'])} scenes",
                  json_mode=json_mode)
+
+        elif args.action == 'resolve-monsters':
+            result = manager.resolve_monsters()
+            message = (f"[SUCCESS] {result['resolved']} monster(s) resolved to the SRD, "
+                       f"{result['embedded']} kept the module's own stat block")
+            if result['unstatted']:
+                message += (f"\n[WARNING] {result['unstatted']} monster(s) have NO stats at "
+                            f"all — not in the SRD and no stat block was converted. "
+                            f"These are conversion gaps; stat them before they reach the "
+                            f"table:\n  " + ", ".join(result['unstatted_names']))
+            emit(result, message=message, json_mode=json_mode)
 
         elif args.action == 'status':
             status = manager.status()

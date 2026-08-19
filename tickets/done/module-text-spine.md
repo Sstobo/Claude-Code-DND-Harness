@@ -75,6 +75,9 @@ None.
 
 ## QA Reports
 
+### 2026-08-19T19:00:00Z — post-commit retraction note [ss-imod01]
+review4 RETRACTED its perfect verdict after commit 917b292: two blocking-grade latent bugs (gutter split computed from trimmed gap can be crossed by an outlier row → whole-page reorder; words_are_glued abs() glues sub-0.5pt overlaps) plus page-49 caption weld (live), last_mode false 'columns' on all-pages-fallback, trailing marker left in slice text, silent long-title drop, circular glued-token test, hardcoded TEST_PDF. None corrupt the sample book's slices materially. Follow-up: tickets ready/extractor-ordering-hardening.
+
 ### 2026-08-19T18:40:00Z — pass [review4-module-text-spine]
 reviewed: perfect (exception round). Independently re-verified: 0 invented tokens on all 50 pages (12 joins, all legitimate -0.0 display-capital seams); char-multiset equality per page; live spine 43 entries; no regressions.
 Notes (non-blocking): assert_no_glued_tokens builds its allow-list via words_are_glued itself (circular — would not have caught the original bug; invariant proven independently instead); words_are_glued abs() glues small overlaps contrary to its docstring; row_text docstring references removed SPACE_GAP; one subsumed duplicate test. Suggested hardening criteria recorded here for a future pass.
