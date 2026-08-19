@@ -4,7 +4,6 @@ The world-bible subagent read is orchestrated by /import (model call, not
 hermetic); these cover the deterministic core that the AC can verify.
 """
 
-import json
 from pathlib import Path
 
 from lib import book_bible
@@ -29,19 +28,6 @@ def test_segmentation_falls_back_to_size_windows():
     big = "no markers here. " * 4000  # ~68k chars, no chapter marks
     chapters = book_bible.segment_into_chapters(big, max_chars=20000)
     assert len(chapters) >= 3 and all(len(c["text"]) <= 20000 for c in chapters)
-
-
-def test_draft_ruleset_from_bible_is_valid_kit():
-    bible = json.loads(
-        (Path(__file__).resolve().parent / "fixtures" / "world-state" / "campaigns"
-         / "dungeon-crawler-carl" / "world-bible.json").read_text(encoding="utf-8")
-    )
-    ruleset = book_bible.draft_ruleset_from_bible(
-        bible, progression_model="resource-axis", resource="viewers", tiers=[1000000])
-    assert ruleset["name"] == "Dungeon Crawler Carl"
-    assert ruleset["resolution"]["model"] == "d20-vs-dc"
-    assert ruleset["progression"]["model"] == "resource-axis"
-    assert ruleset["progression"]["resource"] == "viewers"
 
 
 def test_bible_to_campaign_rules_carries_signature_systems():

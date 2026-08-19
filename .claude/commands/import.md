@@ -95,7 +95,8 @@ and build Step 5's stage around **that** start, not the book's default first pag
 
 ## Step 4: World identity (tone, not inventory)
 
-Draft the bible, kit, voice, and chronicler so the holodeck *sounds* like the book.
+Draft the bible, the rules prose, the voice, and the chronicler so the holodeck
+*sounds* like the book.
 This is identity. It is not a census.
 
 ```bash
@@ -122,42 +123,32 @@ places). Nodes with no edges are a cast list, not a world; a couple of real
 relationships (the villain's faction vs the player's, the caravan vs the hunt)
 pay off in every scene. Do not build a full relationship map.
 
-Kit — `dnd5e` only when the file is a D&D module. Everything else is `custom`.
-D&D-lean resolution (d20, six abilities) is fine as the table's foundation.
-
-```bash
-CAMPAIGN_DIR=$(bash tools/gm-campaign.sh path)
-[ -f "$CAMPAIGN_DIR/ruleset.json" ] || bash tools/gm-extract.sh draft-ruleset \
-  --attributes "str,dex,con,int,wis,cha" \
-  --progression-model "milestone" \
-  --kit "custom"
-```
+Mechanics are 5e for every book (d20, six abilities, death saves). What makes the
+table feel like *this* book is the bible's voice and its signature systems as
+prose — write them into `campaign_rules`, which rides into every scene as YOUR
+WORLD'S RULES. Keep each one concrete enough to run at the table ("sorcery is
+paid for in blood or years", "the city's Menace rises as your name spreads"), not
+a genre label.
 
 ```bash
 bash tools/gm-extract.sh campaign-rules
+```
+
+**If the book carries long-form rules prose** — a system the `campaign_rules`
+one-liners cannot hold (a drug-and-addiction economy, a duelling procedure, a
+faction-standing ladder) — write it to `rules.md` in the campaign dir now. Most
+books have none; skip the step rather than padding a file. `WorldKit.rules_doc_path()`
+finds it by that name, and the GM loads it on demand.
+
+```bash
 CAMPAIGN_DIR=$(bash tools/gm-campaign.sh path)
 uv run python lib/overview_seed.py "$CAMPAIGN_DIR" \
   --fields-json '{"campaign_name":"<World>","genre":"...","tone":{"grim":40,"adventure":40,"horror":20}}' \
   --fix-rules-doc
 ```
 
-Write a short `rules.md` if the book has signature systems, then point the kit at it.
-
-**Make the signature systems executable — dice, not vibes.** Instantiate 1–3 of
-the `game_core` primitives, name them for this world, and persist onto the kit so
-the GM *rolls* them:
-
-```bash
-bash tools/gm-extract.sh write-systems --systems-json '[
-  {"primitive":"named_track","name":"Menace","config":{"max":6,"thresholds":[{"at":3,"consequence":"men step aside for you"},{"at":6,"consequence":"the city turns out to hunt you"}]}},
-  {"primitive":"price_roll","name":"Sorcery'"'"'s Price","config":{"dice":"1d20","ladder":[{"min_roll":15,"cost":"a night lost to dreams"},{"min_roll":5,"cost":"a year of your life"},{"min_roll":-99,"cost":"something now watches you"}]}}
-]'
-```
-
-Primitives: **named_track** (a Menace/Dread/Corruption meter with threshold beats),
-**price_roll** (forbidden power exacts a cost), **reaction_roll** (reputation shifts
-an NPC's opening stance), **guarded_payoff** (treasure guarded/cursed — roll before
-the hand closes). They ride into every scene as YOUR WORLD'S SIGNATURE SYSTEMS.
+`--fix-rules-doc` reports whether that file is there — `rules_doc: None` is the
+correct answer for a book with no such prose.
 
 Voice — verbatim excerpts only (the filter drops paraphrase):
 

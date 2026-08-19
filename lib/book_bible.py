@@ -4,10 +4,11 @@ Book Bible import helpers — long-context reading instead of chunk-and-delete.
 
 The import flow keeps the book text (not deleted on cleanup), a world-bible
 subagent reads LARGE spans (whole chapters via long context, not 3000-char
-chunks) and emits a structured world-bible.json, and that bible AUTO-DRAFTS the
-World Kit ruleset + campaign_rules. This module holds the deterministic, testable
-pieces: chapter segmentation, the bible→ruleset/campaign_rules draft, and token
-observability. The subagent read itself is orchestrated by the /import command.
+chunks) and emits a structured world-bible.json, and that bible feeds the
+campaign_rules prose the GM plays by. This module holds the deterministic,
+testable pieces: chapter segmentation, the bible→campaign_rules draft, the world
+index, and token observability. The subagent read itself is orchestrated by the
+/import command.
 """
 
 import copy
@@ -73,33 +74,6 @@ def bible_to_campaign_rules(bible: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def draft_ruleset_from_bible(bible: Dict[str, Any], progression_model: str = "milestone",
-                             kit: str = "custom", attributes: List[str] = None,
-                             **progression_config) -> Dict[str, Any]:
-    """Auto-draft a World Kit ruleset.json from a world-bible.
-
-    progression_model is chosen by the importer / human (default milestone, the
-    safest book-native option). Resolution defaults to the universal d20-vs-dc core.
-    `kit` is the machine-readable router: 'dnd5e' unlocks the D&D mechanics skills
-    and the spell-caster agent, and the importer sets it ONLY when the book
-    actually is a D&D module; every other book stays 'custom'.
-    """
-    progression = {"model": progression_model}
-    progression.update(progression_config)
-    agents = ["monster-manual", "rules-master", "loot-dropper", "gear-master", "npc-builder"]
-    if kit == "dnd5e":
-        agents.append("spell-caster")
-    return {
-        "name": bible.get("name", "Imported World"),
-        "kit": kit,
-        "stat_schema": {"attributes": list(attributes or []), "vitals": ["hp"]},
-        "progression": progression,
-        "resolution": {"model": "d20-vs-dc"},
-        "active_agents": agents,
-        "rules_doc": "rules.md",
-    }
-
-
 def draft_voice(style: str, sample_passages: List[str], source_text: str,
                 vocab: List[str] = None) -> Dict[str, Any]:
     """Build a world-bible `voice` block for an imported book, GROUNDED in the source.
@@ -126,7 +100,7 @@ def log_token_estimate(text: str, label: str = "import") -> int:
     return approx
 
 
-# --- the import chain: bible -> ruleset -> campaign_rules ---
+# --- the import chain: bible -> campaign_rules ---
 #
 # The split is deliberate. This module writes only what the SOURCE can prove: the
 # chapter map, the verbatim-filtered voice block, and the skeleton keys
@@ -210,19 +184,6 @@ def draft_bible(campaign_dir, name: str = None, voice: Dict[str, Any] = None,
     return bible
 
 
-def write_ruleset(campaign_dir, progression_model: str = "milestone", kit: str = "custom",
-                  attributes: List[str] = None, force: bool = False,
-                  **progression_config) -> Dict[str, Any]:
-    """Draft the World Kit from the bible and write it to ruleset.json."""
-    path = Path(campaign_dir) / "ruleset.json"
-    if path.exists() and not force:
-        raise FileExistsError(f"{path} already exists — pass --force to redraft it")
-    ruleset = draft_ruleset_from_bible(load_bible(campaign_dir), progression_model=progression_model,
-                                       kit=kit, attributes=attributes, **progression_config)
-    path.write_text(json.dumps(ruleset, indent=2, ensure_ascii=False), encoding="utf-8")
-    return ruleset
-
-
 def write_campaign_rules(campaign_dir) -> Dict[str, Any]:
     """Map the bible's signature systems into campaign-overview.json's campaign_rules."""
     rules = bible_to_campaign_rules(load_bible(campaign_dir))
@@ -266,29 +227,6 @@ def write_index(campaign_dir, index: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
-def write_systems(campaign_dir, systems: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """Persist executable signature systems onto the kit (ruleset.json `systems`).
-
-    Each kept entry is `{primitive, name, config}` — an instantiation of a
-    game_core primitive (named_track / price_roll / reaction_roll /
-    guarded_payoff). Malformed entries (no primitive or no name) are dropped.
-    Requires an existing ruleset.json (run `draft-ruleset` first).
-    """
-    path = Path(campaign_dir) / "ruleset.json"
-    if not path.exists():
-        raise FileNotFoundError(
-            f"no ruleset.json in {campaign_dir} — run `gm-extract.sh draft-ruleset` first")
-    ruleset = json.loads(path.read_text(encoding="utf-8"))
-    clean = []
-    for s in (systems or []):
-        if isinstance(s, dict) and s.get("primitive") and s.get("name"):
-            clean.append({"primitive": s["primitive"], "name": s["name"],
-                          "config": s.get("config") or {}})
-    ruleset["systems"] = clean
-    path.write_text(json.dumps(ruleset, indent=2, ensure_ascii=False), encoding="utf-8")
-    return clean
-
-
 def main():
     import argparse
 
@@ -301,15 +239,6 @@ def main():
     p_bible.add_argument("--voice-json", help='{"style":...,"sample_passages":[...],"vocab":[...]}')
     p_bible.add_argument("--fields-json", help="JSON object of creative fields (tone/themes/factions/...)")
 
-    p_kit = sub.add_parser("draft-ruleset", help="draft ruleset.json from the bible")
-    p_kit.add_argument("campaign_dir")
-    p_kit.add_argument("--kit", default="custom", help="'dnd5e' only when the book IS a D&D module")
-    p_kit.add_argument("--progression-model", default="milestone",
-                       choices=["milestone", "xp-levels", "resource-axis"])
-    p_kit.add_argument("--attributes", help="comma-separated stat schema attributes")
-    p_kit.add_argument("--progression-json", help="extra progression config (e.g. resource/tiers)")
-    p_kit.add_argument("--force", action="store_true", help="overwrite an existing ruleset.json")
-
     p_rules = sub.add_parser("campaign-rules", help="write campaign_rules into campaign-overview.json")
     p_rules.add_argument("campaign_dir")
 
@@ -318,12 +247,6 @@ def main():
     p_index.add_argument("campaign_dir")
     p_index.add_argument("--index-json", required=True,
                          help='{"npcs":[{"name":..,"note":..}],"locations":[...],"items":[...],"monsters":[...]}')
-
-    p_sys = sub.add_parser("write-systems",
-                           help="persist executable signature systems onto the kit (ruleset.json)")
-    p_sys.add_argument("campaign_dir")
-    p_sys.add_argument("--systems-json", required=True,
-                       help='[{"primitive":"named_track","name":"Menace","config":{"max":6,"thresholds":[...]}}]')
 
     args = parser.parse_args()
 
@@ -341,30 +264,14 @@ def main():
             print(f"world-bible.json drafted: {bible['name']} "
                   f"(index: {idx_counts}; "
                   f"{len(bible['voice']['sample_passages'])} verbatim passages, confirmed=False)")
-        elif args.action == "draft-ruleset":
-            ruleset = write_ruleset(
-                args.campaign_dir,
-                progression_model=args.progression_model,
-                kit=args.kit,
-                attributes=[a.strip() for a in args.attributes.split(",") if a.strip()]
-                if args.attributes else None,
-                force=args.force,
-                **(json.loads(args.progression_json) if args.progression_json else {}),
-            )
-            print(f"ruleset.json drafted: {ruleset['name']} | kit: {ruleset['kit']} "
-                  f"| attrs: {ruleset['stat_schema']['attributes']} "
-                  f"| agents: {ruleset['active_agents']}")
         elif args.action == "write-index":
             idx = write_index(args.campaign_dir, json.loads(args.index_json))
             counts = ", ".join(f"{len(idx.get(b, []))} {b}" for b in INDEX_BUCKETS)
             print(f"world index written: {counts}")
-        elif args.action == "write-systems":
-            sysv = write_systems(args.campaign_dir, json.loads(args.systems_json))
-            print(f"kit systems written: {', '.join(s['name'] for s in sysv) or '(none)'}")
         else:
             rules = write_campaign_rules(args.campaign_dir)
             print(f"campaign_rules written: {len(rules['signature_systems'])} signature systems")
-    except (ConfirmedBibleError, FileNotFoundError, FileExistsError) as e:
+    except (ConfirmedBibleError, FileNotFoundError) as e:
         print(f"[ERROR] {e}", file=sys.stderr)
         sys.exit(1)
 

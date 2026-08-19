@@ -13,7 +13,7 @@ sources:
   - { resource: /lib/world_bible.py }
   - { resource: /lib/session_manager.py }
   - { resource: /lib/play_pack.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:12:07Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:55:41Z }
 verified: { by: claude-fable-5, at: 2026-08-13T14:27:33Z }
 ---
 
@@ -42,7 +42,7 @@ is named in `world-state/active-campaign.txt`.
 ├── plots.json               # Plot hooks and quests
 ├── items.json               # Items (from imports)
 ├── consequences.json        # Pending/resolved events + firing provenance
-├── ruleset.json             # LEGACY — still written at import, no longer read
+├── ruleset.json             # LEGACY — never written, never read (old campaigns only)
 ├── world-bible.json         # Fidelity spine (voice, factions, geography, systems)
 ├── rules.md                 # Optional long-form rules prose (WorldKit.rules_doc_path)
 ├── session-log.md           # Session history — the canonical ledger
@@ -559,8 +559,8 @@ and `death-saves` lethality with the massive-damage bar at max HP. `WorldKit.kit
 returns `"dnd5e"`.
 
 - A stale `ruleset.json` left in a campaign from before the hardcoding is **ignored** by
-  `WorldKit` (`book_bible.write_ruleset` / `write_systems` still write one; that authoring
-  path is retired under its own ticket).
+  `WorldKit`, and nothing writes a new one — the kit-drafting verbs are gone from
+  `book_bible.py` and `gm-extract.sh`.
 - `WorldKit.signature_systems()` and `WorldKit.systems()` are empty by design, so a
   world's flavor systems must live in campaign-overview `campaign_rules`.
 - Long-form rules prose is `rules.md` in the campaign dir, resolved by

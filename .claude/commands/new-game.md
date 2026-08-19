@@ -1,7 +1,7 @@
 # /new-game - Create Your World
 
-Author tonight's table, not a planet. Same dream as `/import`: kit, voice, a
-primer, one street. The campaign file is a **journal of where the table has
+Author tonight's table, not a planet. Same dream as `/import`: voice, rules
+prose, a primer, one street. The campaign file is a **journal of where the table has
 been**. The world grows AS YOU PLAY — seed a clock, a thread, or a plot when you
 see a long-game opportunity, materialize the next face or place when play walks
 toward it. Do not pre-build the universe: author tonight's one stage, then let the
@@ -82,7 +82,8 @@ in the author's voice at play (surfaced every beat by `get_full_context`):
 Keep geography to the starting street plus a few horizon names. Do not author
 the continent. **Wire 2–4 edges** into the `factions`/`geography` graphs (a
 tension between two factions, an adjacency between two places) — nodes with no
-edges are a cast list, not a world. Signature systems go here — they become the kit.
+edges are a cast list, not a world. Signature systems go here — they become the
+world's rules prose (Phase C writes them into `campaign_rules`).
 
 Validate, then present for approval:
 ```bash
@@ -91,8 +92,8 @@ uv run python lib/world_bible.py show
 ```
 
 Show the user the `name`, voice style, themes, factions, and signature systems.
-**Gate play on their approval** — let them edit or accept. Then write the kit
-and the play pack (Phase C). The bible stays `confirmed: false` until they accept.
+**Gate play on their approval** — let them edit or accept. Then write the rules
+prose and the play pack (Phase C). The bible stays `confirmed: false` until they accept.
 
 ---
 
@@ -100,15 +101,20 @@ and the play pack (Phase C). The bible stays `confirmed: false` until they accep
 
 Write only what tonight needs:
 
-1. Draft the kit (`gm-extract.sh draft-ruleset`) — derive it from the world, not a 5e default.
-2. Write a short `rules.md` if the world has signature systems.
-2b. **Make the signature systems executable — dice, not vibes.** Instantiate 1–3
-   `game_core` primitives (**named_track** meter with threshold beats / **price_roll**
-   cost for forbidden power / **reaction_roll** reputation-shifted NPC stance /
-   **guarded_payoff** guarded-or-cursed treasure), name them for this world, and
-   persist: `bash tools/gm-extract.sh write-systems --systems-json '[{"primitive":"named_track","name":"Dread","config":{"max":4,"thresholds":[{"at":4,"consequence":"..."}]}}]'`.
-   They surface as YOUR WORLD'S SIGNATURE SYSTEMS and are rolled, not narrated.
-2c. **Author the World Index** — a scannable one-sentence roster of the named
+1. **Write the world's signature systems into `campaign_rules`.** Mechanics are
+   5e; what makes this world its own is the prose the GM plays by. Take the
+   bible's `signature_systems` (blood-priced sorcery, a Dread that rises, the
+   price of a favour) and persist them as campaign rules — they ride into every
+   scene as YOUR WORLD'S RULES:
+   ```bash
+   bash tools/gm-extract.sh campaign-rules
+   ```
+   (Edit the bible's `signature_systems` and re-run if the wording needs work.)
+   If a system needs more room than a one-liner — a duelling procedure, a
+   faction-standing ladder — write that long-form prose to `rules.md` in the
+   campaign dir; `WorldKit.rules_doc_path()` finds it by name. Most worlds need
+   no such file.
+2. **Author the World Index** — a scannable one-sentence roster of the named
    figures, places, relics, and monsters this world contains. There is no book to
    extract from, so **you invent it** from the world's tone/themes (same schema as
    an imported world's index). The GM scans it before inventing a name, so the
@@ -212,7 +218,7 @@ first `gm-player.sh set` re-seeds the opening.
 ## COMPLETION CHECKLIST (play tonight)
 - [ ] `world-seed.json` (premise, voice, art style)
 - [ ] `world-bible.json` approved and confirmed (voice + signature systems, not a planet)
-- [ ] `ruleset.json` World Kit derived from this world (not a silent 5e default)
+- [ ] `campaign_rules` carrying this world's signature systems as prose
 - [ ] `play_pack` set + `gm-playpack.sh stage` (one room, present NPCs, exits, hook)
 - [ ] chronicler locked (`gm-image.sh chronicler`)
 - [ ] handed off to the one question (`gm-player.sh onboard ...`)

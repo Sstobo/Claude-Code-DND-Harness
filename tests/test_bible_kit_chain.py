@@ -1,8 +1,8 @@
-"""The import chain: source text -> world-bible -> ruleset -> campaign_rules.
+"""The import chain: source text -> world-bible -> campaign_rules.
 
-Import Step 6.7 used to read a world-bible.json that no step wrote, and the kit
-was a hand-pasted 5e heredoc. These cover the wired chain — every fixture is a
-throwaway tmp campaign, never a live one.
+Import Step 6.7 used to read a world-bible.json that no step wrote. These cover
+the wired chain — every fixture is a throwaway tmp campaign, never a live one.
+Kit drafting is gone: the harness is 5e, so nothing here writes a ruleset.
 """
 
 import json
@@ -94,36 +94,6 @@ def test_draft_bible_without_source_text_fails_loudly(tmp_path):
         book_bible.draft_bible(tmp_path)
 
 
-def test_ruleset_carries_a_kit_and_no_spellcaster_for_custom(campaign):
-    book_bible.draft_bible(campaign, name="The Iron Tangle")
-    ruleset = book_bible.write_ruleset(
-        campaign, progression_model="resource-axis", attributes=["str", "dex", "int"],
-        resource="viewers")
-
-    assert json.loads((campaign / "ruleset.json").read_text(encoding="utf-8")) == ruleset
-    assert ruleset["kit"] == "custom"
-    assert ruleset["name"] == "The Iron Tangle"
-    assert "spell-caster" not in ruleset["active_agents"]
-    assert ruleset["stat_schema"]["attributes"] == ["str", "dex", "int"]
-    assert ruleset["progression"] == {"model": "resource-axis", "resource": "viewers"}
-
-
-def test_dnd5e_kit_gets_the_spellcaster(campaign):
-    book_bible.draft_bible(campaign)
-    ruleset = book_bible.write_ruleset(campaign, kit="dnd5e")
-    assert ruleset["kit"] == "dnd5e"
-    assert "spell-caster" in ruleset["active_agents"]
-
-
-def test_ruleset_will_not_clobber_a_sibling_kit(campaign):
-    book_bible.draft_bible(campaign)
-    (campaign / "ruleset.json").write_text('{"name": "Copied Sibling Kit"}', encoding="utf-8")
-
-    with pytest.raises(FileExistsError):
-        book_bible.write_ruleset(campaign)
-    assert book_bible.write_ruleset(campaign, force=True)["name"]
-
-
 def test_campaign_rules_land_in_the_overview(campaign):
     book_bible.draft_bible(campaign, name="The Iron Tangle", fields={
         "tone": "comedy-horror",
@@ -144,7 +114,7 @@ def test_campaign_rules_land_in_the_overview(campaign):
 
 def test_chain_without_a_bible_names_the_step_that_writes_it(campaign):
     with pytest.raises(FileNotFoundError, match="draft-bible"):
-        book_bible.write_ruleset(campaign)
+        book_bible.write_campaign_rules(campaign)
 
 
 def test_review_survives_string_faction_nodes(dcc_world):
@@ -169,13 +139,24 @@ def test_cli_drives_the_whole_chain(campaign):
     assert run("draft-bible", str(campaign), "--name", "The Iron Tangle",
                "--voice-json", json.dumps({"style": "clipped", "sample_passages": [VERBATIM]}),
                "--fields-json", json.dumps({"signature_systems": ["loot boxes"]})).returncode == 0
-    assert run("draft-ruleset", str(campaign), "--attributes", "str,dex").returncode == 0
     assert run("campaign-rules", str(campaign)).returncode == 0
 
-    ruleset = json.loads((campaign / "ruleset.json").read_text(encoding="utf-8"))
     overview = json.loads((campaign / "campaign-overview.json").read_text(encoding="utf-8"))
-    assert ruleset["kit"] == "custom" and ruleset["stat_schema"]["attributes"] == ["str", "dex"]
     assert overview["campaign_rules"]["signature_systems"] == ["loot boxes"]
 
-    # Second draft-ruleset is refused rather than silently overwriting.
-    assert run("draft-ruleset", str(campaign)).returncode == 1
+    # Kit drafting is gone: argparse rejects the verb outright rather than the
+    # command failing for some incidental reason.
+    refused = run("draft-ruleset", str(campaign))
+    assert refused.returncode == 2
+    assert "invalid choice: 'draft-ruleset'" in refused.stderr
+    assert not (campaign / "ruleset.json").exists()
+
+
+@pytest.mark.parametrize("command", ["new-game.md", "import.md"])
+def test_creation_commands_carry_no_kit_drafting(command):
+    """Campaign creation goes straight to 5e — no kit ceremony in either door."""
+    doc = (REPO / ".claude" / "commands" / command).read_text(encoding="utf-8")
+    for gone in ("draft-ruleset", "write-systems", "ruleset.json"):
+        assert gone not in doc, f"{command} still references {gone}"
+    # The surviving surface: a world's signature systems land in campaign_rules.
+    assert "campaign-rules" in doc and "campaign_rules" in doc

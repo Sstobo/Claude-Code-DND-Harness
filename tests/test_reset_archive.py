@@ -45,7 +45,9 @@ FIXTURE_FILES = {
     "threat-clocks.json": '{"Doom": {"filled": 2, "segments": 6}}\n',
     "world-tick-log.json": '{"ticks": []}\n',
     "loremaster-cache.json": '{"The Pit": {"brief": "dark"}}\n',
-    # Source, world and kit — reset must leave these alone.
+    # Source and world — reset must leave these alone. ruleset.json is a legacy
+    # file no step writes any more; it is here to prove reset does not eat one
+    # left behind by a pre-5e campaign.
     "world-bible.json": '{"voice": "grim"}\n',
     "world-seed.json": '{"premise": "a test world"}\n',
     "ruleset.json": '{"kit": "test-kit"}\n',
@@ -58,8 +60,8 @@ FIXTURE_FILES = {
     "images/scene.png": "not-really-a-png\n",
 }
 
-# What reset must clear, and what it must keep — "keeps the SOURCE, the WORLD
-# and the KIT, clears the STORY".
+# What reset must clear, and what it must keep — "keeps the SOURCE and the
+# WORLD, clears the STORY" (plus any legacy file already on disk).
 CLEARED_FILES = [
     "character.json", "plots.json", "items.json", "campaign-memory.json",
     "combat_state.json", "threat-clocks.json", "world-tick-log.json",
@@ -207,7 +209,7 @@ def test_reset_clears_every_story_file(fixture_campaign, action):
 
 
 @pytest.mark.parametrize("action", ["archive", "hard"])
-def test_reset_keeps_the_source_and_the_kit(fixture_campaign, action):
+def test_reset_keeps_the_source_and_the_world(fixture_campaign, action):
     kept_before = {rel: (fixture_campaign / rel).read_bytes() for rel in KEPT}
 
     assert run_reset(action, "--yes").returncode == 0
@@ -276,8 +278,10 @@ def test_reset_command_doc_matches_the_real_mechanism():
     # The promised scope must match what reset_world actually does.
     for name in ("plots", "items", "combat state", "threat clocks", "saves"):
         assert name in doc.lower(), f"reset.md never says {name} is cleared"
-    for name in ("ruleset.json", "chunks/", "vectors/", "world-bible.json", "world-seed.json"):
+    for name in ("chunks/", "vectors/", "world-bible.json", "world-seed.json"):
         assert name in doc, f"reset.md never says {name} is kept"
+    # Kit drafting is gone; the doc must not promise a ruleset.json.
+    assert "ruleset.json" not in doc
 
 
 def test_campaign_delete_rejects_flag_as_campaign_name(fixture_campaign):

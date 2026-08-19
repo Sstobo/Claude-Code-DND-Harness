@@ -2,6 +2,7 @@
 - 2026-08-19T15:35Z  in-review: module-text-spine — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T15:35Z  in-review: adventure-store — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T15:13Z  prd: import-module — structured adventure import, 5 tickets → ready  [ship-it]
+- 2026-08-19T16:19:31Z  done: remove-kit-drafting — 5e from creation, no kit ceremony, review perfect round 2  [ss-5efork]
 - 2026-08-19T16:12:57Z  done: spells-levelup-api — slots/features/ASIs from the classes API, review round 3 + orchestrator close  [ss-5efork]
 # Progress Log
 

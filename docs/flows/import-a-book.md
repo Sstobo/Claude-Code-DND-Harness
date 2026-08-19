@@ -13,7 +13,7 @@ sources:
   - { resource: /lib/session_manager.py }
   - { resource: /lib/play_pack.py }
   - { resource: /tools/gm-playpack.sh }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T16:10:00Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:38:33Z }
 ---
 
 # Importing a book
@@ -32,7 +32,7 @@ the campaign file is a journal; the book is the world.
 2. **The door.** Ask who they are, or who they came to meet. Do not preview
    entity counts. Do not run the extractors *as a census* (full records) — their
    one sanctioned use is the light one-sentence World Index (Step 5.5).
-3. **World identity.** Bible → kit → campaign_rules → voice → chronicler. Tone
+3. **World identity.** Bible → campaign_rules → voice → chronicler. Tone
    and how the holodeck *sounds*. Horizon names, not a gazetteer. The player
    confirms the bible; `/import` never confirms on their behalf.
 4. **The stage.** One room, the exits you can see, the people in it, one hook.
@@ -61,9 +61,10 @@ protagonist picks the page; the stage is built from that page.
 `draft-bible` writes what the source can prove (the empty World Index scaffold,
 verbatim voice filter, skeleton keys — as of 2026-08-15 it no longer persists a
 chapter map; `segment_into_chapters` now feeds only the RAG coarse index). The
-model authors tone / themes / a *handful* of factions and places. `draft-ruleset` takes attributes, progression, and `kit`
-from the importer — `dnd5e` only when the file is a D&D module. Signature
-systems live in the bible and map into `campaign_rules`. A missing
+model authors tone / themes / a *handful* of factions and places. There is no kit
+to draft — every book plays 5e — so what makes the table feel like *this* book is
+the voice plus the bible's signature systems, which `campaign-rules` maps into
+`campaign_rules` prose the GM plays by. A missing
 `current-document.txt` means `prepare` did not finish; an already-confirmed
 bible refuses a silent overwrite.
 

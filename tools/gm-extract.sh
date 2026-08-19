@@ -100,12 +100,13 @@ Commands:
                             Draft/refresh the campaign's world-bible.json from
                             current-document.txt (chapter map + verbatim-filtered
                             voice + skeleton keys). Idempotent; refuses a
-                            confirmed bible. Run BEFORE draft-ruleset.
-  draft-ruleset [campaign] [--kit K] [--progression-model M] [--progression-json J]
-                            [--attributes a,b] [--force]
-                            Draft the World Kit (ruleset.json) from the bible
+                            confirmed bible. Run BEFORE campaign-rules.
   campaign-rules [campaign] Write the bible's signature systems into
                             campaign-overview.json as campaign_rules
+  write-index [campaign] --index-json J
+                            Merge a WORLD INDEX (npcs/locations/items/monsters,
+                            each {name, note}) into the bible — the light import
+                            roster, not the census
   integrity [campaign] [--no-strict]  Canonicalize cross-refs to real keys;
                             fail on unresolved (strict by default)
   merge [campaign] [--cleanup]  Combine results from all extraction agents
@@ -639,8 +640,8 @@ case "$1" in
         cap_extracted "$2" "$3"
         ;;
 
-    draft-bible|draft-ruleset|campaign-rules|write-index|write-systems)
-        # The bible -> kit -> campaign_rules chain (lib/book_bible.py). The
+    draft-bible|campaign-rules|write-index)
+        # The bible -> campaign_rules chain (lib/book_bible.py). The
         # campaign argument is optional here because every flag these verbs take
         # is a --long option: anything starting with -- is passed through, so
         # `draft-bible --name "X"` still means the ACTIVE campaign.

@@ -1,7 +1,7 @@
 ---
 type: Flow
 title: Authoring an original world
-description: /new-game builds one stage — kit, voice, a play pack, one street — then grows the world from the table.
+description: /new-game builds one stage — voice, rules prose, a play pack, one street — then grows the world from the table.
 sources:
   - { resource: /.claude/commands/new-game.md }
   - { resource: /lib/world_bible.py }
@@ -11,22 +11,23 @@ sources:
   - { resource: /lib/opening_seed.py }
   - { resource: /lib/player_manager.py }
   - { resource: /lib/identity_onboarding.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T12:45:56Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:38:33Z }
 ---
 
 # Authoring an original world
 
 `/new-game` is `/import` with the book replaced by generation. The door is the
-same play pack: kit, voice, a primer, one street. There is no fan-out — you author
+same play pack: voice, rules prose, a primer, one street. There is no fan-out — you author
 tonight's one stage, then the world grows AS YOU PLAY. See
 [the dream](../conventions/the-dream.md).
 
 The one problem everything upstream of play is aimed at — **any model asked for "a
 fantasy world" produces the same world** — is solved at the seed, not by scale. The
 anti-generic levers are the **genre bend**, the **voice exemplar** (narration reads
-like a real author), and a **World Kit derived from this world** (never a silent 5e
-default). A gazetteer authored before anyone sits down does not make a world
-distinct; those three do.
+like a real author), and the world's **signature systems as `campaign_rules`
+prose** (sorcery paid for in blood, a Menace that rises). Mechanics are 5e for
+every world — there is no kit to draft. A gazetteer authored before anyone sits
+down does not make a world distinct; those three do.
 
 ## Phases
 
@@ -34,7 +35,7 @@ distinct; those three do.
 |---|---|---|
 | **A — Seed** | genre-aware questionnaire → `world-seed.json` (premise, tone, genre bend, voice, art style, chronicler) | — |
 | **B — Skeleton** | slim bible (voice + signature systems + this street), **shown for approval** | play gates on approval |
-| **C — Play pack** | draft the kit, then `gm-playpack.sh set` + `stage` — one room, present NPCs, exits, hook, primer | — |
+| **C — Play pack** | `gm-extract.sh campaign-rules` (signature systems → prose), then `gm-playpack.sh set` + `stage` — one room, present NPCs, exits, hook, primer | — |
 | **D — Handoff** | lock the chronicler + art style, author appearances for the stage, set `session_count: 0` + location from the pack, then the one identity question → `gm-player.sh onboard` | — |
 
 ## The stage, not the planet

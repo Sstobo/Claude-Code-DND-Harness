@@ -6,7 +6,7 @@ sources:
   - { resource: /lib/game_core.py }
   - { resource: /lib/world_kit.py }
   - { resource: /lib/overview_seed.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:06:23Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:55:24Z }
 ---
 
 # Game core and World Kit
@@ -147,10 +147,10 @@ whether a hit is survivable, dying, or fatal.
 
 **Nothing binds them per world any more.** `WorldKit.systems()` returns `[]`, so the
 **YOUR WORLD'S SIGNATURE SYSTEMS (executable — ROLL these)** block in
-`SessionManager.get_full_context` never renders. `book_bible.write_systems`
-(`gm-extract.sh write-systems`) still writes a `systems` list to `ruleset.json` at import
-time — that authoring path is owned by its own ticket — but the kit no longer reads it.
-The four primitives remain callable directly from `game_core`.
+`SessionManager.get_full_context` never renders, and nothing authors a `systems` list
+any longer — `/import` and `/new-game` write a world's signature systems into
+`campaign_rules` as prose instead. The four primitives remain callable directly from
+`game_core`.
 
 ## The kit decides which mechanics Skills are legitimate
 
@@ -164,5 +164,5 @@ defers to the scene-context KIT block — is in
 ## Related
 
 - [Player character](player-character.md) — where progression state is persisted
-- [World bible](world-bible.md) — the prose spine a kit is drafted from
+- [World bible](world-bible.md) — the prose spine a world's `campaign_rules` are drafted from
 - [Authoring a world](../flows/author-a-world.md) — how an original world is set up
