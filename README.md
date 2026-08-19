@@ -10,7 +10,7 @@ This is not a chatbot you roleplay with. It's a *harness*: a thin, opinionated s
 
 There are two ways into a world, and both get the same living-world treatment:
 
-- **🌍 Author something original — `/new-game`.** A genre-aware questionnaire interviews you, then Claude authors a *book's worth* of brand-new canon and a custom ruleset — and runs it through an anti-generic pipeline whose explicit job is to keep your world from collapsing into off-the-shelf high fantasy. This is the headline act. ([jump ↓](#-author-an-original-world--new-game))
+- **🌍 Author something original — `/new-game`.** A genre-aware questionnaire interviews you, then Claude authors a *book's worth* of brand-new canon and the world's own signature systems — and runs it through an anti-generic pipeline whose explicit job is to keep your world from collapsing into off-the-shelf high fantasy. This is the headline act. ([jump ↓](#-author-an-original-world--new-game))
 - **📖 Import a book you own — `/import`.** Drop in a PDF. The book goes on the shelf. Claude asks who you came to be (or meet), opens *that* page, and you talk. The rest of the book walks on when you do. ([jump ↓](#-import-a-book--import))
 
 Pick either. The persistence, the custom rulebook, the living world, the dying-and-handoff stakes — all identical underneath.
@@ -38,7 +38,7 @@ Every turn runs the same loop: **gather context → decide → execute → persi
 
 - **A memory that outlives the conversation.** NPCs, locations, plot threads, facts, your character sheet, your whole history — all persisted as plain JSON per campaign. At each session's end the GM writes an **arc entry** (what changed, who matters now, what debts are open), and recall over your campaign's history is **semantic** — ask about "the clown" and it finds the summary that says *Grimaldi*. It tracks what's canon-from-the-book versus what *you* made happen. Close the laptop mid-fight; pick it up next week exactly where you left off.
 
-- **A rulebook written for *your* world, not D&D.** Whether you import a book or author one from scratch, Claude produces a **World Bible** (voice, tone, factions, geography, timeline) and from it a **World Kit** — a custom ruleset with its own stats, its own way of leveling, its own signature systems. A *Dune* import plays like *Dune*; a *Dungeon Crawler Carl* import plays like *Dungeon Crawler Carl*; and an original world plays like *itself*. D&D 5e is just one possible kit, not the foundation.
+- **A rulebook written for *your* world, on top of 5e.** Whether you import a book or author one from scratch, Claude produces a **World Bible** (voice, tone, factions, geography, timeline) and from it the world's **signature systems** — the rules prose the GM plays by, carried in the campaign's own `campaign_rules`. A *Dune* import plays like *Dune*; a *Dungeon Crawler Carl* import plays like *Dungeon Crawler Carl*; and an original world plays like *itself*. The dice under all of it are D&D 5e — the book reskins the world, the cast, and the flavor, never the mechanics.
 
 - **A world that pushes context *to* the model.** The old failure mode of LLM roleplay is amnesia — the GM remembers your HP but forgot the cliffhanger. Here, every scene arrives pre-loaded: *previously on…*, open threads, key facts, which NPCs are present and how they talk, the clocks ticking in the background, and any consequence about to land. Claude doesn't have to remember to look — the harness puts it on the table.
 
@@ -79,7 +79,7 @@ From those answers Claude builds **one stage, not a planet** — *seed → skele
 
 1. **Seed.** Your answers become a structured world-seed — premise, tone, genre bend, voice, art style, chronicler. No gazetteer; the world's shape emerges at the table.
 2. **Skeleton.** Claude authors the world's coherent spine in one pass while the seed is fresh — name, voice, themes, factions, signature systems — then **shows it to you for approval before going further.**
-3. **Play pack.** Claude derives a custom **World Kit** from your world (never a silent 5e default), then stages exactly what tonight needs: one room you can stand in, the people in it, the exits you can see, and a hook that won't wait — never a continent.
+3. **Play pack.** Claude writes your world's signature systems into its rules prose (the mechanics stay 5e), then stages exactly what tonight needs: one room you can stand in, the people in it, the exits you can see, and a hook that won't wait — never a continent.
 4. **Handoff.** Claude locks the chronicler and art style, then asks the one question — *who are you in this world?* — and the story begins.
 
 The world is a world with its own voice, its own rules, and its own art, and it grows **as you play**: when a long-game opportunity appears, Claude seeds a threat clock, a story thread, or a new plot and lets it tick. That is the campaign's real long-term planning — authored at the table, not pre-built. `/create-character` remains an opt-in full sheet whenever you want one.
@@ -94,7 +94,7 @@ GM:  Genre bend? (1) sword-and-sorcery  (2) high fantasy  (3) sci-fantasy  (4) f
 
 ## 📖 Import a book — `/import`
 
-Got a favorite novel, a classic adventure module, a weird pulp paperback from the 70s? Drop the PDF into `source-material/`. Claude indexes the real text (the binder), writes a **World Bible** and **World Kit** so the room *sounds* like that book, then asks the only question that matters: **who did you come to meet?** You get that room, those voices, one hook. Not a gazetteer. Not a reskin. When you walk toward Stygia, Stygia is read from the book and written into the journal — not scraped on night zero.
+Got a favorite novel, a classic adventure module, a weird pulp paperback from the 70s? Drop the PDF into `source-material/`. Claude indexes the real text (the binder), writes a **World Bible** and the world's signature systems so the room *sounds* like that book, then asks the only question that matters: **who did you come to meet?** You get that room, those voices, one hook. Not a gazetteer. Not a reskin. When you walk toward Stygia, Stygia is read from the book and written into the journal — not scraped on night zero.
 
 > **Where to find books:** the [Internet Archive](https://archive.org/) is a goldmine — thousands of free books, modules, and old pulp novels. Jump into *IT* and help the bad guys. Drop into *Lord of the Rings* and play from Gollum's perspective. It's your call.
 
@@ -232,9 +232,9 @@ bash tools/gm-image.sh generate --title "The Sunken Crypt" \
 
 It calls OpenAI's `gpt-image-2`, saves the PNG into the campaign's `images/` folder, and prints a clickable `file://` link you open to view it (the VS Code terminal linkifies the path). Every generation is logged with an estimated cost — run `gm-image.sh log` for the running total. Requires `OPENAI_API_KEY` in `.env`; without it the GM just keeps narrating in text. Use `--quality low` for quick drafts, `high` for marquee moments.
 
-### The D&D 5e API, when it fits
+### The D&D 5e API
 
-If your world *is* D&D-flavored, declare `"kit": "dnd5e"` in the campaign's `ruleset.json` and the harness pulls official rules, monsters, spells, and gear from the [D&D 5e API](https://www.dnd5eapi.co/) — grounding numbers in real mechanics instead of guessing. For every other book, your World Kit runs the show, and the D&D mechanics refuse to load (so a bespoke world can't be silently overwritten by 5e).
+Every campaign runs on D&D 5e, so the harness can always pull official rules, monsters, spells, and gear from the [D&D 5e API](https://www.dnd5eapi.co/) — grounding numbers in real mechanics instead of guessing. The book you imported comes first: a creature or ruling the source covers is played the source's way, and the SRD fills in whatever the book leaves silent.
 
 ### The documentation brain
 

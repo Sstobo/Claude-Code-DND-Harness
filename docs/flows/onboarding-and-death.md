@@ -9,8 +9,7 @@ sources:
   - { resource: /lib/opening_seed.py }
   - { resource: /CLAUDE.md }
   - { resource: /.claude/commands/create-character.md }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T12:45:56Z }
-verified: { by: claude-fable-5, at: 2026-08-13T15:15:27Z }
+generated: { by: claude-opus-5[1m], at: 2026-08-19T19:05:13Z }
 ---
 
 # Onboarding and the death hand-off
@@ -71,9 +70,9 @@ live sheet. See [the player character sheet](../modules/player-character.md).
 
 This is the *default* entry path, and the three prompt surfaces that reach it say so:
 `/gm`'s startup checklist and character display, `/import` Step 8, and `/new-game`'s
-Phase F hand-off all route the no-character moment here. Kit-aware `/create-character`
-(generic spine, or the dnd5e race/class/spell branch) is still the opt-in deep dive,
-offered and never imposed. The design bet: a player arrives with an "I love this book"
+Phase F hand-off all route the no-character moment here. `/create-character` — the full 5e
+race/class/background/abilities build — is still the opt-in deep dive, offered and never
+imposed. The design bet: a player arrives with an "I love this book"
 spike, and spending it on ability scores wastes it.
 
 `_default_vitals()` returns a **fresh nested dict every call** — an explicit fix for
@@ -91,9 +90,10 @@ ordering exists to prevent.
 2. Narrate the death with weight. **No menu yet.**
 3. Offer three continuations: take over a **party member**, roll a **new character**, or
    step in as a **canon figure**. (Solo with no party and no fitting canon figure: options
-   2 and 3 only.) Rolling a new character spawns kit-aware `create-character` — it
-   branches on the KIT block / `WorldKit.kit()`, so a Conan death does not open a 5e
-   wizard builder. `CLAUDE.md` SWAP is the runtime instruction.
+   2 and 3 only.) Rolling a new character spawns `create-character`, which builds the 5e
+   way every time — race, class, background, the six abilities. An imported world reskins
+   the flavor over that (a Conan replacement is named and dressed out of the book), not
+   the mechanics. `CLAUDE.md` SWAP is the runtime instruction.
 4. Swap, bridge the fiction, resume.
 
 That hand-off stays the narrative default — death is meant to move the story to someone
@@ -105,7 +105,7 @@ never on a hero already archived to `fallen/`. See
 
 ## `become()` is the only path that moves a sheet
 
-`gm-player.sh become "<name>"` (`lib/player_manager.py:542`) does five things in one call:
+`gm-player.sh become "<name>"` (`lib/player_manager.py:699`) does five things in one call:
 resolves the name **alias-aware** (so "Princess Donut" finds "Donut"), flattens the party
 member's `character_sheet` into `character.json`, archives the fallen PC to
 `fallen/<name>-<id>.json`, updates `current_character` on the overview, and **demotes the

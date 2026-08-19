@@ -12,6 +12,7 @@ sources:
   - { resource: /lib/play_pack.py }
   - { resource: /tools/gm-playpack.sh }
 generated: { by: cursor-grok-4.6, at: 2026-08-15T11:52:48Z }
+verified: { by: claude-opus-5[1m], at: 2026-08-19T18:52:46Z }
 ---
 
 # The dream

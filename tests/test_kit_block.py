@@ -1,4 +1,4 @@
-"""KIT block in scene context; campaign_rules renders as YOUR WORLD'S RULES."""
+"""Scene context carries no KIT block; campaign_rules renders as YOUR WORLD'S RULES."""
 
 import json
 
@@ -17,22 +17,13 @@ def _world(tmp_path, slug, overview=None):
     return str(world)
 
 
-def _kit_section(ctx: str) -> str:
-    assert "--- KIT ---" in ctx
-    rest = ctx.split("--- KIT ---", 1)[1]
-    nxt = rest.find("\n--- ")
-    return rest if nxt < 0 else rest[:nxt]
-
-
 # --- scene context -----------------------------------------------------------
 
-def test_context_kit_block_names_dnd5e_d20_xp_levels(dcc_world):
+def test_context_has_no_kit_block(dcc_world):
+    """The kit is 5e-native, so scene context no longer advertises it."""
     ctx = SessionManager(dcc_world).get_full_context()
-    kit = _kit_section(ctx)
-    assert "kit: dnd5e" in kit
-    assert "resolution: d20-vs-dc" in kit
-    assert "progression: xp-levels" in kit
-    assert "vitals: hp" in kit
+    assert "--- KIT ---" not in ctx
+    assert "SESSION CONTEXT" in ctx
 
 
 def test_campaign_rules_render_as_world_rules(tmp_path):
@@ -49,17 +40,6 @@ def test_campaign_rules_render_as_world_rules(tmp_path):
 def test_dcc_still_renders_campaign_rules(dcc_world):
     ctx = SessionManager(dcc_world).get_full_context()
     assert "loot_box_system" in ctx
-
-
-def test_kit_block_skipped_when_worldkit_fails(dcc_world, monkeypatch):
-    def boom(*_a, **_k):
-        raise RuntimeError("no campaign")
-
-    monkeypatch.setattr("lib.session_manager.WorldKit", boom)
-    ctx = SessionManager(dcc_world).get_full_context()
-    assert "--- KIT ---" not in ctx
-    assert "SESSION CONTEXT" in ctx
-    assert "loot_box_system" in ctx  # campaign_rules still renders
 
 
 # --- WorldKit accessors ------------------------------------------------------

@@ -18,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).parent))
 from entity_manager import EntityManager, npcs_present
 from character_schema import to_flat
 from schemas import PLOT_TYPE_SORT
-from world_kit import WorldKit
 
 
 class SessionManager(EntityManager):
@@ -610,26 +609,6 @@ class SessionManager(EntityManager):
         lines.append(f"Campaign: {campaign_name} | Session #{session_num}")
         lines.append(f"Location: {location} | Time: {time_str}")
 
-        # --- KIT (ambient; skills defer here instead of calling world_kit.py info) ---
-        kit = None
-        try:
-            kit = WorldKit(self._wsd)
-            if kit.campaign_dir is None:
-                kit = None
-        except Exception:
-            kit = None
-        if kit is not None:
-            skills = kit.skills()
-            vitals = kit.vitals()
-            lines.append("")
-            lines.append("--- KIT ---")
-            lines.append(f"kit: {kit.kit()}")
-            lines.append(f"name: {kit.name()}")
-            lines.append(f"resolution: {kit.resolution_model()}")
-            lines.append(f"progression: {kit.progression_model()}")
-            lines.append(f"vitals: {', '.join(vitals) if vitals else '(none)'}")
-            lines.append(f"skills: {', '.join(skills) if skills else '(none)'}")
-
         # --- PRIMER (play pack: tonight's table, not the gazetteer) ---
         try:
             from play_pack import render_primer, normalize_pack, pack_is_set
@@ -1020,59 +999,30 @@ class SessionManager(EntityManager):
             lines.append("(none)")
 
         # --- Your World's Rules (bespoke per-campaign systems; NEVER truncated) ---
-        # campaign_rules is the live surface: the hardcoded 5e kit declares no
-        # signature_systems, so the branch below always takes the fallback.
-        # These rules ARE the magic that makes each book feel distinct. The GM is
-        # told to follow them exactly, so it must see them in full.
-        systems = kit.signature_systems() if kit is not None else []
-        if systems:
+        # campaign_rules is the only surface: the hardcoded 5e kit declares no
+        # signature_systems of its own. These rules ARE the magic that makes each
+        # book feel distinct. The GM is told to follow them exactly, so it must
+        # see them in full.
+        rules = campaign.get('campaign_rules', {})
+        if rules:
+            import json
             lines.append("")
             lines.append("--- YOUR WORLD'S RULES (follow exactly) ---")
-            for system in systems:
-                name = system.get("name") or "unnamed"
-                summary = system.get("summary") or ""
-                extra = system.get("rules") or ""
-                if summary:
-                    lines.append(f"- {name}: {summary}")
-                else:
-                    lines.append(f"- {name}")
-                if extra and extra != summary:
-                    lines.append(f"    {extra}")
-        else:
-            rules = campaign.get('campaign_rules', {})
-            if rules:
-                import json
-                lines.append("")
-                lines.append("--- YOUR WORLD'S RULES (follow exactly) ---")
-                if isinstance(rules, dict):
-                    for key, val in rules.items():
-                        if isinstance(val, (dict, list)):
-                            lines.append(f"- {key}:")
-                            for vline in json.dumps(val, indent=2, ensure_ascii=False).splitlines():
-                                lines.append(f"    {vline}")
-                        else:
-                            lines.append(f"- {key}: {val}")
-                elif isinstance(rules, list):
-                    for rule in rules:
-                        if isinstance(rule, (dict, list)):
-                            for vline in json.dumps(rule, indent=2, ensure_ascii=False).splitlines():
-                                lines.append(f"  {vline}")
-                        else:
-                            lines.append(f"- {rule}")
-
-        # --- Signature Systems (executable primitives; the GM ROLLS these, not vibes) ---
-        try:
-            sys_list = kit.systems() if kit is not None else []
-        except Exception:
-            sys_list = []
-        if sys_list:
-            lines.append("")
-            lines.append("--- YOUR WORLD'S SIGNATURE SYSTEMS (executable — ROLL these, "
-                         "do not just narrate them) ---")
-            lines.append("Resolve with lib/game_core primitives "
-                         "(named_track / price_roll / reaction_roll / guarded_payoff).")
-            for s in sys_list:
-                lines.append(f"- {s['name']} ({s['primitive']}): {self._system_summary(s)}")
+            if isinstance(rules, dict):
+                for key, val in rules.items():
+                    if isinstance(val, (dict, list)):
+                        lines.append(f"- {key}:")
+                        for vline in json.dumps(val, indent=2, ensure_ascii=False).splitlines():
+                            lines.append(f"    {vline}")
+                    else:
+                        lines.append(f"- {key}: {val}")
+            elif isinstance(rules, list):
+                for rule in rules:
+                    if isinstance(rule, (dict, list)):
+                        for vline in json.dumps(rule, indent=2, ensure_ascii=False).splitlines():
+                            lines.append(f"  {vline}")
+                    else:
+                        lines.append(f"- {rule}")
 
         context = "\n".join(lines)
 
@@ -1145,25 +1095,6 @@ class SessionManager(EntityManager):
         out.append("The pointer moves with `bash tools/gm-adventure.sh advance` "
                    "(or `jump <key>`) — the book is a spine, not a rail.")
         return out
-
-    def _system_summary(self, system):
-        """One-line render of an instantiated signature system for the brief."""
-        prim = system.get("primitive")
-        cfg = system.get("config") or {}
-        if prim == "named_track":
-            mx = cfg.get("max", "?")
-            ths = cfg.get("thresholds") or []
-            parts = "; ".join(
-                f"at {t.get('at')}: {t.get('consequence', '')}".strip()
-                for t in ths if isinstance(t, dict))
-            return f"track 0–{mx}" + (f" — {parts}" if parts else "")
-        if prim == "price_roll":
-            return "taking the marked action forces a cost roll"
-        if prim == "reaction_roll":
-            return "NPC opening reaction, modified by this world's reputation/track"
-        if prim == "guarded_payoff":
-            return "roll BEFORE taking marked treasure: clean / guardian wakes / curse attaches"
-        return system.get("summary") or prim or ""
 
     def _recent_session_summaries(self, n=3):
         """Return recent completed-session summary paragraphs (oldest -> newest).

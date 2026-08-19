@@ -11,8 +11,7 @@ sources:
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
-generated: { by: claude-fable-5, at: 2026-08-19T16:19:16Z }
-verified: { by: claude-fable-5, at: 2026-08-14T12:19:52Z }
+generated: { by: claude-opus-5[1m], at: 2026-08-19T19:05:13Z }
 ---
 
 # Scene context — the two doors
@@ -25,7 +24,7 @@ most common way a beat comes out flat.
 | Command | Code | Returns |
 |---|---|---|
 | `gm-session.sh context` | `SessionManager.get_full_context` (`lib/session_manager.py:592`) | The **session brief** — everything below, as formatted prose for the model |
-| `gm-context.sh ["loc"]` | `SceneContext.build` (`lib/scene_context.py:37`) | The **place brief** — this location, NPCs present, named entities, plus grounded source passages |
+| `gm-context.sh ["loc"]` | `SceneContext.build` (`lib/scene_context.py:38`) | The **place brief** — this location, NPCs present, named entities, plus grounded source passages |
 
 Neither contains the other. The session brief has no source passages; the place brief has
 no history, threads, clocks, voice, or rules. Narrating a scene generally wants both.
@@ -33,23 +32,15 @@ no history, threads, clocks, voice, or rules. Narrating a scene generally wants 
 ## What the session brief carries, and why each block exists
 
 `get_full_context` (`lib/session_manager.py:592`) assembles, in order: header (campaign, session #, location, time) ·
-**KIT** · **PRIMER** (play pack, when set) · play style (pacing, action menu, player-rolls dice, RAG inspiration) · **failure (one informing sentence)** · scene-image gate + chronicler · **narrative voice** · **world index** ·
+**PRIMER** (play pack, when set) · play style (pacing, action menu, player-rolls dice, RAG inspiration) · **failure (one informing sentence)** · scene-image gate + chronicler · **narrative voice** · **world index** ·
 **adventure** (only when the campaign has an `adventure.json`) ·
 **previously on** + where-we-paused + open threads · **the world remembers** · story threads · **ready threads** (dormant seeded plots whose linked NPC/place is now present, or whose clock matured) · key facts · threat
 clocks · character · party members · **NPC voices** · pending consequences · **your
-world's rules**. A further block for executable kit primitives (`WorldKit.systems()`,
-rendered "ROLL these") is still coded at `lib/session_manager.py:1057`, but the 5e kit
-declares none, so it never renders.
+world's rules**. There is no KIT block and no executable-primitives block: the kit is
+hardcoded 5e, the mechanics Skills no longer check it, and `WorldKit.systems()` is always
+empty, so both were removed rather than left rendering into the brief.
 
-Nine of those blocks carry design decisions that are not obvious from reading them:
-
-- **KIT is ambient so skills do not re-derive it.** It sits right under the campaign
-  header and names kit identity, resolution, progression, vitals, and skills, loaded
-  via `WorldKit(world_state_dir)`. Since the kit is hardcoded 5e it reads the same in
-  every campaign — `dnd5e`, `d20-vs-dc`, `xp-levels`, `hp`, no skills. If `WorldKit`
-  cannot load (no active campaign, a throw), the block is skipped rather than crashing
-  the brief. `gm-combat` / `gm-levelup` / `gm-spellcasting` defer to this block instead
-  of calling `world_kit.py info`.
+Ten of those blocks carry design decisions that are not obvious from reading them:
 
 - **PRIMER is tonight's table.** When `campaign-overview.json.play_pack` has any
   field set, `render_primer` appends `--- PRIMER ---` (whose story, this room,
@@ -73,14 +64,14 @@ Nine of those blocks carry design decisions that are not obvious from reading th
   grouped by non-empty bucket. It is emitted only when at least one bucket has an entry;
   an absent or all-empty `index` prints no header at all.
 - **ADVENTURE is only for a campaign running a converted module.** `_adventure_block`
-  (`lib/session_manager.py:1089`) renders the current scene from `adventure.json` — title,
+  (`lib/session_manager.py:1039`) renders the current scene from `adventure.json` — title,
   location, GM notes, boxed read-aloud, encounters, checks — plus one `Next per the book:`
   line and the reminder that `gm-adventure.sh advance|jump` moves the pointer. Schema
   knowledge stays in `lib/adventure.py`; the brief only renders what
   `AdventureManager.status()` and the scene body already say. A campaign with no
   `adventure.json` — or one whose file will not load — gets no block and the brief it had
   before, so a half-converted book cannot break play.
-- **NPC secrets are surfaced by existence only.** `lib/session_manager.py:932` prints
+- **NPC secrets are surfaced by existence only.** `lib/session_manager.py:928` prints
   `"has a secret"` and never the secret text, so a secret can sit in `npcs.json` without
   leaking into narration the moment its owner walks on stage.
 - **Presence does not require a voice, and present NPCs carry their memory.** Who is here
@@ -116,10 +107,10 @@ Nine of those blocks carry design decisions that are not obvious from reading th
   pointer.
 - **World rules come from `campaign_rules`, and are never truncated.** Every other block
   is bounded — by item count, not by chopping an entry mid-sentence — but YOUR WORLD'S
-  RULES is printed whole (`lib/session_manager.py:1018`). The renderer still prefers
-  `WorldKit.signature_systems()` and falls back to `campaign-overview.json`'s
-  `campaign_rules`, but the 5e kit declares no signature systems, so the fallback is the
-  only live path. Those rules *are* the flavor that makes each book distinct, and the GM
+  RULES is printed whole (`lib/session_manager.py:1010`). It renders
+  `campaign-overview.json`'s `campaign_rules` directly — the old
+  `WorldKit.signature_systems()` preference is gone, since the 5e kit declares none.
+  Those rules *are* the flavor that makes each book distinct, and the GM
   is told to follow them exactly, so it must see all of them.
   See [game core and World Kit](game-core-and-world-kit.md).
 
@@ -130,7 +121,7 @@ never a cut.
 ## RAG is optional everywhere, and fails to empty
 
 `SceneContext.build` wraps the entire enhancer call in a bare `except Exception: pass`
-(`lib/scene_context.py:56-64`). A campaign with no vector store, a missing `chromadb`, or
+(`lib/scene_context.py:58-66`). A campaign with no vector store, a missing `chromadb`, or
 a runtime error inside the enhancer all produce the same thing: `passages: []` and
 `rag_available: false`. Play continues on world state alone.
 

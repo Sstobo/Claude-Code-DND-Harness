@@ -6,7 +6,7 @@ sources:
   - { resource: /lib/game_core.py }
   - { resource: /lib/world_kit.py }
   - { resource: /lib/overview_seed.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:55:24Z }
+generated: { by: claude-opus-5[1m], at: 2026-08-19T18:52:46Z }
 ---
 
 # Game core and World Kit
@@ -21,7 +21,7 @@ files.
 
 | Surface | Value |
 |---|---|
-| `kit()` | `dnd5e` — always, which is what unlocks the D&D mechanics Skills |
+| `kit()` | `dnd5e` — always; the D&D mechanics Skills no longer check it |
 | `stat_schema()` | attributes `str dex con int wis cha`, vitals `["hp"]` |
 | `resolution()` | `d20-vs-dc`, no params |
 | `progression_model()` | `xp-levels`; the built `progression` attribute carries the standard 5e table (`XP_THRESHOLDS`, levels 2–20) |
@@ -157,8 +157,9 @@ any longer — `/import` and `/new-game` write a world's signature systems into
 `gm-combat`, `gm-levelup`, and `gm-spellcasting` encode D&D 5e — hit dice, spell slots, a
 level-20 XP table. None of that exists in `game_core`, which is why the split survives the
 hardcoding: the engine stays system-agnostic and the 5e rules stay in the kit and those
-Skills. `kit()` is now always `dnd5e`, so the gate always opens. The routing rule — STEP-0
-defers to the scene-context KIT block — is in
+Skills. `kit()` is now always `dnd5e`, so there is no gate left to open: the Skills'
+STEP-0 kit checks are gone and scene context no longer carries a KIT block for them to
+defer to — a Skill that routes there just plays 5e. See
 [lean core and skill routing](../conventions/lean-core-and-skill-routing.md).
 
 ## Related

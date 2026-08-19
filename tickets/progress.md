@@ -2,6 +2,7 @@
 - 2026-08-19T20:10Z  in-review: extractor-ordering-hardening — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T19:55Z  done: import-module-command — command + converter agent + SRD resolver  [ss-imod01]
 - 2026-08-19T19:15Z  in-review: import-module-command — verified, reviewer dispatched  [ss-imod01]
+- 2026-08-19T19:14:00Z  done: kit-residue-sweep — KIT block + doc claims swept incl. README, orchestrator close after round cap  [ss-5efork]
 - 2026-08-19T19:09:15Z  done: combat-block-hardening — null/empty-tolerant block mapping, xp validated + unreadable surfaced, review perfect round 2  [ss-5efork]
 - 2026-08-19T18:40Z  done: module-text-spine — row-walking extraction + spine slicer, 48 tests, 4 review rounds  [ss-imod01]
 - 2026-08-19T16:45Z  done: adventure-scene-context — ADVENTURE block in scene context  [ss-imod01]
