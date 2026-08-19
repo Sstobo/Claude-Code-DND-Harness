@@ -1,4 +1,4 @@
-"""Tests for campaign-overview-author: seed overview + campaign_rules, fix rules_doc."""
+"""Tests for campaign-overview-author: seed overview + campaign_rules, report rules_doc."""
 
 import json
 from lib.overview_seed import seed_overview, fix_rules_doc
@@ -23,21 +23,17 @@ def test_seed_sets_fields_and_campaign_rules_preserving_others(tmp_path):
     assert o["player_position"] == {"current_location": "X"}
 
 
-def test_fix_rules_doc_nulls_dangling_pointer(tmp_path):
-    (tmp_path / "ruleset.json").write_text(json.dumps({"name": "K", "rules_doc": "rules.md"}))
-    # rules.md does NOT exist
+def test_fix_rules_doc_reports_absent_prose_and_writes_nothing(tmp_path):
     r = fix_rules_doc(str(tmp_path))
-    assert r["changed"] is True
-    assert r["rules_doc"] is None
-    assert json.loads((tmp_path / "ruleset.json").read_text())["rules_doc"] is None
+    assert r == {"rules_doc": None, "changed": False}
+    assert list(tmp_path.iterdir()) == [], "must not create a ruleset.json or anything else"
 
 
-def test_fix_rules_doc_leaves_valid_pointer(tmp_path):
+def test_fix_rules_doc_finds_rules_md_by_convention(tmp_path):
     (tmp_path / "rules.md").write_text("# rules")
-    (tmp_path / "ruleset.json").write_text(json.dumps({"name": "K", "rules_doc": "rules.md"}))
     r = fix_rules_doc(str(tmp_path))
-    assert r["changed"] is False
-    assert r["rules_doc"] == "rules.md"
+    assert r == {"rules_doc": "rules.md", "changed": False}
+    assert not (tmp_path / "ruleset.json").exists()
 
 
 def test_campaign_rules_readable_by_worldkit_shape(tmp_path):

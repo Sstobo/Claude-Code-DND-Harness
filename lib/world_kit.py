@@ -1,28 +1,17 @@
 #!/usr/bin/env python3
 """
-World Kit: the per-campaign ruleset that sits on top of the generic game core.
+World Kit: the D&D 5e ruleset that sits on top of the generic game core.
 
-A campaign's `ruleset.json` declares HOW that world plays — its stat schema, its
-progression model, its resolution model, and which specialist agents are active —
-without baking D&D 5e into the engine. The WorldKit loads it and drives play
-through `game_core`, so a Dune kit and a Dungeon Crawler Carl kit run the same
-core with entirely different rules. Signature systems on the kit are the
-play-time rules surface (rendered in scene context). campaign-overview's
-`campaign_rules` is the legacy fallback when the kit has none.
+The mechanics are HARDCODED — every campaign plays 5e (str/dex/con/int/wis/cha,
+hp, d20-vs-dc, XP levels, death saves). There is no per-campaign `ruleset.json`
+any more; if one is left on disk from an older campaign the kit ignores it.
+Play still runs through `game_core`, so resolution, progression, and harm stay
+in one place and the engine stays system-agnostic underneath.
 
-ruleset.json shape:
-{
-  "name": "Dungeon Crawler Carl",
-  "kit": "custom",
-  "stat_schema": { "attributes": ["str","con","dex","int"], "vitals": ["hp"] },
-  "progression": { "model": "resource-axis", "resource": "viewers",
-                   "tiers": [1000000, 1000000000] },
-  "resolution": { "model": "d20-vs-dc" },
-  "active_agents": ["monster-manual", "loot-dropper"],
-  "skills": ["might", "guile"],  # optional; absent → []
-  "signature_systems": [ { "name": "...", "summary": "...", "rules": "..." } ],
-  "rules_doc": "rules.md"        # optional: campaign-scoped rules prose, loaded on demand
-}
+A book's own flavor does NOT come from the kit — `signature_systems()` is empty
+by design, so scene context falls through to `campaign_rules()`
+(campaign-overview.json → `campaign_rules`), which is where an imported world's
+loot boxes, viewer counts, and house systems live.
 """
 
 import sys
@@ -36,163 +25,110 @@ from campaign_manager import CampaignManager
 from game_core import make_progression, opposed_check, resolve_check
 
 
-DEFAULT_RULESET = {
-    "name": "Generic Adventure",
-    "kit": "custom",
-    "stat_schema": {"attributes": [], "vitals": ["hp"]},
-    "progression": {"model": "milestone"},
-    "resolution": {"model": "d20-vs-dc"},
-    "active_agents": [],
-    "rules_doc": None,
-}
+# XP required to reach level 2..20 (standard 5e table). Index i = level i+2.
+XP_THRESHOLDS = [300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
+                 85000, 100000, 120000, 140000, 165000, 195000, 225000,
+                 265000, 305000, 355000]
+
+ATTRIBUTES = ["str", "dex", "con", "int", "wis", "cha"]
+VITALS = ["hp"]
+
+# Specialist agents the 5e kit legitimizes (dnd5eapi-backed).
+ACTIVE_AGENTS = ["monster-manual", "rules-master", "spell-caster",
+                 "gear-master", "loot-dropper"]
 
 
 class WorldKit:
-    """Loads a campaign's ruleset.json and drives play through the generic core."""
+    """The D&D 5e kit, driving play through the generic core."""
 
     def __init__(self, world_state_dir: str = None):
         base = world_state_dir or "world-state"
         cm = CampaignManager(base)
         self.campaign_dir = cm.get_active_campaign_dir()
         self.json_ops = JsonOperations(str(self.campaign_dir))
-        self.ruleset = self.json_ops.load_json("ruleset.json") or dict(DEFAULT_RULESET)
-        prog = self.ruleset.get("progression", {}) or {}
-        if isinstance(prog, str):          # shorthand: "progression": "milestone"
-            prog = {"model": prog}
-        self.progression = make_progression(
-            prog.get("model", "milestone"),
-            **{k: v for k, v in prog.items() if k != "model"},
-        )
+        self.progression = make_progression("xp-levels", thresholds=XP_THRESHOLDS)
 
     # --- declared configuration ---
     def name(self) -> str:
-        return self.ruleset.get("name", "Generic Adventure")
+        return "D&D 5e"
 
     def kit(self) -> str:
-        """Kit identity: 'dnd5e' unlocks the D&D mechanics skills + dnd5eapi.
-
-        Anything else (default 'custom') runs the generic core + this ruleset.
-        Legacy rulesets without the field are 'custom' — the safe reading, since
-        loading 5e mechanics into a bespoke world is the failure this prevents.
-        """
-        return self.ruleset.get("kit", "custom")
+        """Kit identity. Always 'dnd5e' — it unlocks the D&D mechanics Skills
+        (gm-combat, gm-levelup, gm-spellcasting) and the dnd5eapi agents."""
+        return "dnd5e"
 
     def stat_schema(self) -> Dict[str, Any]:
-        return self.ruleset.get("stat_schema", {})
+        return {"attributes": list(ATTRIBUTES), "vitals": list(VITALS)}
 
     def vitals(self) -> List[str]:
-        """Vital tracks this world declares ('hp' plus kit vitals: vigor,
-        corruption, water, ...).
-
-        A kit that declares none — no `stat_schema`, an empty list, or no ruleset at
-        all — gets ['hp']. Every world has a body; returning nothing here would make
-        an under-declared kit refuse plain damage.
-        """
-        return (self.stat_schema() or {}).get("vitals") or ["hp"]
+        """Vital tracks this world runs on. 5e has one: hp."""
+        return list(VITALS)
 
     def resolution(self) -> Dict[str, Any]:
-        """{'model': name, 'params': {...}} regardless of ruleset syntax.
-
-        A kit may declare `"resolution": "dice-pool"` or the fuller
-        `{"model": "dice-pool", "target": 5}`; game_core.resolve_check gets the
-        same clean shape either way.
-        """
-        raw = self.ruleset.get("resolution") or {}
-        if isinstance(raw, str):
-            return {"model": raw, "params": {}}
-        params = {k: v for k, v in raw.items() if k != "model"}
-        params.update(params.pop("params", {}) or {})
-        return {"model": raw.get("model") or "d20-vs-dc", "params": params}
+        """{'model': name, 'params': {...}} for game_core.resolve_check."""
+        return {"model": "d20-vs-dc", "params": {}}
 
     def resolution_model(self) -> str:
         return self.resolution()["model"]
 
     def progression_model(self) -> str:
-        prog = self.ruleset.get("progression") or {}
-        if isinstance(prog, str):
-            return prog
-        return prog.get("model", "milestone")
+        return "xp-levels"
 
     def active_agents(self) -> List[str]:
-        return self.ruleset.get("active_agents", [])
+        return list(ACTIVE_AGENTS)
 
     def rules_doc_path(self) -> Optional[Path]:
-        """Path to the campaign's rules prose (loaded on demand), if declared + present."""
-        doc = self.ruleset.get("rules_doc")
-        if not doc:
+        """The campaign's long-form rules prose (loaded on demand), if present.
+
+        By convention `rules.md` in the campaign dir — the `ruleset.rules_doc`
+        pointer went away with ruleset.json.
+        """
+        if self.campaign_dir is None:
             return None
-        p = self.campaign_dir / doc
+        p = Path(self.campaign_dir) / "rules.md"
         return p if p.exists() else None
 
     def campaign_rules(self) -> Dict[str, Any]:
         """World-flavor systems (loot boxes, viewers, ...) from campaign-overview.
 
-        Legacy fallback for scene context when `signature_systems()` is empty.
+        This is where an imported book's own systems live: the kit declares no
+        signature systems, so scene context always renders these.
         """
         overview = self.json_ops.load_json("campaign-overview.json") or {}
         return overview.get("campaign_rules", {})
 
     def skills(self) -> List[str]:
-        """Skill names this kit declares, or [] when the ruleset has none."""
-        raw = self.ruleset.get("skills") or []
-        if isinstance(raw, dict):
-            return [str(k) for k in raw]
-        if not isinstance(raw, list):
-            return []
-        names: List[str] = []
-        for item in raw:
-            if isinstance(item, str):
-                names.append(item)
-            elif isinstance(item, dict) and item.get("name"):
-                names.append(str(item["name"]))
-        return names
+        """Skill names the kit declares. Empty: 5e's skill list lives in the
+        gm-skills Skill, not in the kit block."""
+        return []
 
     def signature_systems(self) -> List[Dict[str, str]]:
-        """Normalize ruleset.signature_systems to a list of {name, summary}.
-
-        Canonical form is a list of `{name, summary, rules?}`. The Conan
-        migration case is a dict of name → summary string (or name →
-        `{summary, rules}`). Bare strings in a list become name=summary.
-        Missing or empty → [].
-        """
-        return _normalize_signature_systems(self.ruleset.get("signature_systems"))
+        """Prose rule flavor declared by the kit. Always empty — book flavor
+        flows through `campaign_rules()` instead."""
+        return []
 
     def lethality(self) -> Dict[str, Any]:
         """The kit's lethality model for `game_core.classify_harm`.
 
-        `{"model": "death-saves" | "gritty" | "none", "massive_damage_at": int?}`.
-        Absent → death-saves (the 5e default), so existing campaigns are
-        unchanged. A grim world sets `gritty` (0 HP is death) or lowers
-        `massive_damage_at` to make single blows lethal sooner.
+        5e-faithful death saves: 0 HP opens the dying gate, and only overkill of
+        at least max HP kills outright (classify_harm defaults the massive-damage
+        bar to max HP when it is not named).
         """
-        raw = self.ruleset.get("lethality")
-        if isinstance(raw, str):
-            return {"model": raw}
-        return raw if isinstance(raw, dict) else {"model": "death-saves"}
+        return {"model": "death-saves"}
 
     def systems(self) -> List[Dict[str, Any]]:
-        """Executable signature-system primitives instantiated by this kit.
-
-        Each entry is ``{primitive, name, config}`` where ``primitive`` names a
-        game_core calculator (named_track / price_roll / reaction_roll /
-        guarded_payoff) and ``config`` skins it for this world. Distinct from
-        ``signature_systems`` (prose flavor): these are the dice the GM rolls.
-        Malformed entries (no primitive or no name) are dropped.
-        """
-        raw = self.ruleset.get("systems") or []
-        if not isinstance(raw, list):
-            return []
-        return [s for s in raw
-                if isinstance(s, dict) and s.get("primitive") and s.get("name")]
+        """Executable signature-system primitives. Always empty — the 5e kit
+        instantiates none of game_core's named_track / price_roll / etc."""
+        return []
 
     # --- play, driven through the generic core ---
     def resolve(self, modifier: int = 0, dc: int = 10, advantage: str = None) -> Dict[str, Any]:
-        """Roll under THIS world's resolution model (d20, 2d6, dice pool, ...)."""
+        """Roll a d20 check through the generic core."""
         return resolve_check(modifier, dc, advantage, model=self.resolution())
 
     def oppose(self, modifier_a: int = 0, modifier_b: int = 0,
                advantage_a: str = None, advantage_b: str = None) -> Dict[str, Any]:
-        """Contest two sides under THIS world's resolution model."""
+        """Contest two sides through the generic core."""
         return opposed_check(modifier_a, modifier_b, advantage_a, advantage_b,
                              model=self.resolution())
 
@@ -201,41 +137,6 @@ class WorldKit:
 
     def level(self, state: Dict[str, Any]) -> int:
         return self.progression.level(state)
-
-
-def _normalize_signature_systems(raw: Any) -> List[Dict[str, str]]:
-    if not raw:
-        return []
-    items: List[Dict[str, str]] = []
-    if isinstance(raw, dict):
-        for name, val in raw.items():
-            items.append(_one_signature_system(str(name), val))
-    elif isinstance(raw, list):
-        for item in raw:
-            if isinstance(item, str):
-                items.append({"name": item, "summary": item})
-            elif isinstance(item, dict):
-                name = item.get("name") or item.get("title") or ""
-                items.append(_one_signature_system(str(name), item))
-    return [s for s in items if s.get("name") or s.get("summary")]
-
-
-def _one_signature_system(name: str, val: Any) -> Dict[str, str]:
-    if isinstance(val, str):
-        return {"name": name, "summary": val}
-    if not isinstance(val, dict):
-        return {"name": name, "summary": str(val) if val else ""}
-    sys_name = str(val.get("name") or name)
-    summary = val.get("summary")
-    rules = val.get("rules")
-    if not isinstance(summary, str):
-        summary = "" if summary is None else str(summary)
-    entry: Dict[str, str] = {"name": sys_name, "summary": summary}
-    if not entry["summary"] and rules:
-        entry["summary"] = rules if isinstance(rules, str) else str(rules)
-    elif rules and rules != entry["summary"]:
-        entry["rules"] = rules if isinstance(rules, str) else str(rules)
-    return entry
 
 
 def main():

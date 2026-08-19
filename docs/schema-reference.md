@@ -13,7 +13,7 @@ sources:
   - { resource: /lib/world_bible.py }
   - { resource: /lib/session_manager.py }
   - { resource: /lib/play_pack.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T16:22:00Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:12:07Z }
 verified: { by: claude-fable-5, at: 2026-08-13T14:27:33Z }
 ---
 
@@ -42,9 +42,9 @@ is named in `world-state/active-campaign.txt`.
 ├── plots.json               # Plot hooks and quests
 ├── items.json               # Items (from imports)
 ├── consequences.json        # Pending/resolved events + firing provenance
-├── ruleset.json             # World Kit — how this world plays
+├── ruleset.json             # LEGACY — still written at import, no longer read
 ├── world-bible.json         # Fidelity spine (voice, factions, geography, systems)
-├── rules.md                 # Optional long-form rules prose (ruleset.rules_doc)
+├── rules.md                 # Optional long-form rules prose (WorldKit.rules_doc_path)
 ├── session-log.md           # Session history — the canonical ledger
 ├── threat-clocks.json       # Named pressure clocks (optional)
 ├── campaign-memory.json     # Recall index, rebuilt on save
@@ -105,8 +105,8 @@ Most of these are created lazily — a campaign that has never been illustrated 
 ```
 
 **`campaign_rules` is the block that reaches the model verbatim and untruncated** every
-beat — it is where a world's signature systems must live to have any effect. Putting them
-in `ruleset.json` instead is a silent no-op for narration. See
+beat — it is the ONLY place a world's signature systems have any effect, since the World
+Kit is hardcoded 5e and declares none of its own. See
 [game core and World Kit](modules/game-core-and-world-kit.md). Worlds are free to add
 their own keys here (the shipped DCC fixture carries `viewer_stats`, `pending_boxes`, and
 `pending_interview_topics`).
@@ -526,7 +526,6 @@ items otherwise stay mixed in — do not treat a legacy save as a whole-world re
     "plots.json": {},
     "items.json": {},
     "consequences.json": {},
-    "ruleset.json": {},
     "world-bible.json": {},
     "threat-clocks.json": {},
     "campaign-memory.json": {},
@@ -551,36 +550,25 @@ items otherwise stay mixed in — do not treat a legacy save as a whole-world re
 - Boolean fields default to `false` if omitted
 - The `created` field is auto-set by managers when entities are created
 
-## ruleset.json (World Kit)
+## The World Kit (no file)
 
-Per-campaign ruleset that drives play through the generic `game_core`. Declares
-how a world plays without baking in D&D 5e.
+There is no `ruleset.json`. The rules are hardcoded in `lib/world_kit.py` and are the
+same in every campaign: attributes `str dex con int wis cha`, vitals `["hp"]`,
+`d20-vs-dc` resolution, `xp-levels` progression on the standard 5e table (levels 2–20),
+and `death-saves` lethality with the massive-damage bar at max HP. `WorldKit.kit()`
+returns `"dnd5e"`.
 
-```json
-{
-  "name": "Dungeon Crawler Carl",
-  "kit": "custom | dnd5e   (absent = custom; dnd5e unlocks the D&D mechanics skills + dnd5eapi)",
-  "stat_schema": { "attributes": ["str","con","dex","int"], "vitals": ["hp"] },
-  "progression": { "model": "milestone | xp-levels | resource-axis", "...": "model config (thresholds/tiers/resource)" },
-  "resolution": { "model": "d20-vs-dc" },
-  "lethality": { "model": "death-saves | gritty | none", "massive_damage_at": 20 },
-  "systems": [ {"primitive": "named_track|price_roll|reaction_roll|guarded_payoff", "name": "Menace", "config": {}} ],
-  "active_agents": ["monster-manual", "loot-dropper"],
-  "rules_doc": "rules.md"
-}
-```
+- A stale `ruleset.json` left in a campaign from before the hardcoding is **ignored** by
+  `WorldKit` (`book_bible.write_ruleset` / `write_systems` still write one; that authoring
+  path is retired under its own ticket).
+- `WorldKit.signature_systems()` and `WorldKit.systems()` are empty by design, so a
+  world's flavor systems must live in campaign-overview `campaign_rules`.
+- Long-form rules prose is `rules.md` in the campaign dir, resolved by
+  `WorldKit.rules_doc_path()` by convention rather than by a pointer field.
+- Saves do not carry it: `SessionManager.SNAPSHOT_JSON_FILES` omits `ruleset.json`, and
+  restoring an older save that has the key silently drops it.
 
-- `lethality` (optional; absent = `death-saves`, the 5e default) tunes
-  `game_core.classify_harm` via `WorldKit.lethality()`: `gritty` makes 0 HP death
-  (no saves), `massive_damage_at` lowers the instant-death overkill bar.
-- `systems` (optional) instantiates the `game_core` signature-system primitives
-  (`WorldKit.systems()`); each rides scene context as an executable ROLL-these
-  block. Written by `book_bible.write_systems` (`gm-extract.sh write-systems`).
-
-- `stat_schema.attributes` is open and kit-defined (no fixed six abilities).
-- `progression.model` selects one of the core's three models; its config
-  (`thresholds` for xp-levels, `resource`+`tiers` for resource-axis) is supplied here.
-- World-flavor systems (loot boxes, viewers) stay in campaign-overview `campaign_rules`.
+See [game core and World Kit](modules/game-core-and-world-kit.md).
 
 ## world-bible.json (Book Bible)
 
@@ -615,7 +603,8 @@ feeds the RAG coarse index (`lib/rag/coarse_index.py`) — it no longer writes i
 bible.
 
 Required: name, voice, tone, themes, factions (graph), geography (graph),
-signature_systems. The bible auto-generates the World Kit ruleset + campaign_rules.
+signature_systems. The bible auto-generates `campaign_rules` (its `signature_systems` are
+what reach the model); the mechanics no longer come from it.
 
 A `confirmed: false` flag on a freshly auto-drafted bible holds the world for human review;
 **an absent flag counts as confirmed**, so hand-authored and legacy bibles are playable

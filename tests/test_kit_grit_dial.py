@@ -1,14 +1,10 @@
-"""QA eval for kit-grit-dial (re-scoped).
+"""QA eval for the lethality classifier.
 
-The original premise — a hardcoded 5e death model in game_core to "branch" — was
-wrong: game_core had only apply_harm/heal. This adds a kit-configurable lethality
-CLASSIFIER (game_core.classify_harm) + WorldKit.lethality() so a grim world plays
-lethal while the default stays 5e-faithful. Pure calculator; no death-save
-ceremony (that's the caller's).
+`game_core.classify_harm` stays configurable — gritty, `none`, and a lowered
+massive-damage bar are all still honored by the core — but the kit no longer
+dials it: `WorldKit.lethality()` is hardcoded 5e death saves. Pure calculator;
+no death-save ceremony (that's the caller's).
 """
-
-import json
-from pathlib import Path
 
 from lib.game_core import classify_harm
 from lib.world_kit import WorldKit
@@ -40,11 +36,6 @@ def test_none_never_instant_kills():
     assert classify_harm(5, 20, 100, {"model": "none"})["outcome"] == "dying"
 
 
-def test_worldkit_lethality_default_and_override(dcc_world):
-    assert WorldKit(dcc_world).lethality() == {"model": "death-saves"}, "absent -> 5e default"
-    active = (Path(dcc_world) / "active-campaign.txt").read_text().strip()
-    p = Path(dcc_world) / "campaigns" / active / "ruleset.json"
-    rs = json.loads(p.read_text())
-    rs["lethality"] = {"model": "gritty", "massive_damage_at": 10}
-    p.write_text(json.dumps(rs))
-    assert WorldKit(dcc_world).lethality() == {"model": "gritty", "massive_damage_at": 10}
+def test_worldkit_lethality_is_5e_death_saves(dcc_world):
+    """The kit is hardcoded 5e: death saves, massive-damage bar left at max HP."""
+    assert WorldKit(dcc_world).lethality() == {"model": "death-saves"}

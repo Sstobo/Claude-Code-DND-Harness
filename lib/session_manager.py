@@ -40,6 +40,8 @@ class SessionManager(EntityManager):
     # Live campaign files snapshotted when present. character.json is captured
     # via the `characters` helper (the PC sheet), not as a filename key.
     # combat_state.json is the on-disk combat file (not combats.json).
+    # ruleset.json is deliberately absent: the World Kit is hardcoded 5e and reads
+    # no such file, so a leftover one carries no state worth saving or restoring.
     SNAPSHOT_JSON_FILES = (
         "campaign-overview.json",
         "npcs.json",
@@ -48,7 +50,6 @@ class SessionManager(EntityManager):
         "plots.json",
         "items.json",
         "consequences.json",
-        "ruleset.json",
         "world-bible.json",
         "threat-clocks.json",
         "campaign-memory.json",
@@ -1016,7 +1017,8 @@ class SessionManager(EntityManager):
             lines.append("(none)")
 
         # --- Your World's Rules (bespoke per-campaign systems; NEVER truncated) ---
-        # Prefer kit signature_systems; campaign_rules is the legacy fallback.
+        # campaign_rules is the live surface: the hardcoded 5e kit declares no
+        # signature_systems, so the branch below always takes the fallback.
         # These rules ARE the magic that makes each book feel distinct. The GM is
         # told to follow them exactly, so it must see them in full.
         systems = kit.signature_systems() if kit is not None else []

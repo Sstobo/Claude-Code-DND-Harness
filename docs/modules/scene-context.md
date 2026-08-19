@@ -10,7 +10,7 @@ sources:
   - { resource: /lib/entity_manager.py }
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-16T00:00:00Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T14:29:08Z }
 verified: { by: claude-fable-5, at: 2026-08-14T12:19:52Z }
 ---
 
@@ -35,17 +35,19 @@ no history, threads, clocks, voice, or rules. Narrating a scene generally wants 
 **KIT** · **PRIMER** (play pack, when set) · play style (pacing, action menu, player-rolls dice, RAG inspiration) · **failure (one informing sentence)** · scene-image gate + chronicler · **narrative voice** · **world index** ·
 **previously on** + where-we-paused + open threads · **the world remembers** · story threads · **ready threads** (dormant seeded plots whose linked NPC/place is now present, or whose clock matured) · key facts · threat
 clocks · character · party members · **NPC voices** · pending consequences · **your
-world's rules** · **signature systems** (executable kit primitives — `WorldKit.systems()`,
-rendered "ROLL these", distinct from the prose rules block).
+world's rules**. A further block for executable kit primitives (`WorldKit.systems()`,
+rendered "ROLL these") is still coded at `lib/session_manager.py:1057`, but the 5e kit
+declares none, so it never renders.
 
 Eight of those blocks carry design decisions that are not obvious from reading them:
 
 - **KIT is ambient so skills do not re-derive it.** It sits right under the campaign
   header and names kit identity, resolution, progression, vitals, and skills, loaded
-  via `WorldKit(world_state_dir)`. A missing `kit` field reads as `custom` — DCC's
-  fixture is that case. If `WorldKit` cannot load (no active campaign, a throw), the
-  block is skipped rather than crashing the brief. `gm-combat` / `gm-levelup` /
-  `gm-spellcasting` defer to this block instead of calling `world_kit.py info`.
+  via `WorldKit(world_state_dir)`. Since the kit is hardcoded 5e it reads the same in
+  every campaign — `dnd5e`, `d20-vs-dc`, `xp-levels`, `hp`, no skills. If `WorldKit`
+  cannot load (no active campaign, a throw), the block is skipped rather than crashing
+  the brief. `gm-combat` / `gm-levelup` / `gm-spellcasting` defer to this block instead
+  of calling `world_kit.py info`.
 
 - **PRIMER is tonight's table.** When `campaign-overview.json.play_pack` has any
   field set, `render_primer` appends `--- PRIMER ---` (whose story, this room,
@@ -102,13 +104,14 @@ Eight of those blocks carry design decisions that are not obvious from reading t
   Each truncation prints `+N more <noun> — <how to see the rest>` rather than dropping
   the tail silently. YOUR WORLD'S RULES is never truncated and never gets a remainder
   pointer.
-- **World rules prefer kit `signature_systems`, then `campaign_rules`, and are never
-  truncated.** Every other block is bounded — by item count, not by chopping an entry
-  mid-sentence — but YOUR WORLD'S RULES is printed whole (`lib/session_manager.py:997`).
-  A kit that declares `signature_systems` (list or the Conan dict form) is the live
-  surface; a legacy campaign with none still gets `campaign_rules`. Those rules *are*
-  the magic that makes each book distinct, and the GM is told to follow them exactly, so
-  it must see all of them. See [game core and World Kit](game-core-and-world-kit.md).
+- **World rules come from `campaign_rules`, and are never truncated.** Every other block
+  is bounded — by item count, not by chopping an entry mid-sentence — but YOUR WORLD'S
+  RULES is printed whole (`lib/session_manager.py:1018`). The renderer still prefers
+  `WorldKit.signature_systems()` and falls back to `campaign-overview.json`'s
+  `campaign_rules`, but the 5e kit declares no signature systems, so the fallback is the
+  only live path. Those rules *are* the flavor that makes each book distinct, and the GM
+  is told to follow them exactly, so it must see all of them.
+  See [game core and World Kit](game-core-and-world-kit.md).
 
 `--full` lifts every bound. `DM_DEBUG_CONTEXT=1` prints an approximate token count to
 stderr without changing the output; the ~2k-token target it reports against is guidance,

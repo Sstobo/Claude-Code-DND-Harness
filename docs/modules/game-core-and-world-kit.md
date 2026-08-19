@@ -1,48 +1,61 @@
 ---
 type: Module
 title: Game core and World Kit
-description: The system-agnostic engine and the per-campaign ruleset that configures it — and the two separate rule surfaces a world actually plays by.
+description: The system-agnostic engine and the hardcoded 5e kit that configures it — and the two separate rule surfaces a world actually plays by.
 sources:
   - { resource: /lib/game_core.py }
   - { resource: /lib/world_kit.py }
   - { resource: /lib/overview_seed.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T16:22:00Z }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:06:23Z }
 ---
 
 # Game core and World Kit
 
-`game_core.py` is the engine every world runs on; `ruleset.json` is the per-campaign
-declaration of how *this* world plays; `WorldKit` binds them. The docstrings on both
-modules state their own contracts. What follows is only what spans files.
+`game_core.py` is the system-agnostic engine; `WorldKit` is the D&D 5e ruleset bolted
+onto it. The rules are **hardcoded in `lib/world_kit.py`** — there is no per-campaign
+`ruleset.json`, and a stale one left on disk by an older campaign is ignored. The
+docstrings on both modules state their own contracts. What follows is only what spans
+files.
+
+## What the kit declares
+
+| Surface | Value |
+|---|---|
+| `kit()` | `dnd5e` — always, which is what unlocks the D&D mechanics Skills |
+| `stat_schema()` | attributes `str dex con int wis cha`, vitals `["hp"]` |
+| `resolution()` | `d20-vs-dc`, no params |
+| `progression_model()` | `xp-levels`; the built `progression` attribute carries the standard 5e table (`XP_THRESHOLDS`, levels 2–20) |
+| `lethality()` | `death-saves`, massive-damage bar left at max HP |
+| `active_agents()` | monster-manual, rules-master, spell-caster, gear-master, loot-dropper |
+| `skills()`, `signature_systems()`, `systems()` | empty — see below |
 
 ## A world plays by TWO rule surfaces, not one
 
-This is the fact that most often surprises someone editing rules, because the two live
-in different files, are loaded by different code, and used to be surfaced to the GM
-from the *wrong* one.
+The mechanics above are fixed for every campaign. A book's own flavor is the *other*
+surface, and it lives in a different file read by different code.
 
 | Surface | Lives in | Read by | Holds |
 |---|---|---|---|
-| **Mechanics** | `ruleset.json` | `WorldKit` | kit identity, stat schema, progression, resolution, vitals, skills, **signature_systems** |
-| **Legacy flavor** | `campaign-overview.json` → `campaign_rules` | `WorldKit.campaign_rules()` | loot boxes, viewer counts — used only when the kit has no signature_systems |
-| **Rules prose** | the file named by `ruleset.rules_doc` | `WorldKit.rules_doc_path()` | long-form rules text, loaded on demand |
+| **Mechanics** | `lib/world_kit.py` (hardcoded) | `WorldKit` | kit identity, stat schema, progression, resolution, vitals, lethality |
+| **World flavor** | `campaign-overview.json` → `campaign_rules` | `WorldKit.campaign_rules()` | loot boxes, viewer counts — the book's own systems |
+| **Rules prose** | `rules.md` in the campaign dir | `WorldKit.rules_doc_path()` | long-form rules text, loaded on demand |
 
-**Signature systems on the kit ARE rendered in scene context.** YOUR WORLD'S RULES
-prints `WorldKit.signature_systems()` when the ruleset has any (list form, or the
-Conan dict-of-name→summary migration case — both normalize to `{name, summary}`),
-never truncated. `campaign_rules` is the **legacy fallback** for campaigns that
-never got systems onto the kit (DCC's fixture is this case). Adding a system to
-`ruleset.json` is no longer a silent no-op.
+`WorldKit.signature_systems()` returns `[]` **by design**, so scene context's YOUR
+WORLD'S RULES block always falls through to `campaign_rules()`. That fallback is now the
+only path, not a legacy one — it is where an imported book's systems are expected to be.
+`overview_seed.seed_overview` exists to fill it when an import left it empty while the
+book's systems sat in prose inside a plot description. That module no longer touches
+`ruleset.json` at all. See [scene-context](scene-context.md).
 
-`overview_seed.py` still exists because imports used to leave `campaign_rules` empty
-while the book's systems lived in prose inside a plot description — that path still
-feeds the fallback. See [scene-context](scene-context.md).
+`systems()` (the executable primitives) returns `[]` for the same reason: the 5e kit
+instantiates none of `game_core`'s named_track / price_roll / reaction_roll /
+guarded_payoff, so the ROLL-these block never renders.
 
 ## The resolution model is executed, not just declared
 
-`resolution.model` picks the dice a check is actually rolled on — `resolve_check`
-dispatches on it, so a 2d6 world rolls 2d6 rather than a d20 wearing a 2d6 label. Three
-models ship:
+A resolution model picks the dice a check is actually rolled on — `resolve_check`
+dispatches on the name it is handed, so a 2d6 caller rolls 2d6 rather than a d20 wearing a
+2d6 label. Three models ship in the engine:
 
 | Model | Roll | Success | Crit / fumble |
 |---|---|---|---|
@@ -60,57 +73,49 @@ means an extra/fewer die rather than a second d20.
 on that model's own axis — totals for d20 and 2d6, success counts for a pool. A contest
 has no DC, so each side is resolved at DC 0 and only its axis value is read.
 
-The `model` argument is optional on both and defaults to `d20-vs-dc`, which is why every
-pre-existing caller — including the whole `dnd5e` path — is unaffected. `WorldKit.resolve()`
-and `WorldKit.oppose()` are the doors that supply the campaign's model.
+The `model` argument is optional on both and defaults to `d20-vs-dc`. The kit supplies
+`d20-vs-dc` through `WorldKit.resolve()` / `WorldKit.oppose()`, so the other two models are
+reachable only by calling `game_core` directly — they stay in the engine because the engine
+is not 5e, but nothing in play selects them today.
 
-## Ruleset syntax is normalized before the core sees it
+## Nothing outside `WorldKit` decides the kit's values
 
-A kit may write `"resolution": "dice-pool"` or `{"model": "dice-pool", "target": 4}`;
-`WorldKit.resolution()` returns `{model, params}` either way, and `progression` accepts the
-same string shorthand. `level` is an accepted alias for `xp-levels` in both
+`player_manager` asks the kit — vitals from `vitals()`, thresholds off the built
+`progression` object (`_xp_thresholds`, `_max_level`) — rather than holding a 5e literal of
+its own. Its `DEFAULT_XP_THRESHOLDS` is a fallback that now agrees with the kit's table
+rather than competing with it. `level` remains an accepted alias for `xp-levels` in
 `make_progression` and `spectacle_award`.
 
-Nothing outside `WorldKit` may re-parse `ruleset.json` for these fields. `player_manager`
-asks the kit — vitals from `vitals()`, thresholds off the built `progression` object — so a
-syntax the kit accepts can never crash a sheet operation, and there is exactly one place a
-new shorthand has to be taught.
+## Failure modes
 
-## Failure modes: two silent, one now audible
+Two of the three old failure modes came from a campaign half-authoring its own ruleset;
+neither can happen now that the rules are a Python literal.
 
-The engine prefers degrading to erroring — a half-authored kit should still be playable —
-but it means kit bugs surface as *bland play*, not as a stack trace. Both fallbacks that
-would silently swap out a world's math now say so.
+1. **Unrecognized model name → a warning, then the default.** Still live in the engine for
+   direct `game_core` callers: `make_progression` falls through to `MilestoneProgression`
+   and `resolve_check` falls back to `d20-vs-dc`, each printing a one-line `[WARNING]`
+   naming the offending value. The warnings go to **stderr**, never stdout, so `--json`
+   output on the tool wrappers stays parseable. `WorldKit` passes only known names, so it
+   never trips this.
+2. **Missing `rules.md` → `None`.** `rules_doc_path()` returns the campaign's `rules.md`
+   when it exists and `None` otherwise. The old `ruleset.rules_doc` pointer is gone, and
+   nothing writes one any more — `overview_seed.fix_rules_doc` only reports whether the
+   prose file is there, so a rules doc under any other name is simply not found. Rename
+   it to `rules.md`.
 
-1. **Unrecognized model name → a warning, then the default.** `make_progression` falls
-   through to `MilestoneProgression` and `resolve_check` falls back to `d20-vs-dc`, but
-   each prints a one-line `[WARNING]` naming the offending value. A typo in `ruleset.json`
-   (`"xp-level"` for `"xp-levels"`) still costs the campaign its XP math, but it no longer
-   does it invisibly. The warnings go to **stderr**, never stdout, so `--json` output on
-   the tool wrappers stays parseable.
-2. **Missing ruleset → generic kit.** `WorldKit.__init__` falls back to `DEFAULT_RULESET`
-   — an unnamed world with no attributes, milestone progression, and `hp` as its one
-   vital. `vitals()` returns `['hp']` for an under-declared kit too (no `stat_schema`, or
-   an empty list), because every world has a body and a kit half-authored into silence
-   should not refuse plain damage.
-3. **Dangling `rules_doc` → `None`.** `rules_doc_path()` returns `None` when the declared
-   file is absent, so a kit copied from a sibling campaign quietly loses its rules prose.
-   `overview_seed.py` nulls the dangling pointer at import time rather than repairing it.
-
-To check a live campaign rather than trusting any of this: `bash tools/gm-campaign.sh path`
-then read its `ruleset.json`, or run `uv run python lib/world_kit.py info --json`.
+To check a live campaign rather than trusting any of this:
+`uv run python lib/world_kit.py info --json`.
 
 ## `spectacle_award` is a calculator, not a transaction
 
 `spectacle_award` (`lib/game_core.py`) computes amounts and returns them. It reads no
-files and writes none. Persistence, level-up detection, and the DCC follower co-award are
-the caller's job — `gm-player.sh award` → `player_manager`. Calling the core function
-directly awards nothing.
+files and writes none. Persistence and level-up detection are the caller's job —
+`gm-player.sh award` → `player_manager`. Calling the core function directly awards nothing.
 
 Its XP is scaled to the gap to the next level rather than being a flat table, so one tier
-stays meaningful at level 1 and level 12. The `followers` amount is only applied when the
-kit declares a secondary follower currency, which is why the same tier pays differently in
-a Dungeon Crawler Carl campaign than in a swords-and-sorcery one.
+stays meaningful at level 1 and level 12. The `followers` amount is only applied when a
+secondary follower currency is declared; `player_manager._spectacle_config` declares none
+and hands over `DEFAULT_SPECTACLE_TIERS`, so every award is plain XP.
 
 ## Signature-system primitives are calculators, too
 
@@ -134,30 +139,30 @@ files and write none**; persistence is the caller's job. Rolls are seedable via
 omitted. `uv run python lib/game_core.py` runs their edge-case self-check.
 
 `classify_harm(current_hp, max_hp, amount, lethality)` is the same shape — a pure
-classifier returning `{new_hp, outcome}` (`ok`/`dying`/`dead`) under the kit's
-`WorldKit.lethality()` model. Default `death-saves` is 5e-faithful (0 HP → dying,
-massive overkill → dead); `gritty` makes 0 HP death; `massive_damage_at` lowers the
-instant-death bar. The death-save ceremony itself stays in `gm-combat` / the Death
-Protocol — the core only says whether a hit is survivable, dying, or fatal.
+classifier returning `{new_hp, outcome}` (`ok`/`dying`/`dead`). It still accepts `gritty`
+and a lowered `massive_damage_at` from any direct caller, but `WorldKit.lethality()` hands
+it `death-saves` unconditionally: 0 HP → dying, overkill of at least max HP → dead. The
+death-save ceremony itself stays in `gm-combat` / the Death Protocol — the core only says
+whether a hit is survivable, dying, or fatal.
 
-**The World Kit binds them per world** (as of 2026-08-15). `ruleset.json` may carry
-a `systems` list of `{primitive, name, config}` instantiations — a Conan **Menace**
-named_track, a **Sorcery's Price** price_roll — read by `WorldKit.systems()`
-(malformed entries dropped) and persisted at creation by `book_bible.write_systems`
-(`gm-extract.sh write-systems`). `SessionManager.get_full_context` renders them as a
-distinct **YOUR WORLD'S SIGNATURE SYSTEMS (executable — ROLL these)** block, separate
-from the prose YOUR WORLD'S RULES, so the GM rolls the primitives instead of narrating
-by vibes. `/import` and `/new-game` author 1–3 at world creation.
+**Nothing binds them per world any more.** `WorldKit.systems()` returns `[]`, so the
+**YOUR WORLD'S SIGNATURE SYSTEMS (executable — ROLL these)** block in
+`SessionManager.get_full_context` never renders. `book_bible.write_systems`
+(`gm-extract.sh write-systems`) still writes a `systems` list to `ruleset.json` at import
+time — that authoring path is owned by its own ticket — but the kit no longer reads it.
+The four primitives remain callable directly from `game_core`.
 
 ## The kit decides which mechanics Skills are legitimate
 
 `gm-combat`, `gm-levelup`, and `gm-spellcasting` encode D&D 5e — hit dice, spell slots, a
-level-20 XP table. None of that exists in `game_core`. Loading them for a non-5e kit
-imports rules the world never declared. The routing rule — STEP-0 defers to the
-scene-context KIT block — is in [lean core and skill routing](../conventions/lean-core-and-skill-routing.md).
+level-20 XP table. None of that exists in `game_core`, which is why the split survives the
+hardcoding: the engine stays system-agnostic and the 5e rules stay in the kit and those
+Skills. `kit()` is now always `dnd5e`, so the gate always opens. The routing rule — STEP-0
+defers to the scene-context KIT block — is in
+[lean core and skill routing](../conventions/lean-core-and-skill-routing.md).
 
 ## Related
 
 - [Player character](player-character.md) — where progression state is persisted
 - [World bible](world-bible.md) — the prose spine a kit is drafted from
-- [Authoring a world](../flows/author-a-world.md) — who writes `ruleset.json` for an original world
+- [Authoring a world](../flows/author-a-world.md) — how an original world is set up

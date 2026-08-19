@@ -64,11 +64,14 @@ def calculate_saves(class_name, level, stats):
         'artificer': ['con', 'int']
     }
     
-    class_profs = proficiencies.get(class_name.lower(), [])
-    
+    class_profs = proficiencies.get((class_name or '').lower(), [])
+
     saves = {}
     for stat in ['str', 'dex', 'con', 'int', 'wis', 'cha']:
-        modifier = calculate_modifier(stats[stat])
+        # A partial stat block is legitimate (nameless onboarding fills the rest
+        # in later), so an unrolled stat scores as the 10 average rather than
+        # taking the whole save out with a KeyError.
+        modifier = calculate_modifier(stats.get(stat, 10))
         if stat in class_profs:
             saves[stat] = modifier + prof_bonus
         else:
@@ -77,11 +80,12 @@ def calculate_saves(class_name, level, stats):
     return saves
 
 def resolve_hp(character_data, stats, is_dnd5e):
-    """HP as {current, max}. An authored HP is preserved exactly — only the
-    dnd5e kit derives it from the class hit die + CON formula.
+    """HP as {current, max}. An authored HP is preserved exactly — the hit die +
+    CON formula only runs when there is a class to read a hit die off.
 
-    Returns (hp_dict, warning_or_None). Non-dnd5e with no authored HP falls
-    back to 10/10; the warning names that fallback so the caller can surface it.
+    Returns (hp_dict, warning_or_None). A classless sheet (the nameless-traveler
+    onboarding route, which fills class in later) falls back to 10/10; the warning
+    names that fallback so the caller can surface it.
     """
     authored = character_data.get('hp')
     if isinstance(authored, dict):
@@ -89,14 +93,14 @@ def resolve_hp(character_data, stats, is_dnd5e):
         return {"current": authored.get('current', max_hp), "max": max_hp}, None
     if isinstance(authored, (int, float)):
         return {"current": authored, "max": authored}, None
-    if is_dnd5e:
+    if is_dnd5e and character_data.get('class'):
         rolled = calculate_hp(character_data['class'], character_data['level'],
                               calculate_modifier(stats.get('con', 10)))
         return {"current": rolled, "max": rolled}, None
-    # Non-5e kits own their own HP curve; nothing here can guess it.
+    # No class, no hit die — nothing here can guess the curve.
     return (
         {"current": 10, "max": 10},
-        "hp defaulted to 10/10; the kit does not derive HP — author it",
+        "hp defaulted to 10/10; no class to derive a hit die from — author it",
     )
 
 
@@ -114,11 +118,10 @@ def save_character(character_data):
 
     # Validate required fields. `attributes` is the World Kit's stat_schema name;
     # `stats` is the legacy alias (and the canonical flat key we persist).
-    # race/class are dnd5e sheet fields — optional elsewhere, matching
-    # schemas.validate_character (only name + level are universal).
+    # race/class stay OPTIONAL even on this 5e-only fork: the nameless-traveler
+    # onboarding route saves a sheet before either is chosen and fills them in
+    # later. This matches schemas.validate_character (only name + level).
     required_fields = ['name', 'level']
-    if is_dnd5e:
-        required_fields += ['race', 'class']
     for field in required_fields:
         if field not in character_data:
             return {"error": f"Missing required field: {field}"}
@@ -158,9 +161,11 @@ def save_character(character_data):
         "visual_appearance": va_mod.normalize(character_data.get('visual_appearance'))
     }
 
-    # 5e saving throws only exist in a 5e world; elsewhere keep whatever was authored.
+    # 5e saving throws. A classless sheet still gets them — proficiencies are
+    # simply empty until a class is chosen.
     if is_dnd5e:
-        character['saves'] = calculate_saves(character_data['class'], character_data['level'], stats)
+        character['saves'] = calculate_saves(character_data.get('class', ''),
+                                             character_data['level'], stats)
     elif 'saves' in character_data:
         character['saves'] = character_data['saves']
 

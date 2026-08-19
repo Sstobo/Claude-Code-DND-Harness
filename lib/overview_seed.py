@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Author per-book campaign-overview fields + campaign_rules; fix dangling rules_doc.
+"""Author per-book campaign-overview fields + campaign_rules.
 
-Import copies/creates ruleset.json but leaves campaign-overview as the default
-scaffold (genre "Fantasy", no campaign_rules), so the book's signature systems live
-nowhere the GM tooling reads (WorldKit.campaign_rules() reads overview.campaign_rules).
-A sibling-kit copy can also leave ruleset.rules_doc pointing at a file that doesn't
-exist. These helpers seed real overview content and null a dangling pointer.
+Import leaves campaign-overview as the default scaffold (genre "Fantasy", no
+campaign_rules), so the book's signature systems live nowhere the GM tooling reads
+(WorldKit.campaign_rules() reads overview.campaign_rules). `seed_overview` writes
+real content into it — and since the World Kit is hardcoded 5e and declares no
+signature systems of its own, that block is the ONLY surface a book's systems reach
+the model through.
 """
 
 import json
@@ -29,37 +30,16 @@ def seed_overview(campaign_dir, fields: dict = None, campaign_rules: dict = None
 
 
 def fix_rules_doc(campaign_dir) -> dict:
-    """Resolve a dangling ruleset.rules_doc: null it if the target file is missing.
+    """Report the campaign's rules prose. Reads nothing else and writes nothing.
 
-    Returns {"rules_doc": <final value>, "changed": bool}.
+    There is no pointer left to dangle: `WorldKit.rules_doc_path()` resolves
+    `rules.md` in the campaign dir by convention. This stays because `/import`
+    still calls it, and it now only answers whether the prose is there.
+
+    Returns {"rules_doc": "rules.md" | None, "changed": False}.
     """
-    cdir = Path(campaign_dir)
-    path = cdir / "ruleset.json"
-    if not path.exists():
-        return {"rules_doc": None, "changed": False}
-    ruleset = json.loads(path.read_text())
-    doc = ruleset.get("rules_doc")
-    if doc and not (cdir / doc).exists():
-        ruleset["rules_doc"] = None
-        path.write_text(json.dumps(ruleset, indent=2))
-        return {"rules_doc": None, "changed": True}
-    return {"rules_doc": doc, "changed": False}
-
-
-def set_rules_doc(campaign_dir, filename: str = "rules.md") -> dict:
-    """Point ruleset.rules_doc at `filename` (only if the file exists in the campaign).
-
-    Returns {"rules_doc": <value>, "changed": bool}.
-    """
-    cdir = Path(campaign_dir)
-    rs_path = cdir / "ruleset.json"
-    if not rs_path.exists() or not (cdir / filename).exists():
-        return {"rules_doc": None, "changed": False}
-    ruleset = json.loads(rs_path.read_text())
-    changed = ruleset.get("rules_doc") != filename
-    ruleset["rules_doc"] = filename
-    rs_path.write_text(json.dumps(ruleset, indent=2))
-    return {"rules_doc": filename, "changed": changed}
+    doc = Path(campaign_dir) / "rules.md"
+    return {"rules_doc": doc.name if doc.exists() else None, "changed": False}
 
 
 def main():

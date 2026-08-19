@@ -288,8 +288,9 @@ def validate_character(data: Dict[str, Any], kit=None) -> Tuple[bool, List[str]]
             if extra:
                 errors.append(f"Character: attributes not in active kit schema: {sorted(extra)}")
 
-    # Required fields — only what every kit shares. race/class are 5e-flavored
-    # and legitimately absent on e.g. a nameless traveler or a Dune character.
+    # Required fields — name + level only. race/class are legitimately absent on
+    # a nameless traveler, who is saved before either is chosen; save_character.py
+    # matches this, so the two validators cannot disagree about a valid sheet.
     required = ['name', 'level']
     for field in required:
         if not data.get(field):

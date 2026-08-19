@@ -2,6 +2,7 @@
 # Progress Log
 
 Append-only, newest first. One line per board-level event. See `README.md`.
+- 2026-08-19T15:20:36Z  done: hardcode-5e-ruleset — WorldKit is 5e, ruleset.json retired from lib, review perfect round 2  [ss-5efork]
 - 2026-08-19T15:14:02Z  done: api-file-cache — cached dnd5eapi core (atomic, corrupt-safe), review perfect round 2  [ss-5efork]
 - 2026-08-19T14:10:45Z  prd: 5e-native-fork active; 7 tickets → ready (hardcode-5e-ruleset, remove-kit-drafting, unconditional-5e-gates, api-file-cache, monsters-source-of-truth, spells-levelup-api, encounter-cr-budgets)  [ss-5efork]
 - 2026-08-15T16:23:00Z  done: world-index-conan-backfill — conan bible gets a recognizable Conan index; 126 junk chapters removed (live data)  [ss-rt14b]

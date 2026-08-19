@@ -19,9 +19,9 @@ from character_schema import to_flat, is_open_schema
 class PlayerManager(EntityManager):
     """Manage player character operations. Inherits from EntityManager for common functionality."""
 
-    # Default XP thresholds (used only when the active World Kit does not declare
-    # its own xp-levels progression). NOT a hardcoded leveling path — see
-    # _xp_thresholds(), which delegates to the kit.
+    # Fallback XP thresholds for a kit that declares no xp-levels progression.
+    # The 5e kit does declare one, and its table is this table — see
+    # _xp_thresholds(), which reads the kit rather than this constant.
     DEFAULT_XP_THRESHOLDS = [
         0,       # Level 1
         300,     # Level 2
@@ -93,8 +93,8 @@ class PlayerManager(EntityManager):
 
     def world_kit(self):
         """The active campaign's World Kit (cached). The single source of truth for
-        vitals and the progression model, so a ruleset-less campaign gets the kit's
-        own defaults instead of a second, disagreeing fallback here."""
+        vitals and the progression model, so nothing here has to keep a second,
+        disagreeing copy of either."""
         if self._kit is None:
             from world_kit import WorldKit
             self._kit = WorldKit(self._kit_base)
@@ -104,10 +104,9 @@ class PlayerManager(EntityManager):
         """Level thresholds from the active World Kit (xp-levels model), else the
         default table. Index L = XP required to reach level L+1; index 0 == 0.
 
-        This is how leveling delegates to the kit instead of a hardcoded 5e path.
-        Asked of the kit's built progression object rather than re-parsed from
-        ruleset.json, so every ruleset syntax the kit accepts (including the bare
-        string form and the 'level' alias) is understood here too.
+        Read off the kit's built progression object rather than a literal here, so
+        the table has exactly one home. The kit is 5e, so this agrees with
+        DEFAULT_XP_THRESHOLDS rather than competing with it.
         """
         progression = self.world_kit().progression
         thresholds = getattr(progression, 'thresholds', None)
@@ -290,20 +289,17 @@ class PlayerManager(EntityManager):
         return result
 
     def _spectacle_config(self) -> Dict[str, Any]:
-        """Spectacle tier table + optional follower currency from the active kit.
-        Tiers default to game_core.DEFAULT_SPECTACLE_TIERS; a kit overrides them
-        (and declares a follower currency) via ruleset.json -> progression.spectacle."""
+        """Spectacle tier table for the active kit.
+
+        The 5e kit declares no spectacle overrides and no follower currency, so the
+        tiers are game_core.DEFAULT_SPECTACLE_TIERS and every award is plain XP."""
         import game_core
-        ruleset = self.json_ops.load_json("ruleset.json") or {}
-        prog = ruleset.get("progression", {}) or {}
-        spec = (prog.get("spectacle") or {}) if isinstance(prog, dict) else {}
         return {
-            # The EFFECTIVE model (what make_progression built), so a typo'd model
-            # name degrades to milestone here exactly as it does in the core.
+            # The EFFECTIVE model (what make_progression built).
             'model': self.world_kit().progression.name,
-            'tiers': spec.get("tiers") or game_core.DEFAULT_SPECTACLE_TIERS,
-            'follower_field': spec.get("follower_field"),   # e.g. "followers"
-            'follower_label': spec.get("follower_label", "followers"),
+            'tiers': game_core.DEFAULT_SPECTACLE_TIERS,
+            'follower_field': None,
+            'follower_label': 'followers',
         }
 
     def award_spectacle(self, name: str, tier: str, reason: str = None) -> Dict[str, Any]:
@@ -487,12 +483,10 @@ class PlayerManager(EntityManager):
         }
 
     def _kit_vitals(self) -> List[str]:
-        """Vital tracks the active World Kit declares — 'hp' plus whatever else the
-        world runs on (vigor, corruption, water, heat).
+        """Vital tracks the active World Kit declares. The 5e kit declares one: hp.
 
-        Asked of the kit rather than re-read off ruleset.json here, so a campaign
-        with no ruleset gets the kit's own default (['hp']) instead of an empty list
-        that would refuse a plain HP change.
+        Asked of the kit rather than restated here, so a vital can never be
+        refused because two places disagreed about what the world runs on.
         """
         return self.world_kit().vitals()
 
@@ -1072,9 +1066,9 @@ def main():
     hp_parser.add_argument('name', help='Character name')
     hp_parser.add_argument('amount', help='HP change (+5 to heal, -3 for damage)')
 
-    # Modify any vital the active World Kit declares (vigor, corruption, ...)
+    # Modify any vital the active World Kit declares
     vital_parser = subparsers.add_parser('vital', help="Read or change a kit vital on the active PC")
-    vital_parser.add_argument('vital', help='Vital name as declared in ruleset.json stat_schema.vitals')
+    vital_parser.add_argument('vital', help='Vital name the World Kit declares (5e: hp)')
     vital_parser.add_argument('amount', nargs='?', help='+N / -N to adjust, or the literal "set"')
     vital_parser.add_argument('value', nargs='?', help='New value (only with "set")')
 

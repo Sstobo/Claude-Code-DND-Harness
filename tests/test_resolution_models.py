@@ -5,7 +5,6 @@ RNG is pinned by monkeypatching random.randint with a scripted sequence, so ever
 assertion is about the model's arithmetic, not about luck.
 """
 
-import json
 import random
 
 import pytest
@@ -29,12 +28,10 @@ def faces(monkeypatch):
     return queue
 
 
-def _kit_world(tmp_path, ruleset):
+def _kit_world(tmp_path):
     world = tmp_path / "world-state"
-    campaign = world / "campaigns" / "kitworld"
-    campaign.mkdir(parents=True)
+    (world / "campaigns" / "kitworld").mkdir(parents=True)
     (world / "active-campaign.txt").write_text("kitworld", encoding="utf-8")
-    (campaign / "ruleset.json").write_text(json.dumps(ruleset), encoding="utf-8")
     return str(world)
 
 
@@ -186,35 +183,22 @@ def test_opposed_check_ties_go_to_neither(faces):
     assert gc.opposed_check(2, 2, model="dice-pool")['winner'] == 'tie'
 
 
-def test_kit_oppose_uses_the_declared_model(tmp_path, faces):
-    kit = WorldKit(_kit_world(tmp_path, {"resolution": "2d6-plus-mod"}))
-    faces.extend([6, 6, 1, 1])
+def test_kit_oppose_rolls_d20(tmp_path, faces):
+    kit = WorldKit(_kit_world(tmp_path))
+    faces.extend([18, 3])
     contest = kit.oppose(0, 0)
-    assert contest['a'] == 12 and contest['b'] == 2 and contest['winner'] == 'a'
+    assert contest['a'] == 18 and contest['b'] == 3 and contest['winner'] == 'a'
 
 
-# --- the kit drives it ---------------------------------------------------------
+# --- the kit is hardcoded 5e: d20-vs-dc, no params -----------------------------
 
-def test_kit_normalizes_string_and_dict_resolution_syntax(tmp_path):
-    terse = WorldKit(_kit_world(tmp_path / "a", {"resolution": "dice-pool"}))
-    assert terse.resolution() == {"model": "dice-pool", "params": {}}
-
-    full = WorldKit(_kit_world(tmp_path / "b", {
-        "resolution": {"model": "dice-pool", "target": 4}}))
-    assert full.resolution() == {"model": "dice-pool", "params": {"target": 4}}
-    assert full.resolution_model() == "dice-pool"
+def test_kit_resolution_is_d20_with_no_params(tmp_path):
+    kit = WorldKit(_kit_world(tmp_path))
+    assert kit.resolution() == {"model": "d20-vs-dc", "params": {}}
+    assert kit.resolution_model() == "d20-vs-dc"
 
 
-def test_kit_resolve_uses_the_declared_model(tmp_path, faces):
-    kit = WorldKit(_kit_world(tmp_path, {"resolution": {"model": "2d6-plus-mod"}}))
-    faces.extend([6, 5])
-    r = kit.resolve(modifier=1, dc=10)
-    assert r['die'] == 11 and r['total'] == 12
-
-
-def test_ruleset_less_campaign_still_rolls_d20(tmp_path, faces):
-    world = tmp_path / "world-state"
-    (world / "campaigns" / "bare").mkdir(parents=True)
-    (world / "active-campaign.txt").write_text("bare", encoding="utf-8")
+def test_kit_resolve_rolls_d20(tmp_path, faces):
+    kit = WorldKit(_kit_world(tmp_path))
     faces.append(7)
-    assert WorldKit(str(world)).resolve(modifier=0, dc=5)['die'] == 7
+    assert kit.resolve(modifier=0, dc=5)['die'] == 7

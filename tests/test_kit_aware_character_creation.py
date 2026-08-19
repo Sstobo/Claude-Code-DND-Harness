@@ -1,22 +1,16 @@
-"""Tests for kit-aware-character-creation: create-character branches on the
-active kit; non-dnd5e saves warn on the 10/10 HP fallback and do not require
-5e race/class.
+"""Tests for kit-aware-character-creation.
+
+The create-character command/agent keep a generic spine and a dnd5e branch. The
+kit is hardcoded 5e now, so the live path is the dnd5e branch — the spine's
+prose is still asserted here because it is what a future non-5e kit would run,
+and because the branch must not leak 5e rules into it.
 """
 
 import json
 import re
 from pathlib import Path
 
-from lib.schemas import validate_character
-from lib.world_kit import WorldKit
-
-from tests.test_kit_vitals import (
-    CONAN,
-    HYBORIAN_RULESET,
-    _make_world,
-    _save,
-    _sheet,
-)
+from tests.test_kit_vitals import _make_world, _save, _sheet
 
 ROOT = Path(__file__).resolve().parent.parent
 COMMAND = ROOT / ".claude" / "commands" / "create-character.md"
@@ -25,9 +19,6 @@ VA_KEYS = (
     "sex", "age", "race", "species", "hair", "face", "eyes",
     "clothing", "gear", "demeanor", "size",
 )
-
-# Live Conan bug: ruleset has NO kit field → WorldKit.kit() == 'custom'.
-CONAN_LIVE_RULESET = {k: v for k, v in HYBORIAN_RULESET.items() if k != "kit"}
 
 
 def _cmd():
@@ -152,47 +143,29 @@ def test_gm_player_banner_is_kit_neutral():
     assert "Player Character Manager" in text
 
 
-def test_custom_kit_sheet_without_race_class_saves_and_validates(tmp_path):
-    world = _make_world(tmp_path, "conan-live", CONAN_LIVE_RULESET)
-    assert WorldKit(str(world)).kit() == "custom"
+def test_nameless_traveler_saves_without_race_or_class(tmp_path):
+    """The onboarding route saves a sheet before race/class are chosen, so neither
+    may be required — and the missing class must not crash the save derivations."""
+    from lib.schemas import validate_character
+    from lib.world_kit import WorldKit
 
-    payload = {
-        "name": "Nameless",
-        "level": 1,
-        "attributes": {"might": 14, "guile": 11, "grit": 13},
-        "hp": {"current": 20, "max": 20},
-    }
-    r = _save(world, payload)
+    world = _make_world(tmp_path, "forgotten-realms")
+    r = _save(world, {
+        "name": "Nameless", "level": 1,
+        "stats": {"str": 16, "dex": 12, "con": 15, "int": 10, "wis": 13, "cha": 8},
+    })
     assert r.returncode == 0, r.stdout + r.stderr
     sheet = _sheet(world)
+    assert sheet["race"] == "" and sheet["class"] == ""
+    assert sheet["saves"]["str"] == 3          # +3 mod, no class proficiency
     ok, errs = validate_character(sheet, WorldKit(str(world)))
     assert ok, errs
 
 
-def test_save_warnings_on_10_10_fallback(tmp_path):
-    world = _make_world(tmp_path, "conan-live", CONAN_LIVE_RULESET)
-    payload = {k: v for k, v in CONAN.items() if k != "hp"}
-    # No race/class either — custom kit must not require them.
-    payload.pop("race", None)
-    payload.pop("class", None)
-    r = _save(world, payload)
+def test_partial_stat_block_does_not_break_saves(tmp_path):
+    """An unrolled stat scores as 10 rather than taking the save block out."""
+    world = _make_world(tmp_path, "forgotten-realms")
+    r = _save(world, {"name": "Half-Rolled", "level": 1, "stats": {"str": 16}})
     assert r.returncode == 0, r.stdout + r.stderr
-    result = json.loads(r.stdout)
-    assert _sheet(world)["hp"] == {"current": 10, "max": 10}
-    warnings = result["warnings"]
-    assert isinstance(warnings, list) and warnings
-    assert any("10/10" in w for w in warnings)
-
-
-def test_dnd5e_still_requires_race_and_class(tmp_path):
-    from tests.test_kit_vitals import DND5E_RULESET
-
-    world = _make_world(tmp_path, "forgotten-realms", DND5E_RULESET)
-    r = _save(world, {
-        "name": "Thorin", "level": 1,
-        "stats": {"str": 16, "dex": 12, "con": 15, "int": 10, "wis": 13, "cha": 8},
-    })
-    assert r.returncode == 1
-    err = json.loads(r.stdout)
-    assert "error" in err
-    assert "race" in err["error"] or "class" in err["error"]
+    saves = _sheet(world)["saves"]
+    assert saves["str"] == 3 and saves["cha"] == 0
