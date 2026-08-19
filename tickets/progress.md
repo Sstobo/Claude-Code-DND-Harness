@@ -1,3 +1,6 @@
+- 2026-08-19T16:10Z  done: adventure-store — adventure.json manager + gm-adventure.sh, 34 tests  [ss-imod01]
+- 2026-08-19T15:35Z  in-review: module-text-spine — verified, reviewer dispatched  [ss-imod01]
+- 2026-08-19T15:35Z  in-review: adventure-store — verified, reviewer dispatched  [ss-imod01]
 - 2026-08-19T15:13Z  prd: import-module — structured adventure import, 5 tickets → ready  [ship-it]
 # Progress Log
 
