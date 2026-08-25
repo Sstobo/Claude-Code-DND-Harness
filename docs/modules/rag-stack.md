@@ -9,7 +9,7 @@ sources:
   - { resource: /lib/rag/embedder.py }
   - { resource: /lib/rag/coarse_index.py }
   - { resource: /lib/entity_enhancer.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-17T13:46:17Z }
+generated: { by: claude-opus-5, at: 2026-08-25T19:29:25Z }
 verified: { by: claude-fable-5, at: 2026-08-13T15:15:46Z }
 ---
 
@@ -81,6 +81,17 @@ name it gets **nothing attached** — reported as low-relevance, not written as 
 When that share of a batch is at or above `LOW_RELEVANCE_WARN_FRACTION` (0.25 of total),
 the summary prints a WARNING banner, lists the 0-name-bearing names, and the process
 exits non-zero. Retrieval queries with the entity's type, not the name alone.
+
+**Locations honour the same rule as of 2026-08-25, and did not before.**
+`get_scene_context` (`lib/entity_enhancer.py`) — the path `gm-session.sh move` runs on
+arrival — took the top 5 hits unconditionally and wrote them onto the location as
+`context`, `enhanced: true`. Semantic search always returns its best N however bad they
+are, so a place the book never describes got five passages about somewhere else, stored
+as that location's record and shown to the GM under `[GM Context: <place> (from source)]`.
+Passages are now filtered by `MAX_CONTEXT_DISTANCE` (0.60 cosine) before they are stored
+or returned, and a location whose every hit is noise gets **None** rather than a wrong
+neighbourhood. Measured on the AT-05 store: a place the book genuinely describes lands at
+0.44, noise sits at 0.65–0.78. A passage carrying no `distance` is not trusted.
 
 ## Related
 

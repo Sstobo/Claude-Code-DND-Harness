@@ -14,6 +14,27 @@ if [ -z "$1" ] || [ -z "$2" ]; then
     exit 1
 fi
 
+# This tool SETS the clock from two positional strings and validates neither, so a
+# caller who assumes an `advance`-style verb silently overwrites the campaign date
+# with its own arguments (time_of_day="advance", current_date="30m" — seen in play).
+# ponytail: block the two shapes that actually get typed, not every possible typo.
+case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+    advance|add|set|tick|pass|skip|next|forward|elapse)
+        echo "[ERROR] gm-time.sh has no '$1' verb — it SETS the clock, it does not advance it." >&2
+        echo "  Usage: gm-time.sh <time_of_day> <date> [--ticks N] [--duration \"<text>\"]" >&2
+        echo "  For elapsed time, name the clock you are moving TO and describe the gap:" >&2
+        echo "    gm-time.sh \"Afternoon\" \"1st of the First Month, Year 1\" --duration \"3 hours\"" >&2
+        exit 1
+        ;;
+esac
+
+if printf '%s' "$2" | grep -Eqi '^[0-9]+ *(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days|w|week|weeks)$'; then
+    echo "[ERROR] '$2' is a duration, not a date — this would overwrite the campaign date." >&2
+    echo "  Pass the new date, and put the elapsed time in --duration:" >&2
+    echo "    gm-time.sh \"Evening\" \"1st of the First Month, Year 1\" --duration \"$2\"" >&2
+    exit 1
+fi
+
 TIME_OF_DAY="$1"
 DATE="$2"
 shift 2

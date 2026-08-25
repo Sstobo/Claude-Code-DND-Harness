@@ -7,7 +7,10 @@ if [ "$#" -lt 1 ]; then
     echo "Usage: gm-consequence.sh <action> [args]"
     echo ""
     echo "Actions:"
-    echo "  add <description> <trigger>    - Add new consequence"
+    echo "  add <description> <trigger> [--trigger-type T --match M]
+                                 - Add new consequence. WITHOUT --trigger-type the
+                                   trigger is fuzzy-matched only and may never fire;
+                                   pin it with on_location|on_npc|on_time|on_event."
     echo "  tick                           - Fire consequences matching the current scene (auto on move/time)"
     echo "  check                          - Check pending consequences"
     echo "  resolve <id>                   - Resolve a consequence"
@@ -34,6 +37,18 @@ case "$ACTION" in
             exit 1
         fi
         DESC="$1"; TRIG="$2"; shift 2
+        # Without --trigger-type the trigger is only fuzzy-matched, and a consequence
+        # that never fires looks identical to one that has not fired YET. Seen in play:
+        # "arriving at the Saltbreeze Stockade" reported a near-miss while the party
+        # stood in a location named The Saltbreeze Stockade.
+        case " $* " in
+            *" --trigger-type "*) ;;
+            *)
+                echo "[WARN] no --trigger-type: this consequence is fuzzy-matched and may never fire." >&2
+                echo "       Pin it:  --trigger-type on_location|on_npc|on_time|on_event --match \"<value>\"" >&2
+                echo "       Then confirm with: bash tools/gm-consequence.sh tick" >&2
+                ;;
+        esac
         $PYTHON_CMD "$LIB_DIR/consequence_manager.py" add "$DESC" "$TRIG" "$@"
         ;;
 

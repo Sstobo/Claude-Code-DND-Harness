@@ -15,7 +15,7 @@ sources:
   - { resource: /tools/gm-clock.sh }
   - { resource: /tools/gm-plot.sh }
   - { resource: /.claude/agents/plot-weaver.md }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-16T00:00:00Z }
+generated: { by: claude-opus-5, at: 2026-08-25T19:29:25Z }
 verified: { by: cursor-grok-4.6, at: 2026-08-14T19:13:47Z }
 ---
 
@@ -36,6 +36,16 @@ actually elapsed, a same-day hop still costs one segment, and a full clock annou
 itself (`⚠ FULL — a dramatic beat is due`) in the tick output and the session brief.
 Clocks that must not move on the calendar are declared `advance_on: "event"` and only
 ever move by hand.
+
+## The clock is set, never advanced
+
+`gm-time.sh` takes `<time_of_day> <date>` positionally and writes both. It has no
+`advance` verb, and until 2026-08-25 it validated neither argument — so a caller who
+assumed one (`gm-time.sh advance 30m`) silently overwrote the campaign date with
+`time_of_day: "advance"`, `current_date: "30m"`, and the reactivity tick then ran
+against a corrupt clock. The wrapper now rejects verb-shaped first arguments and
+duration-shaped dates, pointing at the real form: name the clock you are moving TO
+and put the gap in `--duration`, which is what scales the tick anyway.
 
 ## A clock that fills fires (since 2026-08-14)
 

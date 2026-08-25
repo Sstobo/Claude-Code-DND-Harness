@@ -61,6 +61,15 @@ ENTITY_QUERIES = {
 }
 
 
+# Chroma cosine distance: 0 is identical, 1 is unrelated. Measured against the
+# AT-05 store, a location the book genuinely describes lands at 0.44 while pure
+# noise sits at 0.65-0.78, so anything above this floor is not about the place it
+# was retrieved for. ponytail: one global floor, tuned on one book — if a corpus
+# with different chunk sizes reads as over- or under-filtered, make it per-campaign
+# rather than nudging this number.
+MAX_CONTEXT_DISTANCE = 0.60
+
+
 class EntityEnhancer:
     """
     RAG-based entity enhancement for D&D campaign entities.
@@ -574,6 +583,14 @@ class EntityEnhancer:
             f"{location_name} atmosphere inhabitants features",
             n_results=8
         )
+
+        # A semantic search always returns its best N, however bad they are. Taking
+        # the top 5 unconditionally wrote five passages about a DIFFERENT CITY into
+        # a location's permanent record and labelled them "(from source)" — worse
+        # than having no context, because it reads as canon for this place.
+        passages = [p for p in passages
+                    if p.get("distance") is not None
+                    and p["distance"] <= MAX_CONTEXT_DISTANCE]
 
         if not passages:
             return None
