@@ -6,7 +6,7 @@ sources:
   - { resource: /lib/world_bible.py }
   - { resource: /lib/book_bible.py }
   - { resource: /tools/gm-extract.sh }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:55:16Z }
+generated: { by: claude-opus-5, at: 2026-08-25T19:02:00Z }
 verified: { by: claude-fable-5, at: 2026-08-13T15:15:27Z }
 ---
 
@@ -28,6 +28,25 @@ later ticket populates it; the drafter only lays the empty structure). `tone`, `
 `factions`, `geography` and `signature_systems` are the **model's** authorship, merged in
 by re-running the same verb with `--fields-json`. That is why the verb is idempotent:
 scaffold, read the book, merge, merge again.
+
+## A converted module derives its index instead of drafting one
+
+`draft_bible` reads `source/current-document.txt`, which `/import-module` never
+produces — it slices a PDF into scenes and converts those, and nothing writes the
+book back out as text. So a module campaign had no bible, and with no bible the
+WORLD INDEX block in scene context silently did not render: a whole session played
+with no roster to check a name against. `derive_index_from_module`
+(`lib/book_bible.py`) closes that by building the index out of what the import
+already persisted — `npcs.json` plus every scene's `location`, `encounters[].monsters`
+and non-coin `treasure` — and seeding a minimal `confirmed: false` bible when none
+exists, so a later `draft-bible` can still enrich it. Nothing is hand-authored by an
+agent, which is what keeps the index true to the book. Exposed as
+`gm-extract.sh index-from-module`, idempotent, and a required step of `/import-module`.
+
+The rail matters because retrieval is the thing it guards against: RAG chunks cross
+PDF page columns and will splice two unrelated paragraphs into one fluent sentence,
+carrying a **real** name in a **false** arrangement. The index is what lets the GM
+catch that before it reaches the page.
 
 As of 2026-08-15 the bible no longer persists a `chapters` array. `draft_bible` used to
 write one derived from `segment_into_chapters`; it stopped, in favor of the `index`. The

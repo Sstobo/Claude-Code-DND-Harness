@@ -43,7 +43,7 @@ def test_index_block_surfaces_in_context(dcc_world):
 
 def test_empty_index_emits_no_header(dcc_world):
     _write_index(dcc_world, {"npcs": [], "locations": [], "items": [], "monsters": []})
-    assert "WORLD INDEX" not in SessionManager(dcc_world).get_full_context()
+    assert "--- WORLD INDEX" not in SessionManager(dcc_world).get_full_context()
 
 
 def test_absent_index_emits_no_header(dcc_world):
@@ -52,7 +52,7 @@ def test_absent_index_emits_no_header(dcc_world):
         bible = json.loads(p.read_text())
         bible.pop("index", None)
         p.write_text(json.dumps(bible))
-    assert "WORLD INDEX" not in SessionManager(dcc_world).get_full_context()
+    assert "--- WORLD INDEX" not in SessionManager(dcc_world).get_full_context()
 
 
 def test_validate_accepts_good_and_absent_index():

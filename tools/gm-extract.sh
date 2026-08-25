@@ -103,6 +103,12 @@ Commands:
                             confirmed bible. Run BEFORE campaign-rules.
   campaign-rules [campaign] Write the bible's signature systems into
                             campaign-overview.json as campaign_rules
+  index-from-module [campaign]
+                            Derive the WORLD INDEX from a CONVERTED MODULE's own
+                            adventure.json + npcs.json (no source text needed).
+                            Run this at the end of /import-module: without it the
+                            WORLD INDEX block never renders and the GM has no rail
+                            against misplacing a name it read in a RAG passage.
   write-index [campaign] --index-json J
                             Merge a WORLD INDEX (npcs/locations/items/monsters,
                             each {name, note}) into the bible — the light import
@@ -640,7 +646,7 @@ case "$1" in
         cap_extracted "$2" "$3"
         ;;
 
-    draft-bible|campaign-rules|write-index)
+    draft-bible|campaign-rules|write-index|index-from-module)
         # The bible -> campaign_rules chain (lib/book_bible.py). The
         # campaign argument is optional here because every flag these verbs take
         # is a --long option: anything starting with -- is passed through, so

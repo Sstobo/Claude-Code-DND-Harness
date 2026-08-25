@@ -205,7 +205,36 @@ Dedup by name first: one entry per person, even if they appear in five scenes.
 
 ---
 
-## Step 9: Import summary
+## Step 9: Make the source usable at play time (do not skip)
+
+```bash
+bash tools/gm-extract.sh add "<the module file>"
+bash tools/gm-extract.sh index-from-module
+```
+
+The first embeds the module into this campaign's vector store. Slicing and
+converting never touch RAG, so without this the store is EMPTY: `gm-search.sh
+--rag-only` returns nothing all session while scene context is still telling the
+GM to mine the source every beat. Verify with a real query before you hand off.
+
+The second builds the WORLD INDEX — the anti-hallucination rail.
+
+Derives the index mechanically from the `adventure.json` and `npcs.json` this
+import just wrote — no agent hand-authors it, so it is true to the book by
+construction. It seeds a minimal unconfirmed `world-bible.json` if the campaign
+has none (a module import has no `source/current-document.txt`, so `draft-bible`
+cannot run). Idempotent; safe to re-run after fixing conversion gaps.
+
+**Why this step exists.** Without a bible the WORLD INDEX block in scene context
+silently does not render, and the GM plays a whole session with no way to check a
+name. RAG passages are chunked across PDF page columns and will splice two
+unrelated paragraphs into one fluent sentence — carrying a REAL name in a FALSE
+arrangement. That is not a hypothetical: it put this module's Eldoria smiths on
+the docks of the wrong town. The index is what makes the check possible.
+
+---
+
+## Step 10: Import summary
 
 Print it, then hand off.
 

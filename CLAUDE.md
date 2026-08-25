@@ -135,6 +135,7 @@ All tools take `--json` for structured returns. **Always prefix with `bash tools
 
 ## Search Guide (which tool)
 - **Naming a new thing? Scan the WORLD INDEX first.** Scene context carries a WORLD INDEX (named NPCs/locations/items/monsters that already exist) — check it for an established name before inventing a new one.
+- **RAG is texture, never fact.** Retrieved passages are chunked across PDF page columns and will splice two unrelated paragraphs into one fluent sentence — a REAL name in a FALSE arrangement. Take mood, imagery, and cadence from a passage; never take who someone is, where they are, or what they did. Resolve every proper noun against the WORLD INDEX / `npcs.json` / the scene record before it reaches the page, and when the index places it elsewhere, **the index wins**. Running a converted module? The ADVENTURE block's `read_aloud`/`gm_notes` are the book for this beat; RAG covers only what the scene record doesn't.
 - **Narrating a scene? Use the one front door:** `bash tools/gm-context.sh ["loc"] [--entity "Name"]` — world-state + grounded source passages, internally routed. A new face or place that is not in the journal yet: `bash tools/gm-playpack.sh from-book "<name>"` then RAG. Do not census ahead.
 - Source material (free text): `gm-search.sh "q" --rag-only`. World state: `gm-search.sh "q" --world-only`. Both: `gm-search.sh "q"`. NPCs by tag: `gm-search.sh --tag-location "Place"`.
 - **WRONG**: `gm-enhance.sh query "free text"` (entity NAME lookup, not search). **RIGHT**: `gm-search.sh "free text" --rag-only`.

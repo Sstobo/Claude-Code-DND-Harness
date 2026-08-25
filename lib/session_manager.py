@@ -654,11 +654,34 @@ class SessionManager(EntityManager):
         # Informing, not adjudicating — caps and judgment live in skills / gm-craft.
         lines.append("Failure: failure should cost something; decide the stake before the roll.")
 
+        # Rendered once, here, because the inspiration line below points at this
+        # block — an unreadable module must not be advertised as the beat's source.
+        adventure_lines = self._adventure_block(full)
+
         if self.get_preferences().get("rag_inspiration", False):
-            lines.append("Inspiration: every beat (or every other beat), run "
-                         "`gm-search.sh \"<what's happening now>\" --rag-only` and mine the "
-                         "returned passages for a concrete image, phrase, or sensory detail "
-                         "from the source. Synthesize — never paste raw passages.")
+            # RAG is texture, never fact. Chunked PDF text splices adjacent columns,
+            # which reads as fluent prose the book never wrote — so a passage may
+            # carry a REAL name in a FALSE arrangement. The WORLD INDEX above and
+            # the structured files are the authority on who/where/what.
+            insp = ("Inspiration: every beat (or every other beat), run "
+                    "`gm-search.sh \"<what's happening now>\" --rag-only` and mine the "
+                    "returned passages for a concrete image, phrase, or sensory detail "
+                    "from the source. Synthesize — never paste raw passages.")
+            if adventure_lines:
+                insp += (" PRIMARY SOURCE IS THE SCENE RECORD: this campaign runs a "
+                         "converted module, so the ADVENTURE block's read_aloud/gm_notes "
+                         "are the book for the beat you are playing. Reach for RAG only "
+                         "for what the scene record does not carry (atmosphere, "
+                         "off-book improvisation, appendix/table detail).")
+            insp += (" TEXTURE, NOT FACTS: retrieved passages are chunked across page "
+                     "columns and routinely splice two unrelated paragraphs into one "
+                     "convincing sentence. Take mood, imagery and cadence from them — "
+                     "never take who someone is, where they are, or what they did. "
+                     "Before any proper noun from a passage reaches the page, resolve it "
+                     "against the WORLD INDEX / npcs.json / the scene record; if the "
+                     "index places it elsewhere, the index wins. A name that resolves "
+                     "nowhere does not get spoken.")
+            lines.append(insp)
         if self.get_preferences().get("action_menu", True):
             lines.append("Play style: action menu ON — end each beat with exactly THREE "
                          "numbered options, then a final line \"Or something else...\" to "
@@ -747,7 +770,7 @@ class SessionManager(EntityManager):
             lines.extend(index_lines)
 
         # --- Adventure (only when this campaign is running a converted module) ---
-        lines.extend(self._adventure_block(full))
+        lines.extend(adventure_lines)
 
         # --- Previously On (story spine: resume story-aware, not stat-amnesiac) ---
         # Bounded by item COUNT, never by chopping a single entry. --full shows all.

@@ -227,6 +227,81 @@ def write_index(campaign_dir, index: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+_COIN_RE = re.compile(r'^\s*[\d,]+\s+(gold|silver|copper|platinum|electrum)\s+pieces?\s*$', re.I)
+
+
+def derive_index_from_module(campaign_dir) -> Dict[str, Any]:
+    """Build a WORLD INDEX from a converted module's OWN data — no agent authoring.
+
+    /import-module writes adventure.json + npcs.json but never drafted a bible, so
+    the WORLD INDEX block in scene context silently did not render. That block is
+    the rail that stops a name being invented, or a real name being placed in the
+    wrong scene. Deriving it mechanically from what the import already persisted
+    keeps the index true to the book by construction.
+    """
+    cdir = Path(campaign_dir)
+
+    def _load(name, default):
+        p = cdir / name
+        if not p.exists():
+            return default
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return default
+
+    npcs = _load("npcs.json", {})
+    locations = _load("locations.json", {})
+    adventure = _load("adventure.json", {})
+    scenes = adventure.get("scenes") or []
+
+    # A module import has no source/current-document.txt, so draft_bible cannot run.
+    # Seed the minimum a bible needs to hold an index, left unconfirmed so a later
+    # draft-bible pass can still enrich it.
+    bible_path = _bible_path(cdir)
+    if not bible_path.exists():
+        meta = adventure.get("meta") or {}
+        bible_path.write_text(json.dumps({
+            "name": meta.get("title") or cdir.name,
+            "confirmed": False,
+            "source": "derived from converted module (adventure.json)",
+            "index": {b: [] for b in INDEX_BUCKETS},
+        }, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    index: Dict[str, List[Dict[str, str]]] = {b: [] for b in INDEX_BUCKETS}
+
+    for name, body in (npcs.items() if isinstance(npcs, dict) else []):
+        note = (body or {}).get("description", "") if isinstance(body, dict) else ""
+        index["npcs"].append({"name": name, "note": str(note).strip()})
+
+    for name, body in (locations.items() if isinstance(locations, dict) else []):
+        note = (body or {}).get("description", "") if isinstance(body, dict) else ""
+        index["locations"].append({"name": name, "note": str(note).strip()})
+
+    for scene in scenes:
+        if not isinstance(scene, dict):
+            continue
+        key = str(scene.get("key") or "").strip()
+        where = f"scene {key}" if key else "the module"
+
+        loc = str(scene.get("location") or "").strip()
+        if loc:
+            index["locations"].append({"name": loc, "note": f"{where}: {scene.get('title', '')}".strip(": ")})
+
+        for enc in scene.get("encounters") or []:
+            for mon in (enc or {}).get("monsters") or []:
+                mname = str((mon or {}).get("name") or "").strip()
+                if mname:
+                    index["monsters"].append({"name": mname, "note": where})
+
+        for item in scene.get("treasure") or []:
+            iname = str(item or "").strip()
+            if iname and not _COIN_RE.match(iname):
+                index["items"].append({"name": iname, "note": where})
+
+    return write_index(cdir, index)
+
+
 def main():
     import argparse
 
@@ -248,10 +323,18 @@ def main():
     p_index.add_argument("--index-json", required=True,
                          help='{"npcs":[{"name":..,"note":..}],"locations":[...],"items":[...],"monsters":[...]}')
 
+    p_derive = sub.add_parser("index-from-module",
+                              help="derive the WORLD INDEX from adventure.json + npcs.json")
+    p_derive.add_argument("campaign_dir")
+
     args = parser.parse_args()
 
     try:
-        if args.action == "draft-bible":
+        if args.action == "index-from-module":
+            idx = derive_index_from_module(args.campaign_dir)
+            print("WORLD INDEX derived from the module: " + ", ".join(
+                f"{len(idx.get(b, []))} {b}" for b in INDEX_BUCKETS))
+        elif args.action == "draft-bible":
             bible = draft_bible(
                 args.campaign_dir,
                 name=args.name,

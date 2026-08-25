@@ -11,7 +11,7 @@ sources:
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
-generated: { by: claude-opus-5[1m], at: 2026-08-19T19:05:13Z }
+generated: { by: claude-opus-5, at: 2026-08-25T19:02:00Z }
 ---
 
 # Scene context — the two doors
@@ -47,6 +47,17 @@ Ten of those blocks carry design decisions that are not obvious from reading the
   who is here, the hook, what is offstage). An empty pack adds nothing. Setting
   a pack does not fabricate a session. New names walk on via
   `gm-playpack.sh from-book`.
+
+- **RAG inspiration carries its own guard rail.** When `preferences.rag_inspiration`
+  is on, the brief asks the GM to mine source passages every beat — and in the same
+  breath tells it those passages are texture, never fact. Chunked PDF text splices
+  adjacent page columns, so a passage can carry a real name in an arrangement the
+  book never wrote; the rule is that any proper noun resolves against the WORLD INDEX
+  / `npcs.json` / the scene record before it is spoken, and the index wins a conflict.
+  When the ADVENTURE block actually rendered, the line also demotes RAG to second
+  source behind the scene record. It gates on the rendered block, not on
+  `adventure.json` existing, so an unreadable module is never advertised as the
+  beat's source (`lib/session_manager.py`).
 
 - **Play-style flags stay; failure is one informing sentence.** Pacing, dice, action
   menu and inspiration still read `preferences` and surface when set. Failure is
