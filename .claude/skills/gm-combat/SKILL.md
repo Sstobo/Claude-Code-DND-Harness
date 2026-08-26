@@ -35,8 +35,19 @@ ready and her second blade comes."* Asking a player to invent a line just to adv
 the enemy's turn makes them do your job.
 
 **AN INBOUND ATTACK IS NOT A MENU. BRACE, DON'T CHOOSE.** When it is the enemy's turn
-and a blade is already coming, the press acknowledges it — *"Brace. Press 1."* — and
-that is the ONLY option you offer. Never list alternatives beside an inbound attack
+and a blade is already coming, the press acknowledges it and that is the ONLY option
+you offer.
+
+**Write that line fresh every time, out of the moment.** "Brace. Press 1." twice in a
+row is a UI prompt, and a UI prompt is the one thing a table never sounds like. Take it
+from what is actually happening — who is moving, what they have decided, what the hero
+can no longer do about it:
+> *Vann comes with both hands on it. Press 1.*
+> *He is already inside your reach. Press 1 and find out what that buys him.*
+> *Nothing left to do but be in the way of it. Press 1.*
+> *She has stopped talking. Press 1.*
+The press is the same; the sentence in front of it is narration and should read like
+it. Never list alternatives beside an inbound attack
 ("or talk to the sheriff", "or turn on the wizard"), because a player who picks one has
 just used the enemy's turn to escape the enemy's turn, and the fight stops being a
 fight. Their real choices belong on THEIR turn, and their reaction options (Shield,
