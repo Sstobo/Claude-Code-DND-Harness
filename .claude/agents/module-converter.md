@@ -70,6 +70,14 @@ Field names are exact — they are validated by `lib/adventure.py`.
     "transitions": [
       {"to_key": "b4-cave-mouth", "when": "they finish the climb"}
     ],
+    "requires": [
+      {"kind": "party_size", "min": 2,
+       "note": "\"The harpies pick off whoever climbs last while the others watch.\""},
+      {"kind": "npc_with_party", "name": "Mother Aldis",
+       "note": "\"Mother Aldis knows the handholds and goes first.\""},
+      {"kind": "prior_event", "id": "b1-the-summons",
+       "note": "\"They climb because the summons named this ledge.\""}
+    ],
     "pages": [12, 13]
   }
 ]
@@ -103,11 +111,52 @@ Field by field:
   missing or misspelled `to_key` is rejected by the validator and fails the
   whole batch. `when` says what the party does to take that exit. An empty list
   is fine — play falls through to spine order.
+- `requires` — what this scene assumes is already true when the party walks in.
+  Typed clauses from the closed list below, each one quoting the text it came
+  from. `[]` when the scene assumes nothing beyond being played. See the next
+  section; this is the field converters most often leave empty by reflex.
 - `pages` — list of integers, the page numbers this slice spans. The page
   markers are in the slice text; if none survive, use `[]`.
 
 Every field must be present on every scene. Use `""` for empty strings and `[]`
 for empty lists rather than omitting the field.
+
+## What the scene assumes (`requires`)
+
+A published module is written for a party that has been playing since scene 1,
+and it says so on every page without ever putting it in a field: the guards
+outnumber "the heroes", the sprite is at their shoulder, the artifact is already
+in someone's pack, the last module already happened. When the table does not
+match, the scene quietly stops working and nobody can point at why. `requires`
+is that fine print written down, so the GM can adapt on purpose.
+
+One clause per assumption. The `kind` set is closed; anything outside it is
+rejected by `lib/adventure.py` and fails the whole batch:
+
+| kind | its field | says |
+|---|---|---|
+| `party_size` | `min` (positive integer) | the scene needs a group of at least this many |
+| `npc_with_party` | `name` | this NPC is travelling with them right now |
+| `npc_known` | `name` | they met this NPC in an earlier scene |
+| `item_held` | `name` | they are already carrying this |
+| `prior_event` | `id` | this happened first: another scene's key, or another module (`"at-04"`) |
+| `pc_level` | `min` (positive integer) | the scene is pitched at characters of this level |
+| `narrative` | `note` | an assumption no sheet can answer, e.g. they are changed by what they saw |
+
+`narrative` is the one that can never be satisfied, and that is deliberate. It
+marks the assumption the GM has to write around rather than check. Reserve it for
+what the book leans on and no state can prove; anything that fits one of the
+other kinds belongs under that kind.
+
+**Every clause quotes the book.** `note` carries the module's own words, the
+sentence you read the assumption out of, verbatim and short. Without it a
+converted assumption and an invented one are the same object on disk, and no one
+downstream can tell which they are looking at. A clause you cannot quote is a
+clause you are guessing at: leave it out.
+
+Read the whole slice before you fill this in. Emitting `[]` for a scene whose
+text plainly assumes things is a conversion defect a human will catch at import
+review.
 
 ## Faithfulness rules
 

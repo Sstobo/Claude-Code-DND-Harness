@@ -132,7 +132,9 @@ Return a RAW JSON ARRAY of scene objects with exactly these fields: key, title,
 location, read_aloud (verbatim boxed text), gm_notes (faithful summary),
 encounters [{name, monsters [{name, count, stat_block?}], tactics?}], npcs
 [names], treasure [...], checks [{what, skill, dc}], transitions [{to_key,
-when}], pages. Do NOT set srd_index — the resolver adds it. No prose, no
+when}], requires [{kind, <the kind's own field>, note}] (what the scene assumes
+is already true; the kind table and per-kind fields are in your agent
+definition), pages. Do NOT set srd_index — the resolver adds it. No prose, no
 markdown fences, no commentary: raw JSON only.
 
 You are one of at most 6 agents on this import — a hard cap for the whole run,

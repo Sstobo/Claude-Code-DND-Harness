@@ -30,6 +30,23 @@ SCENE_FIELDS = {
     'checks': list,
     'transitions': list,
     'pages': list,
+    'requires': list,
+}
+
+# What a scene assumes is already true when the party walks in, as typed clauses:
+# {kind, <the kind's own field>, note}. The kind set is CLOSED because the reader
+# on the other end is code — a clause it cannot type is an assumption the book
+# made that nobody checks. `narrative` is the escape hatch for an assumption no
+# machine can test (they have been changed by what they saw), and is by design
+# permanently unsatisfied: it exists to be adapted around, not met.
+REQUIRES_KINDS = {
+    'party_size': 'min',        # a group of at least this many
+    'npc_with_party': 'name',   # this NPC is travelling with them
+    'npc_known': 'name',        # they have met this NPC before
+    'item_held': 'name',        # they are carrying this
+    'prior_event': 'id',        # this happened earlier (a scene key, or another module)
+    'pc_level': 'min',          # the scene is pitched at this level
+    'narrative': 'note',        # unmeetable by design — the quote IS the clause
 }
 
 
@@ -91,6 +108,59 @@ def _stub_scene(key: str, title: str, pages: Optional[List[int]] = None) -> Dict
     return scene
 
 
+def _requires_errors(key: str, requires: Any) -> List[str]:
+    """Problems with one scene's `requires` list, every message naming the scene.
+
+    Three rules, and each one exists because of what happens without it. The kind
+    must be in the closed set, or the clause is a note nothing reads. The kind's
+    own field must be there and usable, or the clause names an assumption without
+    saying what it is ("party_size" with no number cannot be compared to a party).
+    And every clause carries a `note` quoting the module text it was read from,
+    because otherwise a converted assumption and an invented one look identical
+    on disk — the quote is what makes a clause checkable against the book.
+    """
+    if not isinstance(requires, list):
+        return [f"scene '{key}': 'requires' must be a list"]
+
+    errors = []
+    for n, clause in enumerate(requires, 1):
+        if not isinstance(clause, dict):
+            errors.append(f"scene '{key}': requires #{n} must be an object")
+            continue
+
+        kind = clause.get('kind')
+        # A kind straight out of LLM JSON can be a list or a dict, and looking an
+        # unhashable value up in the kind set raises out of a function whose whole
+        # contract is to return the problems it found.
+        if not isinstance(kind, str):
+            errors.append(f"scene '{key}': requires #{n} needs a string 'kind' "
+                          f"(got {kind!r})")
+            continue
+        if kind not in REQUIRES_KINDS:
+            errors.append(
+                f"scene '{key}': requires #{n} has unknown kind {kind!r} "
+                f"(known kinds: {', '.join(sorted(REQUIRES_KINDS))})")
+            continue
+
+        field = REQUIRES_KINDS[kind]
+        value = clause.get(field)
+        if field == 'min':
+            # bool is an int in Python, and a party of `True` is nonsense.
+            if not isinstance(value, int) or isinstance(value, bool) or value < 1:
+                errors.append(f"scene '{key}': requires #{n} ({kind}) needs a positive "
+                              f"integer '{field}' (got {value!r})")
+        elif not isinstance(value, str) or not value.strip():
+            errors.append(f"scene '{key}': requires #{n} ({kind}) needs a non-empty "
+                          f"string '{field}' (got {value!r})")
+
+        note = clause.get('note')
+        if field != 'note' and (not isinstance(note, str) or not note.strip()):
+            errors.append(f"scene '{key}': requires #{n} ({kind}) needs a 'note' quoting "
+                          f"the module text that evidences it (got {note!r})")
+
+    return errors
+
+
 def validate_adventure(adv: Dict[str, Any]) -> List[str]:
     """Return a list of human-readable problems with an adventure dict (empty = valid)."""
     errors = []
@@ -122,6 +192,8 @@ def validate_adventure(adv: Dict[str, Any]) -> List[str]:
         if not isinstance(scene, dict):
             continue
         key = scene.get('key', '?')
+        # A scene converted before `requires` existed simply has none.
+        errors.extend(_requires_errors(key, scene.get('requires', [])))
         transitions = scene.get('transitions', [])
         if not isinstance(transitions, list):
             errors.append(f"scene '{key}': 'transitions' must be a list")

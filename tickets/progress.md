@@ -1,3 +1,4 @@
+- 2026-08-26T19:39:51Z  done: scene-requires-schema — requires schema + validator landed, sweep descoped to hardening ticket (review: perfect, round 2)  [ss-modq26]
 - 2026-08-26T19:33:01Z  done: diegetic-adaptation-craft — craft rules + GM-private prep ritual + renderer hardening (review: perfect, round 2)  [ss-modq26]
 - 2026-08-19T21:00Z  done: e2e-whispering-wood — module imported and playable  [ss-imod01]
 - 2026-08-19T20:25Z  done: extractor-ordering-hardening — retraction findings fixed, 61 tests  [ss-imod01]

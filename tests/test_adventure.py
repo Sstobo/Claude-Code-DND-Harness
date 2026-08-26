@@ -117,6 +117,91 @@ def test_scenes_must_be_a_list():
     assert validate_adventure({"scenes": {"a": {}}}) == ["'scenes' must be a list"]
 
 
+# --- requires clauses ---------------------------------------------------
+
+def _scene_with(requires):
+    """One scene carrying `requires`, wrapped as a whole adventure to validate."""
+    return {"scenes": [{"key": "1.2", "title": "Meeting with Lander", "requires": requires}],
+            "progress": {}}
+
+
+GOOD_CLAUSES = [
+    {"kind": "party_size", "min": 4, "note": "\"When the characters enter the office\""},
+    {"kind": "npc_with_party", "name": "Puck", "note": "\"Puck flies forward\""},
+    {"kind": "npc_known", "name": "Sheriff Amelia Waveshield",
+     "note": "\"Sheriff Waveshield will enter from the door\""},
+    {"kind": "item_held", "name": "Chronometer of Harmony",
+     "note": "\"have you secured the Chronometer of Harmony?\""},
+    {"kind": "prior_event", "id": "at-04", "note": "\"(Refer to AT-04 The Cogs of Lost Time)\""},
+    {"kind": "pc_level", "min": 5, "note": "\"an adventure for four 5th-level characters\""},
+    {"kind": "narrative", "note": "\"My anticipation for your return has been keen.\""},
+]
+
+
+@pytest.mark.parametrize("clause", GOOD_CLAUSES, ids=lambda c: c["kind"])
+def test_every_requires_kind_is_accepted_with_its_own_field(clause):
+    assert validate_adventure(_scene_with([clause])) == []
+
+
+def test_a_scene_converted_before_requires_existed_still_validates():
+    """The book already on disk was converted without the field. An absent
+    `requires` is a scene that assumes nothing, never a validation failure."""
+    adv = {"scenes": [{"key": "1.2", "title": "Meeting with Lander"}], "progress": {}}
+    assert validate_adventure(adv) == []
+
+
+def test_init_gives_every_stub_an_empty_requires(dcc_world):
+    _built(dcc_world)
+    assert all(s["requires"] == [] for s in _on_disk(dcc_world)["scenes"])
+
+
+def test_an_unknown_requires_kind_is_rejected_and_names_the_scene():
+    """The differ reads these clauses by kind. A kind it does not know is an
+    assumption the book made that nothing downstream will ever check."""
+    errors = validate_adventure(_scene_with([{"kind": "party_mood", "min": 2, "note": "q"}]))
+    assert any("scene '1.2': requires #1 has unknown kind 'party_mood'" in e for e in errors), errors
+
+
+@pytest.mark.parametrize("clause, wanted", [
+    ({"kind": "party_size", "note": "q"}, "needs a positive integer 'min'"),
+    ({"kind": "party_size", "min": 0, "note": "q"}, "needs a positive integer 'min'"),
+    ({"kind": "party_size", "min": "four", "note": "q"}, "needs a positive integer 'min'"),
+    ({"kind": "pc_level", "min": True, "note": "q"}, "needs a positive integer 'min'"),
+    ({"kind": "npc_with_party", "note": "q"}, "needs a non-empty string 'name'"),
+    ({"kind": "npc_known", "name": "   ", "note": "q"}, "needs a non-empty string 'name'"),
+    ({"kind": "item_held", "name": 7, "note": "q"}, "needs a non-empty string 'name'"),
+    ({"kind": "prior_event", "note": "q"}, "needs a non-empty string 'id'"),
+    ({"kind": "narrative", "note": ""}, "needs a non-empty string 'note'"),
+])
+def test_a_clause_missing_its_per_kind_field_is_rejected(clause, wanted):
+    errors = validate_adventure(_scene_with([clause]))
+    assert any(wanted in e and "scene '1.2'" in e for e in errors), errors
+
+
+def test_a_clause_without_its_evidence_quote_is_rejected():
+    """The quote is what tells a converted assumption from an invented one, so
+    the validator enforces it like any other required field."""
+    errors = validate_adventure(_scene_with([{"kind": "npc_with_party", "name": "Puck"}]))
+    assert any("needs a 'note' quoting the module text" in e for e in errors), errors
+
+
+def test_requires_must_be_a_list():
+    errors = validate_adventure(_scene_with({"kind": "party_size", "min": 2, "note": "q"}))
+    assert "scene '1.2': 'requires' must be a list" in errors, errors
+
+
+def test_merge_persists_requires_and_refuses_a_bad_clause(dcc_world):
+    m = _built(dcc_world)
+    clause = {"kind": "prior_event", "id": "at-04",
+              "note": "\"(Refer to AT-04 The Cogs of Lost Time)\""}
+    m.merge([{"key": "road", "requires": [clause]}])
+    assert _on_disk(dcc_world)["scenes"][1]["requires"] == [clause]
+
+    with pytest.raises(AdventureError, match="unknown kind 'vibes'"):
+        m.merge([{"key": "keep", "requires": [{"kind": "vibes", "note": "q"}]}])
+    assert _on_disk(dcc_world)["scenes"][2]["requires"] == [], "bad batch did not persist"
+
+
 # --- init + merge -------------------------------------------------------
 
 def test_init_writes_stub_scenes_in_spine_order(dcc_world):
@@ -418,6 +503,27 @@ def test_converter_agent_definition_names_every_scene_field():
     assert "to_key" in doc, "transitions need their to_key field spelled out"
 
 
+def test_converter_agent_definition_names_every_requires_kind():
+    """The clause table in the agent doc is where converters read the kind set
+    from. A kind or per-kind field added in lib/adventure.py and never written
+    down here is one no converter will emit."""
+    from lib.adventure import REQUIRES_KINDS
+
+    doc = (PROJECT_ROOT / ".claude" / "agents" / "module-converter.md").read_text()
+    missing = [f"{kind} ({field})" for kind, field in REQUIRES_KINDS.items()
+               if kind not in doc or field not in doc]
+    assert not missing, f"module-converter.md never mentions: {missing}"
+
+
+def test_import_module_template_asks_converters_for_requires():
+    """Step 5 of /import-module hands each converter an exact field list, and
+    "exactly these fields" is an instruction to omit anything absent from it. A
+    list without `requires` ships every import with the field empty."""
+    template = (PROJECT_ROOT / ".claude" / "commands" / "import-module.md").read_text()
+    assert "requires [{kind" in template, \
+        "the /import-module Step-5 prompt template never asks for `requires`"
+
+
 def test_converter_agent_treats_slice_text_as_data():
     """The converter reads arbitrary PDF text, so the definition must tell it that
     the slice is source material and never an instruction to obey."""
@@ -481,3 +587,28 @@ def test_wrapper_status_and_advance(wrapper_campaign):
     jump = _run("tools/gm-adventure.sh", "jump", "nowhere")
     assert jump.returncode != 0
     assert "unknown scene 'nowhere'" in jump.stdout + jump.stderr
+
+
+def test_merge_cli_rejects_an_unusable_kind_without_a_traceback(wrapper_campaign, tmp_path):
+    """A `kind` arriving from an LLM can be a list. Looking one up in the kind
+    set raises, and a raise out of validate_adventure — whose contract is to
+    RETURN what is wrong — reaches the player as a Python traceback."""
+    bad = [{"key": "tavern", "title": "The Sleeping Giant",
+            "requires": [{"kind": ["party_size"], "min": 2, "note": "\"the heroes\""}]}]
+    assert any("scene 'tavern'" in e and "needs a string 'kind'" in e
+               for e in validate_adventure({"scenes": bad, "progress": {}}))
+
+    (wrapper_campaign / "adventure.json").write_text(json.dumps({
+        "meta": {"title": "Lost Mine"},
+        "scenes": [{"key": "tavern", "title": "The Sleeping Giant", "transitions": []}],
+        "progress": {"current_scene": "tavern", "completed": []},
+    }))
+    batch = tmp_path / "batch.json"
+    batch.write_text(json.dumps(bad))
+
+    result = subprocess.run(["uv", "run", "python", "lib/adventure.py", "merge", str(batch)],
+                            cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "Traceback" not in output, output
+    assert "needs a string 'kind'" in output
