@@ -135,3 +135,23 @@ def test_wrapper_context_shows_the_block(isolated_world_state):
                           cwd=PROJECT_ROOT, env=run_env, check=True,
                           capture_output=True, text=True).stdout
     assert "Current scene: road Ambush on the Road" in out2
+
+
+def test_the_current_scenes_book_text_is_never_truncated(dcc_world):
+    """The brief calls the scene record the primary source; it must not be a summary.
+
+    A 600-char cap hid the substance of 39 of AT-05's 43 scenes — 1.2 stopped
+    before Lander speaks at all.
+    """
+    _built(dcc_world)
+    active = (Path(dcc_world) / "active-campaign.txt").read_text().strip()
+    path = Path(dcc_world) / "campaigns" / active / "adventure.json"
+    data = json.loads(path.read_text())
+    scene = data["scenes"][0]
+    tail = "THE SENTENCE THAT MUST SURVIVE"
+    scene["gm_notes"] = ("filler. " * 400) + tail
+    scene["read_aloud"] = ("boxed. " * 300) + tail
+    path.write_text(json.dumps(data))
+
+    ctx = _context(dcc_world)
+    assert ctx.count(tail) == 2, "both gm_notes and read_aloud must reach the brief whole"

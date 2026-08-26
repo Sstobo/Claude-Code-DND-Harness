@@ -11,7 +11,7 @@ sources:
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
-generated: { by: claude-opus-5, at: 2026-08-26T16:32:54Z }
+generated: { by: claude-opus-5, at: 2026-08-26T16:47:37Z }
 ---
 
 # Scene context — the two doors
@@ -47,6 +47,15 @@ Ten of those blocks carry design decisions that are not obvious from reading the
   who is here, the hook, what is offstage). An empty pack adds nothing. Setting
   a pack does not fabricate a session. New names walk on via
   `gm-playpack.sh from-book`.
+
+- **The current scene's book text is never truncated.** Everything else in the
+  brief is a summary of state the GM can go and read; `gm_notes` and `read_aloud`
+  for the scene being played are the BOOK, and the brief tells the GM they are the
+  primary source. They were capped at 600 and 800 chars, which hid the substance
+  of 39 of AT-05's 43 scenes — 1.2 stopped mid-sentence before Lander speaks, 2.17
+  lost 95% of itself — so the GM was handed a summary labelled as the source and
+  had to open `adventure.json` by hand to run the module as written. `full` no
+  longer governs either field.
 
 - **A check renders as a staged block, and the brief says so.** `lib/dice.py`
   takes `--dc <target>` and repeatable `--from "label:N"`, and prints the target

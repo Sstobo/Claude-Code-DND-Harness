@@ -376,6 +376,13 @@ class SessionManager(EntityManager):
         }
 
         print(f"[SUCCESS] Party moved from {old_location} to {location}")
+        # The scene changed — that's the beat that earns a picture. Nudge here so
+        # the GM sees it in the move output instead of remembering on its own.
+        if (os.environ.get("XAI_API_KEY") or os.environ.get("OPENAI_API_KEY")) \
+                and location != old_location:
+            print(f"[ILLUSTRATE] New scene: {location} — spawn the scene-illustrator "
+                  "agent IN THE BACKGROUND with a one-line beat brief, keep narrating, "
+                  "and show the image inline when it returns.")
         return result
 
     # ==================== Save System ====================
@@ -695,8 +702,8 @@ class SessionManager(EntityManager):
                          "NOT list numbered choices. The player drives freely. "
                          "(Toggle: /gm choices on|off)")
 
-        # --- Scene images (gpt-image-2): only available when a key is configured ---
-        if os.environ.get("OPENAI_API_KEY"):
+        # --- Scene images (xAI Grok Imagine / gpt-image-2): needs a key ---
+        if os.environ.get("XAI_API_KEY") or os.environ.get("OPENAI_API_KEY"):
             lines.append("Scene images: ENABLED — illustrate GENEROUSLY and with glee "
                          "(images cost ~$0.04; lean toward YES). New location, monster/boss "
                          "reveal, big loot, a styled flourish, a funny beat, a quiet vista — "
@@ -724,8 +731,8 @@ class SessionManager(EntityManager):
                              "illustrate and persist it with `bash tools/gm-image.sh "
                              "chronicler --name \"...\" --style \"...\" --persona \"...\"`.")
         else:
-            lines.append("Scene images: DISABLED (no OPENAI_API_KEY) — do NOT call gm-image.sh "
-                         "and do NOT mention images; narrate in text only.")
+            lines.append("Scene images: DISABLED (no XAI_API_KEY / OPENAI_API_KEY) — do NOT "
+                         "call gm-image.sh and do NOT mention images; narrate in text only.")
 
         # --- Narrative Voice (write the prose in the world's authorial voice) ---
         bible = self.json_ops.load_json("world-bible.json") or {}
@@ -1092,11 +1099,17 @@ class SessionManager(EntityManager):
         out.append(f"Current scene: {title}")
         if scene.get('location'):
             out.append(f"Location: {scene['location']}")
+        # NEVER truncated, whatever `full` says. Everything else in this brief is a
+        # summary of state the GM can go and read; this is the BOOK for the beat
+        # being played, and the brief tells the GM it is the primary source. Cutting
+        # it at 600 chars hid the substance of 39 of AT-05's 43 scenes — scene 1.2
+        # stopped mid-sentence before Lander speaks at all, and 2.17 lost 95% of
+        # itself. A summary presented as the source is worse than no source.
         if scene.get('gm_notes'):
-            out.append(f"GM notes: {self._truncate(str(scene['gm_notes']), 600, full)}")
+            out.append(f"GM notes: {scene['gm_notes']}")
         if scene.get('read_aloud'):
             out.append("READ-ALOUD (the book's boxed text — read or paraphrase it in voice):")
-            out.append(f"  | {self._truncate(str(scene['read_aloud']), 800, full)}")
+            out.append(f"  | {scene['read_aloud']}")
 
         for enc in scene.get('encounters') or []:
             if not isinstance(enc, dict):
