@@ -496,3 +496,21 @@ def test_the_panel_marks_the_heros_turn_and_their_death_saves(dcc_world):
     panel = m.header()
     assert "▸ TANDY" in panel, "the turn marker moves to the hero block"
     assert "death saves 0✓/0✗" in panel
+
+
+def test_resistance_halves_and_immunity_zeroes_the_damage(dcc_world, monkeypatch):
+    """A raging barbarian is the commonest resistance case at the table; doing it
+    by hand is the arithmetic this resolver exists to take."""
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=10)
+
+    _fixed(monkeypatch, 24, 7)  # hit, then 7 damage
+    out = m.attack("Goblin", "Kordan", with_action="Scimitar", defence="resist")
+    assert out["damage"] == 3, "halved and rounded DOWN"
+    assert out["damage_raw"] == 7
+    assert m._find(m._load(), "Kordan")["hp_current"] == 47
+
+    _fixed(monkeypatch, 24, 7)
+    assert m.attack("Goblin", "Kordan", with_action="Scimitar", defence="immune")["damage"] == 0

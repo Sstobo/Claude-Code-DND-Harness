@@ -149,6 +149,12 @@ weapon's die or properties, **look it up before you swing** — do not guess:
 uv run python features/gear/dnd_equipment.py "greatsword"
 ```
 
+Add `--resist`, `--vulnerable` or `--immune` when the target's defences apply — rage,
+a damage-type resistance, a creature immune to nonmagical weapons. Resistance halves and
+rounds down, and the receipt shows both numbers (`**8** (16 resist)`). **A raging
+barbarian resists bludgeoning, piercing and slashing**; forgetting it is the single
+easiest way to kill a PC who should have lived.
+
 Add `--adv` or `--dis` for advantage or disadvantage. Sources that grant them:
 
 | Situation | Effect |

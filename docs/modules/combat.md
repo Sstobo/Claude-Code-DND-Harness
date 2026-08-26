@@ -7,7 +7,7 @@ sources:
   - { resource: /lib/dice.py }
   - { resource: /tools/gm-combat.sh }
   - { resource: /.claude/skills/gm-combat/SKILL.md }
-generated: { by: claude-opus-5, at: 2026-08-26T18:58:01Z }
+generated: { by: claude-opus-5, at: 2026-08-26T19:42:16Z }
 verified: { by: claude-opus-5, at: 2026-08-26T18:47:54Z }
 ---
 
@@ -84,6 +84,11 @@ a lockpick read identically at the table — only the label and the verdict diff
 disadvantage roll, not just on a bare `1d20`. Without that a crit rolled with advantage
 — Reckless Attack, flanking, a prone target, which is most crits a barbarian ever
 rolls — came back as an ordinary hit and never doubled its dice.
+
+Resistance, vulnerability and immunity apply to the damage total as the last step, the
+order 5e uses. They are a flag rather than stored state because they are per-damage-type
+and situational — rage covers three types and not a fourth, and the resolver has no way
+to know which type a `--damage 2d6+4` carries.
 
 ## The round panel
 

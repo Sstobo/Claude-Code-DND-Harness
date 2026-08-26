@@ -392,7 +392,7 @@ class CombatManager(EntityManager):
 
     def attack(self, attacker: str, target: str, with_action: str = None,
                bonus: int = None, damage: str = None, advantage: str = None,
-               sources: List = None) -> Dict[str, Any]:
+               sources: List = None, defence: str = None) -> Dict[str, Any]:
         """Resolve one attack: to-hit vs the target's STORED AC, then damage.
 
         This is the only place a swing is adjudicated, so the numbers cannot drift
@@ -401,6 +401,8 @@ class CombatManager(EntityManager):
         its stored SRD actions; `--bonus`/`--damage` override (a PC's weapon, a
         scaled elite, a trap) and are REQUIRED for an attacker with no block.
         Nat 20 hits and doubles the damage dice; nat 1 misses whatever the total.
+        `defence` applies the target's resistance / vulnerability / immunity to the
+        total, which is the last step in 5e's damage order.
         """
         data = self._load()
         tgt = self._find(data, target)
@@ -456,7 +458,14 @@ class CombatManager(EntityManager):
                 r = _DICE.roll(dice)
                 rolled.append({'dice': dice, 'type': part['type'], 'total': r['total'],
                                'rolls': r['rolls'], 'modifier': r.get('modifier', 0)})
-            out['damage'] = sum(r['total'] for r in rolled)
+            raw = sum(r['total'] for r in rolled)
+            # Resistance halves and rounds DOWN, and it lands after every other
+            # modifier — a raging barbarian is the commonest case at the table, and
+            # doing it by hand is exactly the arithmetic this resolver exists to take.
+            out['damage'] = {'resist': raw // 2, 'vulnerable': raw * 2,
+                             'immune': 0}.get(defence, raw)
+            if defence:
+                out['defence'], out['damage_raw'] = defence, raw
             out['damage_rolls'] = rolled
             out['outcome'] = self._apply_delta(tgt, -out['damage'])
             self._save(data)
@@ -481,7 +490,8 @@ class CombatManager(EntityManager):
         tail = None
         if out['hit']:
             legs = " + ".join(_damage_leg(r) for r in out.get("damage_rolls", []))
-            tail = (f"🎲 Damage: {legs} = **{out['damage']}** ▼ "
+            note = (f" ({out['damage_raw']} {out['defence']})" if out.get('defence') else "")
+            tail = (f"🎲 Damage: {legs} = **{out['damage']}**{note} ▼ "
                     f"{out['target']} {_hp_bar(out['target_hp'], out['target_hp_max'])}")
             if out['outcome'] == 'dead':
                 tail += "  💀 DEAD"
@@ -732,6 +742,10 @@ def main():
     p.add_argument('--bonus', type=int, help="to-hit bonus (required if no stored block)")
     p.add_argument('--damage', help="damage notation, e.g. 2d6+4 (required if no stored block)")
     p.add_argument('--adv', action='store_true'); p.add_argument('--dis', action='store_true')
+    p.add_argument('--resist', dest='defence', action='store_const', const='resist',
+                   help="target resists this damage type — halved, rounded down")
+    p.add_argument('--vulnerable', dest='defence', action='store_const', const='vulnerable')
+    p.add_argument('--immune', dest='defence', action='store_const', const='immune')
     p.add_argument('--from', dest='sources', action='append', default=[], metavar='"label:N"',
                    help="attribute part of the bonus, e.g. --from 'strength:4' (repeatable)")
     p = sub.add_parser('death-save'); p.add_argument('name')
@@ -793,6 +807,7 @@ def main():
         try:
             out = m.attack(args.attacker, args.target, with_action=args.with_action,
                            bonus=args.bonus, damage=args.damage, sources=sources,
+                           defence=args.defence,
                            advantage='advantage' if args.adv else
                                      'disadvantage' if args.dis else None)
         except ValueError as e:
