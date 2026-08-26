@@ -69,7 +69,7 @@ class DiceRoller:
             modifier = int(match.group(4)) if match.group(4) else 0
             rolls = sorted([random.randint(1, sides) for _ in range(count)], reverse=True)
             kept = rolls[:keep]
-            return {
+            return self._mark_natural({
                 'notation': notation,
                 'rolls': rolls,
                 'kept': kept,
@@ -77,7 +77,7 @@ class DiceRoller:
                 'modifier': modifier,
                 'total': sum(kept) + modifier,
                 'type': 'advantage'
-            }
+            }, sides, keep)
         
         # Check for disadvantage (keep lowest)
         match = self.disadvantage_pattern.match(notation)
@@ -88,7 +88,7 @@ class DiceRoller:
             modifier = int(match.group(4)) if match.group(4) else 0
             rolls = sorted([random.randint(1, sides) for _ in range(count)])
             kept = rolls[:keep]
-            return {
+            return self._mark_natural({
                 'notation': notation,
                 'rolls': rolls,
                 'kept': kept,
@@ -96,7 +96,7 @@ class DiceRoller:
                 'modifier': modifier,
                 'total': sum(kept) + modifier,
                 'type': 'disadvantage'
-            }
+            }, sides, keep)
         
         # Standard roll
         match = self.simple_pattern.match(notation)
@@ -128,6 +128,22 @@ class DiceRoller:
         
         raise ValueError(f"Invalid dice notation: {notation}")
     
+    @staticmethod
+    def _mark_natural(result: Dict, sides: int, keep: int) -> Dict:
+        """Flag nat 20 / nat 1 on the kept d20 of an advantage or disadvantage roll.
+
+        Only the plain `1d20` path used to set these, so a crit rolled with
+        advantage (Reckless Attack, flanking, a prone target) came back as an
+        ordinary hit and never doubled its dice.
+        """
+        if sides == 20 and keep == 1 and result.get('kept'):
+            die = result['kept'][0]
+            if die == 20:
+                result['natural_20'] = True
+            elif die == 1:
+                result['natural_1'] = True
+        return result
+
     def format_result(self, result: Dict) -> str:
         """Format a roll result for display with colors"""
         if result['type'] == 'advantage':
@@ -174,9 +190,9 @@ class DiceRoller:
     def _plain(self, n: int) -> str:
         return self.WORDS[n] if 0 <= n < len(self.WORDS) else str(n)
 
-    def format_check(self, result: Dict, dc: int, sources=None) -> str:
-        """Render a d20 check against a DC, attributing every point of the bonus."""
-        total = result['total']
+    @staticmethod
+    def roll_parts(result: Dict, sources=None) -> list:
+        """The " · "-joined breakdown line: the dice, then where each bonus came from."""
         modifier = result.get('modifier', 0)
         kept = result.get('kept') or result.get('rolls') or []
         discarded = result.get('discarded') or []
@@ -195,6 +211,32 @@ class DiceRoller:
             parts += [f"**{b:+d}** coming from {label}" for label, b in sources]
         elif modifier:
             parts.append(f"**{modifier:+d}**")
+        return parts
+
+    @staticmethod
+    def format_staged(target: int, total: int, parts, verdict: str,
+                      need_label: str = "You need to beat", tail: str = None) -> str:
+        """The staged block: the target FIRST, dead air, then the roll and the verdict.
+
+        The pause is real because the message streams, so nothing may collapse it or
+        put the outcome above the target. Combat attacks render through here too, so
+        a swing and a skill check read identically at the table.
+        """
+        lines = [
+            need_label, "", f"## [ {target} ]", "",
+            ".", "", ".", "", ".", "",
+            "You rolled", "", f"## [ {total} ]", "",
+            " · ".join(parts), "",
+            verdict,
+        ]
+        if tail:
+            lines += ["", tail]
+        return "\n".join(lines)
+
+    def format_check(self, result: Dict, dc: int, sources=None) -> str:
+        """Render a d20 check against a DC, attributing every point of the bonus."""
+        total = result['total']
+        parts = self.roll_parts(result, sources)
 
         if result.get('natural_20'):
             verdict = "**⚔ NATURAL 20 — fantastic success. More than you hoped for.**"
@@ -207,13 +249,7 @@ class DiceRoller:
         else:
             verdict = f"**✗ FAILURE — short by {self._plain(dc - total)}.**"
 
-        return "\n".join([
-            "You need to beat", "", f"## [ {dc} ]", "",
-            ".", "", ".", "", ".", "",
-            "You rolled", "", f"## [ {total} ]", "",
-            " · ".join(parts), "",
-            verdict,
-        ])
+        return self.format_staged(dc, total, parts, verdict)
 
 
 # Module-level convenience functions

@@ -10,7 +10,7 @@ sources:
   - { resource: /lib/session_manager.py }
   - { resource: /lib/world_kit.py }
 generated: { by: claude-opus-5, at: 2026-08-19T17:48:27Z }
-verified: { by: claude-opus-5, at: 2026-08-19T17:55:42Z }
+verified: { by: claude-opus-5, at: 2026-08-26T18:29:22Z }
 ---
 
 # Lean core, skills on demand

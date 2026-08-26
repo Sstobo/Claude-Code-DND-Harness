@@ -8,6 +8,7 @@
 * [Game core and World Kit](game-core-and-world-kit.md) - The system-agnostic engine and the hardcoded 5e kit that configures it — and the two separate rule surfaces a world actually plays by.
 * [RAG stack](rag-stack.md) - Two retrieval systems over the source book — 3000-char embedded chunks and a chapter-granularity index — plus the parts of each that are inert.
 * [Scene context — the two doors](scene-context.md) - What the harness pushes to the model each beat, and why "context" means two different things depending on which tool you call.
+* [The combat rail](combat.md) - How a fight is adjudicated — the persisted initiative order, the attack resolver that owns every to-hit and damage roll, and the dying gate the PC's sheet shares with it.
 * [The entity graph and name resolution](entity-graph.md) - Why entities cross-reference by name, how the alias resolver keeps that from breaking, and the ordered repair passes an import runs before the gate.
 * [The living world — consequences, clocks, world tick](living-world.md) - The three systems that make the world move on its own, and which of them are actually wired to fire.
 * [The NPC model](npc-model.md) - What an NPC carries beyond a description — inner life, canonical voice lines, party-member sheets, and proxy combat stats.

@@ -96,8 +96,11 @@ KIT_GUARD_PHRASES = [
 FIVE_E_ANCHORS = {
     "gm-combat": [
         "## XP by Challenge Rating",
-        "death saves (DC 10 Con each turn)",
-        "Damage ≥ max HP = instant death",
+        # Death saves are a FLAT DC 10 — a Constitution save you add nothing to.
+        "DC 10 flat, no modifiers",
+        "damage past 0 that equals or exceeds max HP kills outright",
+        # The rail itself: swings resolve in the tool, not in the model's head.
+        "gm-combat.sh attack",
     ],
     "gm-levelup": [
         "## XP Thresholds",

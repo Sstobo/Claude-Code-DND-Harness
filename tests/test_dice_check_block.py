@@ -67,3 +67,16 @@ def test_advantage_is_read_from_the_notation_not_the_dice():
     out = R.format_check(
         _result(3, [3], 0, notation="2d20kl1", kept=[3], discarded=[18]), dc=10)
     assert "disadvantage, keep the 3" in out
+
+
+def test_advantage_rolls_flag_their_naturals_too():
+    """A crit rolled with advantage is still a crit — only 1d20 used to say so."""
+    seen = {"nat1": False, "nat20": False}
+    for _ in range(600):
+        r = R.roll("2d20kh1+3")
+        if r["kept"] == [20]:
+            seen["nat20"] = r.get("natural_20", False)
+        r = R.roll("2d20kl1+3")
+        if r["kept"] == [1]:
+            seen["nat1"] = r.get("natural_1", False)
+    assert seen["nat20"] and seen["nat1"], f"naturals lost on adv/disadv: {seen}"

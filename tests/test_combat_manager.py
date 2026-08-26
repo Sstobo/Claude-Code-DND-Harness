@@ -129,7 +129,9 @@ def test_four_goblins_are_four_damageable_combatants(dcc_world):
     # Each one takes its own damage instead of the first shadowing the rest.
     for i, n in enumerate(names):
         m.modify_hp(n, -(i + 1))
-    assert [c["hp_current"] for c in m._load()["combatants"]] == [6, 5, 4, 3]
+    # By name, not by position: the roster is sorted by rolled initiative.
+    hp = {c["name"]: c["hp_current"] for c in m._load()["combatants"]}
+    assert hp == {"Goblin": 6, "Goblin 2": 5, "Goblin 3": 4, "Goblin 4": 3}
 
 
 def test_duplicate_manual_names_are_suffixed_too(dcc_world):
@@ -309,3 +311,139 @@ def test_combat_is_optional(dcc_world):
     # Never starting combat is a valid state (narrated skirmish).
     assert CombatManager(dcc_world).is_active() is False
     assert CombatManager(dcc_world).header() == "(no active combat)"
+
+
+# --- the attack resolver: the engine owns the math, so nobody can retype it ---
+
+GOBLIN_ARMED = dict(
+    GOBLIN_SRD,
+    dexterity=14,
+    actions=[{
+        "name": "Scimitar",
+        "desc": "Melee Weapon Attack: +4 to hit, reach 5 ft. Hit: 5 (1d6 + 2) slashing damage.",
+        "attack_bonus": 4,
+        "damage": [{"damage_type": {"name": "Slashing"}, "damage_dice": "1d6+2"}],
+    }],
+)
+
+
+def _fixed(monkeypatch, *totals):
+    """Force the next rolls, in order, so a resolution test is not a coin flip."""
+    from lib import combat_manager as cm
+    queue = list(totals)
+
+    def fake(notation):
+        total = queue.pop(0)
+        die = total - _modifier(notation)
+        out = {"notation": notation, "rolls": [die], "kept": [die],
+               "modifier": _modifier(notation), "total": total}
+        if "d20" in notation:
+            if die == 20:
+                out["natural_20"] = True
+            elif die == 1:
+                out["natural_1"] = True
+        return out
+
+    monkeypatch.setattr(cm._DICE, "roll", fake)
+
+
+def _modifier(notation):
+    for sep in ("+", "-"):
+        if sep in notation:
+            return int(notation[notation.index(sep):])
+    return 0
+
+
+def test_attack_uses_the_fetched_block_not_retyped_numbers(dcc_world, monkeypatch):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=10)
+    # to-hit 14 (10 + the block's +4), then 5 damage (3 + the block's +2)
+    _fixed(monkeypatch, 14, 5)
+    out = m.attack("Goblin", "Kordan", with_action="Scimitar")
+    assert out["hit"] is True and out["target_ac"] == 13
+    assert out["damage"] == 5
+    assert m._find(m._load(), "Kordan")["hp_current"] == 45
+
+
+def test_attack_fails_closed_with_no_block_and_no_explicit_numbers(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.add_combatant("Shadow", hp=10, ac=12, initiative=10)
+    with pytest.raises(ValueError, match="no attack bonus"):
+        m.attack("Shadow", "Kordan")
+
+
+def test_nat_1_misses_and_nat_20_hits_whatever_the_ac(dcc_world, monkeypatch):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=30, initiative=20, side="pc")
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=10)
+    _fixed(monkeypatch, 24, 9)  # natural 20 against AC 30
+    out = m.attack("Goblin", "Kordan", with_action="Scimitar")
+    assert out["critical"] and out["hit"]
+    assert out["damage_rolls"][0]["dice"] == "2d6+2", "a crit doubles the dice, not the modifier"
+    _fixed(monkeypatch, 5)  # natural 1 against AC 30
+    assert m.attack("Goblin", "Kordan", with_action="Scimitar")["hit"] is False
+
+
+def test_zero_hp_downs_a_hero_but_kills_a_monster(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=10)
+    assert m.modify_hp("Goblin", -7)["outcome"] == "dead"
+    hero = m.modify_hp("Kordan", -50)
+    assert hero["outcome"] == "dying"
+    assert hero["death_saves"] == {"successes": 0, "failures": 0}
+
+
+def test_death_saves_tally_and_stop(dcc_world, monkeypatch):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.modify_hp("Kordan", -50)
+    _fixed(monkeypatch, 2, 3, 4)
+    for _ in range(2):
+        m.death_save("Kordan")
+    assert m.death_save("Kordan")["status"] == "dead"
+    with pytest.raises(ValueError, match="no more death saves"):
+        m.death_save("Kordan")
+
+
+def test_a_nat_20_death_save_stands_the_hero_up(dcc_world, monkeypatch):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.modify_hp("Kordan", -50)
+    _fixed(monkeypatch, 20)
+    out = m.death_save("Kordan")
+    assert out["status"] == "revived"
+    assert m._find(m._load(), "Kordan")["hp_current"] == 1
+
+
+def test_end_does_not_count_a_downed_hero_as_a_kill(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=10)
+    m.modify_hp("Kordan", -50)
+    m.modify_hp("Goblin", -7)
+    summary = m.end()
+    assert summary["defeated"] == ["Goblin"]
+    assert summary["down"] == ["Kordan"]
+    assert summary["xp_awarded"] == 50
+
+
+def test_join_pc_reads_the_sheet_and_damage_writes_back_to_it(dcc_world):
+    """combat_state.json is deleted by `end` — the PC's HP has to live on the sheet."""
+    from lib.player_manager import PlayerManager
+
+    m = CombatManager(dcc_world)
+    m.start()
+    pc = m.join_pc(initiative=15)
+    assert pc["name"] == "Tandy" and pc["hp_current"] == 72 and pc["hp_max"] == 80
+    m.modify_hp("Tandy", -12)
+    assert PlayerManager(dcc_world)._load_character()["hp"]["current"] == 60
