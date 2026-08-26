@@ -253,3 +253,26 @@ def test_import_diagnostics_never_render_as_continuity(tmp_path):
     assert "The Keeper owes the party a debt." in joined
     assert "Import dropped" not in joined, \
         "location_reconcile's bucket is diagnostics, not continuity"
+
+
+def test_an_abbreviation_past_the_min_words_floor_is_still_not_a_sentence_end():
+    """'…and Dr.' has six words, so the min-words floor alone waves it through."""
+    out = SessionManager._prep_sentence(
+        "The lantern guttered out and Dr. Sallow said nothing at all. Then rain.")
+    assert "Sallow said nothing" in out, out
+    out2 = SessionManager._prep_sentence(
+        "They crossed the yard toward Mr. Vance. He did not move.")
+    assert "Vance" in out2, out2
+
+
+def test_prep_opens_where_the_party_actually_stands(tmp_path):
+    """Off-book play: the live location outranks the scene's printed one."""
+    w = _world(tmp_path)
+    c = w / "campaigns" / "t"
+    over = json.loads((c / "campaign-overview.json").read_text())
+    over["player_position"]["current_location"] = "The Smugglers' Cove"
+    (c / "campaign-overview.json").write_text(json.dumps(over))
+    lines = SessionManager(str(w))._prep_lines()
+    start = next((l for l in lines if "strong start" in l), "")
+    assert "The Smugglers' Cove" in start, start
+    assert "The Gate" not in start, "the book's printed location must not win"

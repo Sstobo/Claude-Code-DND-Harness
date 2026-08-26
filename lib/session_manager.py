@@ -306,7 +306,14 @@ class SessionManager(EntityManager):
                 i = min(ends)
                 if i >= limit:
                     break
-                if len(flat[:i].split()) >= SessionManager._PREP_MIN_WORDS:
+                # The min-words floor alone stops "Dr." only at the sentence
+                # head; five words in, "…and Dr." passes it. A boundary whose
+                # last word is abbreviation-shaped (capitalized, short) is not
+                # a sentence end — skip it and keep scanning.
+                last = flat[:i].rsplit(" ", 1)[-1]
+                abbrevish = last[:1].isupper() and len(last) <= 4
+                if (not abbrevish
+                        and len(flat[:i].split()) >= SessionManager._PREP_MIN_WORDS):
                     return flat[:i + 1]
                 at = i + 1
         return flat if len(flat) <= limit else flat[:limit - 3].rstrip() + "..."
@@ -378,7 +385,10 @@ class SessionManager(EntityManager):
                 cls._prep_sentence(f, 200, whole=True) for f in facts[:2]))
 
         scene = scene if isinstance(scene, dict) else {}
-        where = scene.get('location') or location
+        # The party's REAL location outranks the book's: prep must open where
+        # the table actually stands, or it walks the player back to the page —
+        # the exact failure gm-craft's "world moves to the party" rule names.
+        where = location or scene.get('location')
         skey, stitle = str(scene.get('key', '')), str(scene.get('title', ''))
         title = stitle if stitle.startswith(skey) else f"{skey} {stitle}".strip()
         # ONLY read_aloud. gm_notes is bookkeeping ("if the party failed the
