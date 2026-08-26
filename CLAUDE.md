@@ -48,7 +48,7 @@ SWAP (make the chosen character the active PC):
 ## Action Router — load the matching Skill on demand
 | Player says | Workflow | Skill |
 |---|---|---|
-| "I attack..." | Combat — every swing resolves in `gm-combat.sh attack` | `gm-combat` |
+| "I attack..." | Combat — every swing resolves in `gm-combat.sh attack`; **one turn per reply**, and in player-rolls mode the swing waits for the player's NEXT message | `gm-combat` |
 | "I cast..." | Spellcasting | `gm-spellcasting` |
 | "I talk to..." / "I ask..." | Social/NPC | `gm-social` |
 | "I try to..." | Skill check (d20 vs DC) | `gm-skills` |

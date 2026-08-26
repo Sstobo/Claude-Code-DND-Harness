@@ -101,6 +101,10 @@ FIVE_E_ANCHORS = {
         "damage past 0 that equals or exceeds max HP kills outright",
         # The rail itself: swings resolve in the tool, not in the model's head.
         "gm-combat.sh attack",
+        # The pacing contract. Deleting either of these is how a fight turns back
+        # into a wall of numbers the player never got to trigger.
+        "ONE TURN PER REPLY",
+        "THE SWING IS ITS OWN TURN",
     ],
     "gm-levelup": [
         "## XP Thresholds",
@@ -166,3 +170,15 @@ def test_world_kit_exposes_kit_identity():
     assert r.returncode == 0, r.stderr
     data = json.loads(r.stdout)["data"]
     assert data["kit"] == "dnd5e", data
+
+
+def test_the_router_hardwires_the_combat_pacing_contract():
+    """The always-loaded router must carry the pacing rules, not just the skill.
+
+    The skill loads on demand; a fight can start narrating before it does. Both
+    rules were added because a live session lost them: a whole round narrated in
+    one message, and a swing resolved in the same reply that announced it.
+    """
+    row = next(l for l in _claude_md().splitlines() if l.startswith('| "I attack'))
+    assert "one turn per reply" in row.lower()
+    assert "next message" in row.lower(), "the swing must wait for the player"

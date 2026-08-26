@@ -13,10 +13,26 @@ Every fight runs the same rail. The engine owns the arithmetic; you own the fict
 0 CAST → 1 ORDER → 2 ROUND → 3 SWING → 4 DOWN → 5 CLEAR
 ```
 
-**The one hard rule: you never do combat arithmetic in your head.** No comparing a
-total to an AC, no picking a damage number, no tallying death saves in prose. Every
-one of those goes through `gm-combat.sh` and you narrate what it returns. That is
-what makes the dice real.
+## THE CONTRACT — three rules, every fight, no exceptions
+
+**1. You never do combat arithmetic in your head.** No comparing a total to an AC, no
+picking a damage number, no tallying death saves in prose. Every one of those goes
+through `gm-combat.sh` and you narrate what it returns.
+
+**2. ONE TURN PER REPLY.** A beat is a single combatant's turn — one attacker, one
+target, one resolution — and it ends the reply. Never chain the hero's swing and the
+enemies' answer into one message. Never run three monsters' turns in a row because it
+is "their round". The hero swings and you stop. Their next message brings the answer,
+and you stop again.
+
+**3. THE SWING IS ITS OWN TURN** (whenever player-rolls mode is on). "I attack" declares
+a target; it does not press the button. End the reply on the pressable line — the bonus,
+the damage, the number they need — and STOP. The swing resolves on their NEXT message.
+
+Rules 2 and 3 exist for the same reason: **the roll IS the game.** A die buried
+mid-paragraph in a reply the player never triggered is a die that never landed for them,
+and a round narrated all at once is a wall of numbers scrolling past. Slow down. The
+pause before the result is the product.
 
 ---
 
@@ -105,14 +121,6 @@ is one per round, on a trigger, and can fire on someone else's turn.
 Actions worth naming out loud: Attack · Cast a Spell · Dash · Disengage · Dodge · Help ·
 Hide · Ready · Shove/Grapple (Athletics vs Athletics or Acrobatics).
 
-**ONE TURN PER REPLY. This is the pacing rule that matters most in a fight.** A beat is
-a single combatant's turn — one attacker, one target, one resolution — and it ends the
-reply. Do not chain the hero's swing and the enemies' answer into one message; do not
-run three monsters' turns in a row because it is "their round". The player must see
-each roll land on its own, with a pause after it, or the fight turns into a wall of
-numbers scrolling past and every individual die stops mattering. The hero swings and
-you stop. Their next message brings the answer, and you stop again.
-
 `bash tools/gm-combat.sh next-turn` advances the pointer and rolls the round over. It
 steps over the fallen on its own, but a **dying hero still gets a turn** — that turn is
 their death save. Call it once per combatant, or the round counter is fiction.
@@ -141,15 +149,11 @@ misses on a natural 1, applies the damage through the 5e dying gate, and hands b
 staged block — target first, dead air, then the result. **Paste that output into
 narration as it stands.** Never summarise it, never put the outcome above the target.
 
-**When player-rolls mode is on, the swing is its own turn.** "I attack" declares the
-target; it does not press the button. End the reply on the pressable line and STOP —
+Contract rule 3 in practice — the reply ENDS here, and the swing resolves on the next
+message:
 
 > You go for the guard on the left. **+7** to hit, **2d6+6** with rage, and you need
 > **17** or better. Press **1** to swing, or take another action.
-
-— and resolve it on their next message, in a reply of its own. Resolving a swing inside
-the same reply that announced it buries the roll in a paragraph the player never
-triggered, and the roll is the whole reason they are here.
 
 For the PC, you supply the numbers from the sheet and attribute every point:
 
