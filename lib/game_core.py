@@ -279,16 +279,23 @@ class ResourceAxisProgression(Progression):
 # XP is scaled to the gap to the next level so a beat stays meaningful at any
 # level/floor; `xp_floor` guarantees a minimum. `followers` is only applied when
 # the kit declares a secondary `follower_field` (e.g. DCC viewers).
+# xp_frac is a share of the CURRENT LEVEL's full band, so a tier is worth the
+# same act-for-act whenever it lands. The first cut scaled off XP-remaining,
+# which paid the same beat 10x more just after a level-up than just before it,
+# and made minors a geometric series that could approach but never reach the
+# next level. Calibration against 5e kill XP at level 5 (band 7500): minor 375
+# ≈ a CR 1 kill, major 1125 ≈ CR 3-4, legendary 2475 ≈ a hard encounter — so
+# spectacle competes with combat without outbidding it.
 DEFAULT_SPECTACLE_TIERS = {
-    'minor':     {'xp_frac': 0.20, 'xp_floor': 50,  'followers': 250,  'milestone': 0},
-    'major':     {'xp_frac': 0.50, 'xp_floor': 150, 'followers': 1500, 'milestone': 0},
-    'legendary': {'xp_frac': 1.00, 'xp_floor': 400, 'followers': 8000, 'milestone': 1},
+    'minor':     {'xp_frac': 0.05, 'xp_floor': 50,  'followers': 250,  'milestone': 0},
+    'major':     {'xp_frac': 0.15, 'xp_floor': 150, 'followers': 1500, 'milestone': 0},
+    'legendary': {'xp_frac': 0.33, 'xp_floor': 400, 'followers': 8000, 'milestone': 1},
 }
 
 
 def spectacle_award(tier: str,
                     progression_model: str = 'milestone',
-                    xp_to_next: int = 0,
+                    xp_band: int = 0,
                     tiers: Dict[str, Any] = None,
                     has_follower_currency: bool = False) -> Dict[str, Any]:
     """Compute a discretionary spectacle reward, kit-agnostically.
@@ -297,7 +304,8 @@ def spectacle_award(tier: str,
     progression_model    the active kit's model: 'xp-levels' / 'level' grant XP;
                          'milestone' grants milestone count; 'resource-axis' is
                          driven by its resource (followers) when present.
-    xp_to_next           XP remaining to the next level (used to scale XP rewards).
+    xp_band              full width of the character's CURRENT level (threshold to
+                         threshold), so the reward is position-independent within it.
     tiers                kit tier table (ruleset override), else DEFAULT_SPECTACLE_TIERS.
     has_follower_currency  True if the kit declares a follower/viewer field to co-award.
 
@@ -314,8 +322,8 @@ def spectacle_award(tier: str,
     milestone = 0
     # XP-based kits ('xp-levels' and the 'level' alias) get scaled XP.
     if progression_model in ('xp-levels', 'level'):
-        gap = max(0, int(xp_to_next))
-        xp = max(int(spec.get('xp_floor', 0)), int(round(gap * float(spec.get('xp_frac', 0)))))
+        band = max(0, int(xp_band))
+        xp = max(int(spec.get('xp_floor', 0)), int(round(band * float(spec.get('xp_frac', 0)))))
     elif progression_model == 'milestone':
         # No XP math — a legendary beat can be worth a milestone tick.
         milestone = int(spec.get('milestone', 0))

@@ -6,7 +6,7 @@ sources:
   - { resource: /lib/game_core.py }
   - { resource: /lib/world_kit.py }
   - { resource: /lib/overview_seed.py }
-generated: { by: claude-opus-5[1m], at: 2026-08-19T18:52:46Z }
+generated: { by: claude-fable-5, at: 2026-08-26T20:08:04Z }
 ---
 
 # Game core and World Kit
@@ -112,8 +112,13 @@ To check a live campaign rather than trusting any of this:
 files and writes none. Persistence and level-up detection are the caller's job —
 `gm-player.sh award` → `player_manager`. Calling the core function directly awards nothing.
 
-Its XP is scaled to the gap to the next level rather than being a flat table, so one tier
-stays meaningful at level 1 and level 12. The `followers` amount is only applied when a
+Its XP is scaled to the full width of the character's current level band (threshold to
+threshold, passed in as `xp_band`), so one tier stays meaningful at level 1 and level 12
+AND is worth the same act-for-act wherever in the level it lands. It originally scaled to
+the gap remaining, which paid the same beat 10x more just after a level-up than just
+before one and made minors a geometric series that could never level anyone; rebased
+2026-08-26, tiers recalibrated (minor 5% / major 15% / legendary 33% of the band) so a
+level-5 minor ≈ a CR 1 kill and no single beat is a whole level. The `followers` amount is only applied when a
 secondary follower currency is declared; `player_manager._spectacle_config` declares none
 and hands over `DEFAULT_SPECTACLE_TIERS`, so every award is plain XP.
 

@@ -320,15 +320,20 @@ class PlayerManager(EntityManager):
         cfg = self._spectacle_config()
         actual_name = char.get('name', name)
 
-        # XP gap to next level (drives XP scaling; read-only — a milestone or
+        # Full width of the current level's band (read-only — a milestone or
         # resource-axis sheet must not gain an xp object from a spectacle beat).
+        # Band, not gap-remaining: the same act must be worth the same wherever
+        # in the level it happens.
+        thresholds = self._xp_thresholds()
+        level = int(char.get('level', 1) or 1)
+        floor = thresholds[level - 1] if 0 < level <= len(thresholds) else 0
         xp = self._xp_view(char)
-        xp_to_next = max(0, xp['next_level'] - xp['current'])
+        xp_band = max(0, xp['next_level'] - floor)
 
         award = game_core.spectacle_award(
             tier,
             progression_model=cfg['model'],
-            xp_to_next=xp_to_next,
+            xp_band=xp_band,
             tiers=cfg['tiers'],
             has_follower_currency=bool(cfg.get('follower_field')),
         )
