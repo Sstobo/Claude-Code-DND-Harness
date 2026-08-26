@@ -79,10 +79,17 @@ outcome is genuinely certain (trivial, or literally impossible).
   consequence (fail forward — the situation changes, sometimes for the worse,
   sometimes to death per Stakes & Death). Never quietly fudge a bad roll into a
   good outcome. The dice are why the world feels real.
-- Show the math in narration: `🎲 STR check: 14 + 3 = 17 vs DC 15 — ✓`.
+- **Show every check as the staged block, never a one-liner.** Pass the DC and
+  attribute the bonus, then paste the tool's output straight into narration:
+  `uv run python lib/dice.py "1d20+7" --dc 15 --from "strength:4" --from "your training in athletics:3"`.
+  It renders the target FIRST, then dead air, then the result and the margin. The
+  pause is real because your message streams — so never collapse the block, never
+  summarise it, and never put the outcome above the roll.
 
 `uv run python lib/dice.py "[notation]"` — `1d20+5`, `2d20kh1+3` (advantage),
 `2d20kl1` (disadvantage), `3d6`. One roll per command. Never inline dice.
+Add `--dc <target>` for any check (see below); add `--from "label:N"` once per
+source of the bonus so the player is told where every point came from.
 **Player-rolls mode:** scene context reports it. When ON, the player CHOOSES the
 roll; you still run the dice. Stop at the decision point and present it as a menu:
   1. Roll a <Stat> check with <+X stat / +Y other> bonuses. Target of <Z> or higher.

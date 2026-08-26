@@ -11,7 +11,7 @@ sources:
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
-generated: { by: claude-opus-5, at: 2026-08-25T19:02:00Z }
+generated: { by: claude-opus-5, at: 2026-08-26T16:32:54Z }
 ---
 
 # Scene context — the two doors
@@ -47,6 +47,15 @@ Ten of those blocks carry design decisions that are not obvious from reading the
   who is here, the hook, what is offstage). An empty pack adds nothing. Setting
   a pack does not fabricate a session. New names walk on via
   `gm-playpack.sh from-book`.
+
+- **A check renders as a staged block, and the brief says so.** `lib/dice.py`
+  takes `--dc <target>` and repeatable `--from "label:N"`, and prints the target
+  first, then dead air, then the result, the per-source attribution, and the
+  margin. The player-rolls instruction tells the GM to paste that block unchanged
+  rather than collapse it to a one-liner. The pause is made of streamed message
+  text on purpose: tool output does not reliably reach the player, so no spinner,
+  sleep, or carriage-return animation in a tool can carry dramatic timing — the
+  bytes survive capture, but nobody is watching the stream they arrive on.
 
 - **RAG inspiration carries its own guard rail.** When `preferences.rag_inspiration`
   is on, the brief asks the GM to mine source passages every beat — and in the same
