@@ -29,6 +29,17 @@ and you stop again.
 a target; it does not press the button. End the reply on the pressable line — the bonus,
 the damage, the number they need — and STOP. The swing resolves on their NEXT message.
 
+**Always end on a PRESS, never on "say something".** Even when the next beat is the
+enemy's and the player has no decision to make, give them a button: *"Press 1 when
+ready and her second blade comes."* Asking a player to invent a line just to advance
+the enemy's turn makes them do your job.
+
+**The roll block speaks from the side of whoever is swinging.** The player IS the PC, so
+their own attacks read "you need to beat 17 / You rolled 25" and an enemy's read
+"To get through your guard, Lena needs to beat 13 / Lena rolled 24". `gm-combat.sh
+attack` handles this from the combatants' sides — never rewrite its output to
+second person.
+
 Rules 2 and 3 exist for the same reason: **the roll IS the game.** A die buried
 mid-paragraph in a reply the player never triggered is a die that never landed for them,
 and a round narrated all at once is a wall of numbers scrolling past. Slow down. The

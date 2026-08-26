@@ -514,3 +514,28 @@ def test_resistance_halves_and_immunity_zeroes_the_damage(dcc_world, monkeypatch
 
     _fixed(monkeypatch, 24, 7)
     assert m.attack("Goblin", "Kordan", with_action="Scimitar", defence="immune")["damage"] == 0
+
+
+def test_the_roll_block_speaks_from_the_right_side_of_the_swing(dcc_world, monkeypatch):
+    """The player IS the PC. A guard swinging at them must read "she needs", not
+    "you need" — addressing the defender as the roller reads as a mistake, because
+    it is one."""
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=20, side="pc")
+    m.add_combatant("Anselm", hp=24, ac=16, initiative=15, side="ally")
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=10)
+
+    _fixed(monkeypatch, 24, 5)
+    mine = m.attack("Kordan", "Goblin", bonus=7, damage="2d6+4")["render"]
+    assert "you need to beat" in mine and "You rolled" in mine
+
+    _fixed(monkeypatch, 24, 5)
+    theirs = m.attack("Goblin", "Kordan", with_action="Scimitar")["render"]
+    assert "Goblin needs to beat" in theirs and "Goblin rolled" in theirs
+    assert "You rolled" not in theirs, "the PC is not the one swinging"
+
+    _fixed(monkeypatch, 24, 5)
+    neither = m.attack("Goblin", "Anselm", with_action="Scimitar")["render"]
+    assert "To hit Anselm, Goblin needs to beat" in neither
+    assert "your guard" not in neither, "nobody here is the player"

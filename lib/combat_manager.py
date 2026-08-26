@@ -471,16 +471,30 @@ class CombatManager(EntityManager):
             self._save(data)
         out['target_hp'] = tgt['hp_current']
         out['target_hp_max'] = tgt['hp_max']
-        out['render'] = self._render_attack(out, roll, sources)
+        out['render'] = self._render_attack(
+            out, roll, sources,
+            # The player IS the PC. A guard swinging at them must read "she needs",
+            # not "you need" — the block was addressing the defender as the roller.
+            attacker_is_pc=(atk or {}).get('side') == 'pc',
+            target_is_pc=tgt.get('side') == 'pc')
         return out
 
     @staticmethod
-    def _render_attack(out: Dict[str, Any], roll: Dict[str, Any], sources: List = None) -> str:
-        """The staged block — the AC first, the pause, then the swing and its cost."""
+    def _render_attack(out: Dict[str, Any], roll: Dict[str, Any], sources: List = None,
+                       attacker_is_pc: bool = True, target_is_pc: bool = False) -> str:
+        """The staged block — the AC first, the pause, then the swing and its cost.
+
+        `attacker_is_pc` decides whose side the prose sits on. The player is the PC,
+        so a guard's swing has to read "she needs 13" and "she rolled 24"; addressing
+        the defender as though they were the one rolling reads as a mistake at the
+        table, because it is one.
+        """
+        who = out['attacker']
         if out['critical']:
             verdict = "**⚔ CRITICAL HIT — the dice double.**"
         elif out['fumble']:
-            verdict = "**💀 NATURAL 1 — the swing goes wide, and it costs you.**"
+            verdict = ("**💀 NATURAL 1 — the swing goes wide, and it costs you.**" if attacker_is_pc
+                       else f"**💀 NATURAL 1 — {who} fumbles it, and it costs them.**")
         elif out['hit']:
             over = out['to_hit'] - out['target_ac']
             verdict = f"**✓ HIT — {'on the nose' if over == 0 else f'past the guard by {over}'}.**"
@@ -497,10 +511,18 @@ class CombatManager(EntityManager):
                 tail += "  💀 DEAD"
             elif out['outcome'] == 'dying':
                 tail += "  💀 DOWN — 0 HP, dying"
+        if attacker_is_pc:
+            need = f"To hit {out['target']}, you need to beat"
+        elif target_is_pc:
+            need = f"To get through your guard, {who} needs to beat"
+        else:
+            # Neither side is the player — an ally being swung at, a monster turning
+            # on another. Third person for both, so nobody is addressed as "you".
+            need = f"To hit {out['target']}, {who} needs to beat"
         return _DICE.format_staged(out['target_ac'], out['to_hit'],
                                    _DICE.roll_parts(roll, sources), verdict,
-                                   need_label=f"To hit {out['target']}, you need to beat",
-                                   tail=tail)
+                                   need_label=need, tail=tail,
+                                   roll_label="You rolled" if attacker_is_pc else f"{who} rolled")
 
     def death_save(self, name: str) -> Dict[str, Any]:
         """One 5e death save: DC 10 flat, three up or three down, nat 20 stands up.

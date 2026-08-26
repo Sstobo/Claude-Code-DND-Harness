@@ -215,7 +215,8 @@ class DiceRoller:
 
     @staticmethod
     def format_staged(target: int, total: int, parts, verdict: str,
-                      need_label: str = "You need to beat", tail: str = None) -> str:
+                      need_label: str = "You need to beat", tail: str = None,
+                      roll_label: str = "You rolled") -> str:
         """The staged block: the target FIRST, dead air, then the roll and the verdict.
 
         The pause is real because the message streams, so nothing may collapse it or
@@ -225,7 +226,7 @@ class DiceRoller:
         lines = [
             need_label, "", f"## [ {target} ]", "",
             ".", "", ".", "", ".", "",
-            "You rolled", "", f"## [ {total} ]", "",
+            roll_label, "", f"## [ {total} ]", "",
             " · ".join(parts), "",
             verdict,
         ]
