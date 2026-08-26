@@ -9,8 +9,8 @@ sources:
   - { resource: /tools/gm-extract.sh }
   - { resource: /lib/agent_extractor.py }
   - { resource: /lib/json_ops.py }
-  - { resource: /tests/test_json_wrappers_player.py }
-generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
+  - { resource: /tests/test_json_wrappers_onboard.py }
+generated: { by: claude-opus-5, at: 2026-08-26T18:46:07Z }
 verified: { by: claude-fable-5, at: 2026-08-13T15:15:46Z }
 ---
 
@@ -92,7 +92,7 @@ adding an MCP process. The wiring pattern for a new manager is fixed —
 One trap the existing code already works around: a manager whose logic `print()`s human
 text must suppress that in JSON mode or the envelope is preceded by garbage.
 `consequence_manager` does this with `contextlib.redirect_stdout`
-(`lib/consequence_manager.py:362-367`). Any manager that prints inside its logic needs the
+(`lib/consequence_manager.py:430`). Any manager that prints inside its logic needs the
 same treatment.
 
 `DM_JSON=1` turns the envelope on globally, which is the easy way to script a whole
@@ -107,10 +107,27 @@ a `validate_name`, but the real trust boundary is inside the Python. A manager t
 
 ## Enforcement point
 
-`tests/test_json_wrappers_*.py` (player, npc, session, consequence) run each manager as a
-subprocess and assert the envelope parses with `ok: true` and the expected `data`. That is
-a genuine guard for the four managers covered — and only those four. A new manager gets no
-envelope enforcement until a matching test exists; adding one is part of adding the tool.
+There is no envelope test family, and the `--json` wiring ticket in
+`tests/test_cli_output_json.py`'s docstring — per-manager coverage for session, consequence,
+player and npc — was never finished. What exists is one wrapper-level test,
+`tests/test_json_wrappers_onboard.py`: it runs `bash tools/gm-player.sh onboard` as a real
+subprocess against a hermetic `GM_WORLD_STATE_BASE` tree and asserts both envelope shapes —
+`ok: true` with the expected `data`, and `ok: false` with the refusal text on the
+clobber guard. One wrapper, one verb.
+
+The rest of the coverage is incidental, and worth knowing the shape of before trusting it:
+
+- `tests/test_adventure.py` and `tests/test_combat_manager.py` also drive real wrappers
+  (`gm-adventure.sh advance --json`, `gm-combat.sh add-enemy --json`) and assert the
+  envelope, but only on the verbs those suites happen to exercise.
+- `tests/test_world_tick.py` and `tests/test_story_escape_hatches.py` assert the envelope
+  off `lib/world_tick.py` and `lib/player_manager.py` run directly. That checks `emit`, not
+  the wrapper — everything `common.sh` guarantees above is skipped.
+- `tests/test_cli_output_json.py` covers the `cli_output` primitives themselves and touches
+  no wrapper at all.
+
+So a new manager gets no envelope enforcement unless someone writes it, and most existing
+ones have none either. Adding the test is part of adding the tool.
 
 ## Related
 
