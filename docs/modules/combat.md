@@ -7,7 +7,8 @@ sources:
   - { resource: /lib/dice.py }
   - { resource: /tools/gm-combat.sh }
   - { resource: /.claude/skills/gm-combat/SKILL.md }
-generated: { by: claude-opus-5, at: 2026-08-26T18:29:22Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:48:13Z }
+verified: { by: claude-opus-5, at: 2026-08-26T18:47:54Z }
 ---
 
 # The combat rail
@@ -30,7 +31,10 @@ The rail is six steps — cast, order, round, swing, down, clear — and `gm-com
 
 `attack()` **fails closed**: no stored bonus and no `--bonus` raises rather than
 inventing a number. That is the whole point of the resolver, so the error is the
-feature — refetch the block or read the sheet.
+feature — refetch the block or read the sheet. An action found by name but carrying no
+bonus is a separate error, because it is usually not an attack at all: Fey Charm, Web
+and breath weapons force a **save**, which the defender rolls with `lib/dice.py --dc`.
+Sending the GM to refetch a block that was already complete would be the wrong fix.
 
 **The `--combat` view of `dnd_monster.py` is not enough to fight with.** It keeps each
 action's name and prose but drops `attack_bonus` and `damage`, so a creature added from
@@ -63,6 +67,11 @@ That counter persists on the combatant record, so three failures spread across a
 compaction or a resume still kill. `death_save()` refuses to roll once the record is
 `stable` or `dead` — a stabilised hero has left the sequence, and re-rolling them was
 the old way the tally quietly reset.
+
+`next_turn` steps over the fallen, so the pointer never lands on a corpse — but a
+**dying hero keeps their turn**, because that turn is when they roll a death save. It
+is the only thing that moves the round counter; nothing about resolving an attack
+advances a turn, since one turn can hold a multiattack.
 
 ## One staged block for every d20
 

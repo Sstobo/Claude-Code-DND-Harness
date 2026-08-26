@@ -447,3 +447,19 @@ def test_join_pc_reads_the_sheet_and_damage_writes_back_to_it(dcc_world):
     assert pc["name"] == "Tandy" and pc["hp_current"] == 72 and pc["hp_max"] == 80
     m.modify_hp("Tandy", -12)
     assert PlayerManager(dcc_world)._load_character()["hp"]["current"] == 60
+
+
+def test_next_turn_steps_over_the_fallen_but_not_the_dying(dcc_world):
+    """A corpse has no turn; a dying hero's turn is when they roll a death save."""
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant("Kordan", hp=50, ac=13, initiative=30, side="pc")
+    m.add_combatant("Goblin", hp=7, ac=15, initiative=20)
+    m.add_combatant("Anselm", hp=24, ac=16, initiative=10, side="ally")
+    m.modify_hp("Goblin", -7)   # dead — skipped
+    m.modify_hp("Anselm", -24)  # dying — still gets a turn
+
+    order = [m.next_turn()["turn_index"] for _ in range(3)]
+    names = [m._load()["combatants"][i]["name"] for i in order]
+    assert names == ["Anselm", "Kordan", "Anselm"], names
+    assert m._load()["round"] == 2, "one wrap in three turns, so one new round"

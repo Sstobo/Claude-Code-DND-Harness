@@ -378,6 +378,15 @@ class CombatManager(EntityManager):
         if bonus is None:
             bonus = (action or {}).get('attack_bonus')
         if bonus is None:
+            # An action found by name but carrying no bonus is usually not an attack
+            # at all (Fey Charm, Web, a breath weapon) — it forces a SAVE, which the
+            # defender rolls with lib/dice.py. Sending the GM to refetch the block
+            # would be the wrong fix, so say which case this is.
+            if action is not None:
+                raise ValueError(
+                    f"'{action.get('name')}' is not an attack roll — it has no attack bonus. "
+                    f"If it forces a save, roll it as a check: "
+                    f"uv run python lib/dice.py \"1d20+<mod>\" --dc <save DC>")
             raise ValueError(f"no attack bonus for '{attacker}' — fetch the full stat block "
                              f"or pass --bonus (never invent one)")
         dmg_parts = ([{'dice': damage, 'type': ''}] if damage
@@ -511,14 +520,36 @@ class CombatManager(EntityManager):
         self._save(data)
         return c
 
+    @staticmethod
+    def _has_a_turn(c: Dict[str, Any]) -> bool:
+        """A corpse gets no turn; a dying hero does — that turn IS their death save."""
+        if c.get('hp_current', 1) > 0:
+            return True
+        conditions = c.get('conditions') or []
+        if 'dead' in conditions or 'stable' in conditions:
+            return False
+        return c.get('side') in ('pc', 'ally')
+
     def next_turn(self) -> Dict[str, Any]:
+        """Advance to the next combatant who still has a turn, rolling the round over.
+
+        The pointer used to land on the fallen, so every fight asked the GM to
+        notice and step over its own corpses. If nobody is left standing the
+        pointer simply stops where the scan ended — the fight is over.
+        """
+        combatants = self._load().get('combatants', [])
         data = self._load()
-        n = len(data.get('combatants', []))
+        n = len(combatants)
         if n == 0:
             return data
-        data['turn_index'] = (data.get('turn_index', 0) + 1) % n
-        if data['turn_index'] == 0:
-            data['round'] = data.get('round', 1) + 1
+        idx, rnd = data.get('turn_index', 0), data.get('round', 1)
+        for _ in range(n):
+            idx += 1
+            if idx >= n:
+                idx, rnd = 0, rnd + 1
+            if self._has_a_turn(combatants[idx]):
+                break
+        data['turn_index'], data['round'] = idx, rnd
         self._save(data)
         return data
 

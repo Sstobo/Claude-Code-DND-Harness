@@ -79,7 +79,9 @@ is one per round, on a trigger, and can fire on someone else's turn.
 Actions worth naming out loud: Attack · Cast a Spell · Dash · Disengage · Dodge · Help ·
 Hide · Ready · Shove/Grapple (Athletics vs Athletics or Acrobatics).
 
-`bash tools/gm-combat.sh next-turn` advances the pointer and rolls the round over.
+`bash tools/gm-combat.sh next-turn` advances the pointer and rolls the round over. It
+steps over the fallen on its own, but a **dying hero still gets a turn** — that turn is
+their death save. Call it once per combatant, or the round counter is fiction.
 Run the enemies' turns yourself — decide the target from what the creature wants, not
 from what is convenient, and swing through step 3 like everyone else.
 
@@ -95,6 +97,9 @@ from what is convenient, and swing through step 3 like everyone else.
 ```bash
 bash tools/gm-combat.sh attack "Goblin" --at "Kordan" --with "Scimitar"
 ```
+
+An action with no attack bonus (Fey Charm, Web, a breath weapon) is refused rather
+than faked — those force a **save**, which the defender rolls with `lib/dice.py --dc`.
 
 The enemy's to-hit and damage dice come straight off its stored block. The target's AC
 comes off its record. The engine rolls, compares, doubles the dice on a natural 20,
