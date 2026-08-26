@@ -88,6 +88,11 @@ the fight into a spreadsheet. Show it again whenever the player has lost the thr
 The panel has no right border on purpose: `█` is an ambiguous-width character, so a
 closed box drifts a column on whatever font the player is running. Do not add one.
 
+**The action menu goes below the panel, never inside it.** The three numbered options
+and the closing "Or something else..." are prose the player chooses from, and they run
+whatever length the beat needs — a long one inside a frame wraps and splits it. The
+panel reports the board; the menu asks the question.
+
 The staged attack block above stays **unboxed** for the same reason it has dead air in
 it — a frame would collapse the pause that makes the roll land.
 

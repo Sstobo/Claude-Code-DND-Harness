@@ -7,7 +7,7 @@ sources:
   - { resource: /lib/dice.py }
   - { resource: /tools/gm-combat.sh }
   - { resource: /.claude/skills/gm-combat/SKILL.md }
-generated: { by: claude-opus-5, at: 2026-08-26T18:55:17Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:58:01Z }
 verified: { by: claude-opus-5, at: 2026-08-26T18:47:54Z }
 ---
 
@@ -102,7 +102,9 @@ guessed constant — a long name or a stacked condition list pushes them over ra
 colliding with them.
 
 The staged attack block stays unframed on the same logic plus one more: a box would
-collapse the dead air that makes the roll land.
+collapse the dead air that makes the roll land. The action menu sits below the panel
+rather than inside it, so an option can be as long as the beat needs without wrapping
+into the frame — the panel reports the board, the menu asks the question.
 
 ## What the resolver deliberately does not track
 
