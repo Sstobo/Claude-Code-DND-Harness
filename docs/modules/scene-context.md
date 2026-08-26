@@ -11,7 +11,7 @@ sources:
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
-generated: { by: claude-opus-5, at: 2026-08-26T16:47:37Z }
+generated: { by: claude-fable-5, at: 2026-08-26T18:29:38Z }
 verified: { by: claude-opus-5, at: 2026-08-26T18:02:35Z }
 ---
 
@@ -48,6 +48,31 @@ Ten of those blocks carry design decisions that are not obvious from reading the
   who is here, the hook, what is offstage). An empty pack adds nothing. Setting
   a pack does not fabricate a session. New names walk on via
   `gm-playpack.sh from-book`.
+
+- **Two documents, two rhythms (the abundance architecture, 2026-08-26).** The
+  per-beat `context` brief is the DELTA; `gm-session.sh dossier` is the living
+  campaign document, rendered whole from live state on every call — story
+  overview (the module's part-openers), THE STORY SO FAR (the chronicle), all
+  KEY FACTS, WORLD INDEX, then a NOW block ordered last for long-context
+  attention: threads, full player sheet, full sheets for present NPCs (empty
+  appearance fields dropped), the current scene complete, and THE STORY COMING
+  UP — every reachable exit with its whole text. Delivery is event-driven
+  (session start, scene/location change, after context compaction, on demand)
+  because conversation context is append-only: re-sending a ~8k-token document
+  every beat would stack near-identical copies, so deltas ride between events.
+  The scarcity caps died with it: `_world_remembers` recalls 10 whole entries
+  (was 3, truncated at 240 chars — the cap that dropped the session's two
+  corrections), and `_key_facts` renders every stored category, with the
+  whitelist moved to write time (`note_manager.VALID_CATEGORIES` rejects unknown
+  categories; a muscle-memory `gm-note.sh add` once filed a whole campaign under
+  a category named "add" that no reader rendered).
+
+- **The chronicle is the story as told.** `gm-session.sh chronicle "<prose>"
+  --scene "<label>"` appends to `chronicle.md` — additive narrative with origin
+  stamps inline ([BOOK x.y]/[ADAPTED]/[INVENTED]), written at scene close while
+  the scene is still verbatim in context. It is the durable narrative memory
+  compaction cannot eat, and the provenance record that makes "are we sticking
+  to the book?" a glance instead of an audit.
 
 - **The current scene's book text is never truncated.** Everything else in the
   brief is a summary of state the GM can go and read; `gm_notes` and `read_aloud`

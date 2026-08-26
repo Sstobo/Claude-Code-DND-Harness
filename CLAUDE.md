@@ -29,7 +29,7 @@ Every interaction: **CONTEXT → DECIDE → EXECUTE → PERSIST → NARRATE.**
 The PC CAN die. This is not a guaranteed power-fantasy. Fail-forward does NOT mean immortal — it means failure changes the situation, and sometimes the change is death.
 - **Some plot armor is fine, lethal stakes are mandatory.** Never kill on one unlucky roll in a trivial moment. DO let death land from: reckless play against over-leveled threats, ignored warnings, or a string of bad outcomes that has visibly tightened.
 - **Telegraph lethality.** Before a beat can kill, the danger must be readable — name the threat's weight ("this is far beyond you"), let bad odds show, give an out. Death is earned, never ambush-by-GM-fiat.
-- **0 HP is the dying gate, not auto-death.** On 0 HP run death saves (`gm-combat`). Instant death only on massive damage (damage ≥ max HP) or when the fiction makes survival absurd (fall into lava, executed while helpless). Lethality is machine-readable: `game_core.classify_harm(...)` returns `ok`/`dying`/`dead` under the 5e-faithful death-saves model.
+- **0 HP is the dying gate, not auto-death.** On 0 HP run death saves (`bash tools/gm-combat.sh death-save "<name>"`; a monster at 0 is simply dead). Instant death only on massive damage (damage ≥ max HP) or when the fiction makes survival absurd (fall into lava, executed while helpless). Lethality is machine-readable: `game_core.classify_harm(...)` returns `ok`/`dying`/`dead` under the 5e-faithful death-saves model.
 - **When the PC dies → run the Death Protocol** (below). Do not just end the session.
 
 ## Death Protocol (PC hits 0 and dies)
@@ -48,7 +48,7 @@ SWAP (make the chosen character the active PC):
 ## Action Router — load the matching Skill on demand
 | Player says | Workflow | Skill |
 |---|---|---|
-| "I attack..." | Combat (persist via `gm-combat.sh`) | `gm-combat` |
+| "I attack..." | Combat — every swing resolves in `gm-combat.sh attack` | `gm-combat` |
 | "I cast..." | Spellcasting | `gm-spellcasting` |
 | "I talk to..." / "I ask..." | Social/NPC | `gm-social` |
 | "I try to..." | Skill check (d20 vs DC) | `gm-skills` |
@@ -105,12 +105,24 @@ anytime via `bash tools/gm-session.sh dice on|off|toggle` or natural language
 ## Movement (non-dungeon)
 1. Validate destination (`gm-search.sh`); reachable? obstacles? 2. Travel time (adjacent 1 min · district 15-30 min · <5 mi 1-2 hr · 5-20 mi 2-8 hr · day trip 8-10 hr; stealth ×2, running ÷2, difficult terrain ×2, mounted ×0.75). 3. `bash tools/gm-session.sh move "[loc]"` + `gm-time.sh` (auto-creates the location, checks consequences, runs the reactivity tick). 4. Arrival awareness: Passive Perception = 10 + the character's FULL Perception bonus (Wis mod, plus proficiency when they have it — not the bare Wis mod); mention what beats the hidden DC. 5. Narrate. (Dungeons → `gm-dungeon` skill.)
 
-## Scene context (read at session start + each beat)
-`bash tools/gm-session.sh context` assembles: PREVIOUSLY ON (recent summaries +
-cliffhanger + open threads), STORY THREADS, KEY FACTS, NPC VOICES (present NPCs +
-goal/mood + canonical lines), THREAT CLOCKS, PENDING CONSEQUENCES, and YOUR
-WORLD'S RULES (full, never truncated). `bash tools/gm-context.sh ["loc"]` adds
-grounded source passages.
+## The dossier and the beat brief (two documents, two rhythms)
+**The DOSSIER is the living campaign document** — `bash tools/gm-session.sh dossier`
+— every section whole, no caps: story overview, THE STORY SO FAR (the chronicle),
+all KEY FACTS, WORLD INDEX, then the NOW block (threads, full player sheet, full
+sheets for every NPC present, the current scene's complete book text, and THE
+STORY COMING UP — every reachable exit with its full text and deadlines). Read it
+WHOLE at: session start, every scene/location change, after any context
+compaction, and whenever unsure. Between dossier reads, `gm-session.sh context`
+is the per-beat DELTA brief. `bash tools/gm-context.sh ["loc"]` adds grounded
+source passages.
+**The CHRONICLE is the story as told** — at every scene close, append 3-8 lines:
+`bash tools/gm-session.sh chronicle "<prose>" --scene "<label>"`. Every line
+carries an origin stamp inline — `[BOOK x.y]` (the module said it), `[ADAPTED]`
+(the module bent to this table), `[INVENTED]` (yours) — written WHILE the scene
+is still verbatim in context, never reconstructed later. The chronicle is
+additive narrative; mechanical state still goes through the state tools.
+**Canon drift:** `bash tools/gm-npc.sh stale` lists NPCs improvised past their
+last canon check; after re-grounding one in the book, `gm-npc.sh checked "<name>"`.
 
 ## The living world (fires on its own)
 - **Plan as you go, never pre-build.** The world grows from the table, not from a gazetteer authored before play. When you see a long-game opportunity, seed it with one of these tools and let it develop — a threat clock, an open thread, a new plot beat, or a triggered consequence. That IS the campaign's mid- to long-term planning; do not fan out a book's worth of canon up front (`/new-game` and `/import` both stop at one stage on purpose).
@@ -134,9 +146,10 @@ grounded source passages.
 | Play pack / one name from the book | `gm-playpack.sh set` / `stage` / `from-book "<name>"` |
 | Location moved | `gm-session.sh move` |
 | Consequence (structured) | `gm-consequence.sh add "..." "<trigger>" --trigger-type ... --match ...` |
-| Combat | `gm-combat.sh` (optional; for fights worth tracking) |
+| Combat | `gm-combat.sh` — `start --pc` / `join` / `add-enemy` build the order, `attack` resolves every to-hit and damage roll against stored AC, `death-save` tallies the dying. Never do combat arithmetic yourself. |
 | Fact / note | `gm-note.sh` |
 | New plot thread (seed a dormant thread; or async via `plot-weaver`) | `gm-plot.sh add "<name>" --type … --status dormant --description "…" [--npc …] [--location …]` |
+| Scene closes | `gm-session.sh chronicle "<3-8 lines, origin stamps inline>" --scene "<label>"` |
 | End session | `gm-session.sh end "<summary>" --cliffhanger "..." --open-thread "..."` — then write the arc entry: `gm-recall.sh arc '{"summary": "...", "who_matters": [...], "open_debts": [...]}'` (this is what long-term recall surfaces) |
 All tools take `--json` for structured returns. **Always prefix with `bash tools/`.**
 

@@ -30,8 +30,20 @@ class NoteManager:
         if not facts_path.exists():
             self.json_ops.save_json("facts.json", {})
 
+    # The write-time gate. Any string used to be accepted as a category, so a
+    # muscle-memory `gm-note.sh add "<fact>"` filed a whole session under a
+    # category literally named "add" — which no reader rendered. Three campaigns
+    # were carrying orphaned buckets when this landed.
+    VALID_CATEGORIES = ('plot_local', 'plot_regional', 'plot_world',
+                        'player_choices', 'npc_relations', 'lore')
+
     def add_fact(self, category: str, fact: str) -> bool:
         """Add a fact to the specified category."""
+        if category not in self.VALID_CATEGORIES:
+            print(f"[ERROR] '{category}' is not a fact category. "
+                  f"Valid: {', '.join(self.VALID_CATEGORIES)}")
+            print("  Usage: gm-note.sh <category> \"<fact>\"   (there is no 'add' verb)")
+            return False
         facts = self.json_ops.load_json("facts.json")
 
         if category not in facts:

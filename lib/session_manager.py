@@ -813,7 +813,7 @@ class SessionManager(EntityManager):
             lines.append("--- THE WORLD REMEMBERS (older history this scene touches — "
                          "use it or let it lie, but don't contradict it) ---")
             for r in remembered:
-                lines.append(f"- {self._truncate(r, 240, full)}")
+                lines.append(f"- {r}")  # whole entries — a 240-char cut once stopped one word before "or was BROUGHT"
             for d in open_debts:
                 lines.append(f"OPEN DEBT: {d}")
             if held_back:
@@ -1267,13 +1267,21 @@ class SessionManager(EntityManager):
     KEY_FACT_CATEGORIES = ('plot_local', 'plot_regional', 'plot_world',
                            'player_choices', 'npc_relations', 'lore')
 
-    def _key_facts(self, per_category=3):
-        """Established facts the GM must keep continuity on. per_category=None = all."""
+    def _key_facts(self, per_category=None):
+        """Established facts the GM must keep continuity on.
+
+        Renders EVERY category the store holds, all entries by default. The
+        whitelist lives at write time now (note_manager.VALID_CATEGORIES); a
+        read-side whitelist meant a mis-filed bucket was silently invisible —
+        three campaigns had orphaned buckets and KEY FACTS had never rendered.
+        """
         facts = self.json_ops.load_json("facts.json") or {}
         if not isinstance(facts, dict):
             return []
         out = []
-        for cat in self.KEY_FACT_CATEGORIES:
+        ordered = [c for c in self.KEY_FACT_CATEGORIES if c in facts] + \
+                  [c for c in facts if c not in self.KEY_FACT_CATEGORIES]
+        for cat in ordered:
             items = facts.get(cat)
             if not isinstance(items, list):
                 continue
@@ -1305,7 +1313,7 @@ class SessionManager(EntityManager):
             query = " ".join([location or ""] + present).strip()
             if not query:
                 return [], [], 0
-            top_k = None if full else 3
+            top_k = None if full else 10  # abundance: the cap that dropped tonight's two corrections was 3
             hits = mem.recall(query, top_k=top_k)
             arcs = mem.arcs()
             debts = [str(d) for d in (arcs[-1].get("open_debts") or [])] if arcs else []
@@ -1540,6 +1548,211 @@ class SessionManager(EntityManager):
         return matches[-1]
 
 
+    # ------------------------------------------------------------- chronicle
+    # The story so far, as told — the one artifact the structured files cannot
+    # carry. Appended at scene close WHILE the scene is still verbatim in the
+    # conversation (the moment authorship is still honest), with origin stamps
+    # inline: [BOOK x.y] / [ADAPTED] / [INVENTED]. Additive narrative, never a
+    # shadow copy of the JSON. Rendered whole in the dossier.
+
+    CHRONICLE_FILE = "chronicle.md"
+
+    def chronicle_add(self, entry: str, scene: str = None) -> Dict[str, Any]:
+        """Append one story-so-far entry. `scene` labels the heading when given."""
+        path = self.campaign_dir / self.CHRONICLE_FILE
+        stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        head = f"## {stamp}" + (f" — {scene}" if scene else "")
+        with open(path, "a", encoding="utf-8") as f:
+            if path.stat().st_size == 0 if path.exists() else True:
+                pass
+            f.write(f"{head}\n\n{entry.strip()}\n\n")
+        return {"chronicle": str(path), "entry_chars": len(entry)}
+
+    def _chronicle(self) -> str:
+        path = self.campaign_dir / self.CHRONICLE_FILE
+        if not path.exists():
+            return ""
+        return path.read_text(encoding="utf-8").strip()
+
+    # --------------------------------------------------------------- dossier
+    # The living campaign document — every section whole, rebuilt from live
+    # state at each call so it is always current. Delivered at session start,
+    # on scene/location change, after a context compaction, and on demand;
+    # between deliveries the per-beat `context` brief carries only deltas.
+    # Ordered for long-context attention (strong at the ends, weak in the
+    # middle): identity and rules first, archives in the middle, the NOW block
+    # — current scene, present NPCs, live pressures — last, nearest play.
+
+    def get_dossier(self) -> str:
+        lines = ["=== CAMPAIGN DOSSIER (the living document — read it whole; the per-beat brief only carries deltas) ==="]
+
+        campaign = self.json_ops.load_json(self.campaign_file) or {}
+        name = campaign.get('name', campaign.get('campaign_name', 'Unknown Campaign'))
+        location = campaign.get('player_position', {}).get('current_location', 'Unknown')
+        tod = campaign.get('time_of_day', '')
+        date = campaign.get('current_date', '')
+        lines.append(f"Campaign: {name} | Session #{self._get_session_number()}")
+        lines.append(f"Location: {location} | Time: {tod}, {date}")
+
+        # --- identity & rules (top: read first, governs everything) ---
+        rules = campaign.get('campaign_rules')
+        if rules:
+            lines += ["", "--- YOUR WORLD'S RULES ---", str(rules)]
+
+        # --- story overview (the module's shape, so foreshadowing is possible) ---
+        try:
+            from adventure import AdventureManager
+            adv_mgr = AdventureManager(self._wsd)
+            adv = adv_mgr.load() if (adv_mgr.campaign_dir is not None and adv_mgr.exists()) else None
+        except Exception:
+            adv, adv_mgr = None, None
+        if adv:
+            meta = adv.get('meta') or {}
+            lines += ["", "--- STORY OVERVIEW ---",
+                      f"Module: {meta.get('title', '?')} (levels {meta.get('levels', '?')})"]
+            for sc in adv.get('scenes', []):
+                if str(sc.get('key', '')).startswith('part') and sc.get('gm_notes'):
+                    lines.append(f"{sc.get('title', sc['key'])}: {sc['gm_notes']}")
+
+        # --- the story so far (chronicle, whole) ---
+        chron = self._chronicle()
+        if chron:
+            lines += ["", "--- THE STORY SO FAR (as told at this table; origin stamps are honest) ---", chron]
+
+        # --- middle mass: facts, index, dormant threads ---
+        facts = self._key_facts(per_category=None)
+        if facts:
+            lines += ["", "--- KEY FACTS (all of them) ---"] + [f"- {f}" for f in facts]
+        full_ctx_extras = []
+        lines += self._world_index_lines()
+
+        # --- THE NOW BLOCK (bottom: nearest the conversation) ---
+        lines += ["", "=== NOW ==="]
+
+        # live pressures
+        lines += self._threat_clock_lines()
+        lines += self._pending_consequence_lines()
+        lines += self._story_thread_lines()
+
+        # the player, whole sheet
+        char = self.json_ops.load_json("character.json") or {}
+        if char:
+            lines += ["", "--- PLAYER (full sheet) ---",
+                      json.dumps({k: v for k, v in char.items() if k != 'notes'},
+                                 indent=1, ensure_ascii=False)]
+
+        # present NPCs, whole sheets; everyone else stays in the index above
+        npcs = self.json_ops.load_json("npcs.json") or {}
+        present = self._present_npcs(npcs, location, full=True)
+        if present:
+            lines += ["", "--- PRESENT NPCS (full sheets — these people are in the room) ---"]
+            for pname, _ in present:
+                body = npcs.get(pname) or {}
+                keep = {k: body.get(k) for k in
+                        ('description', 'attitude', 'goal', 'secret', 'current_mood',
+                         'voice', 'bonds', 'events', 'visual_appearance') if body.get(k)}
+                va = keep.get('visual_appearance')
+                if isinstance(va, dict):
+                    va = {k: v for k, v in va.items() if v}
+                    if va:
+                        keep['visual_appearance'] = va
+                    else:
+                        keep.pop('visual_appearance', None)
+                lines.append(f"{pname}:")
+                lines.append(json.dumps(keep, indent=1, ensure_ascii=False))
+
+        # the current scene, whole, and what is reachable from it
+        if adv and adv_mgr:
+            lines += self._adventure_block(full=True)
+            cur = (adv.get('progress') or {}).get('current_scene')
+            scene = next((sc for sc in adv.get('scenes', [])
+                          if sc.get('key') == cur), None) if cur else None
+            if scene:
+                trans = [t for t in scene.get('transitions', []) if isinstance(t, dict)]
+                nxt = []
+                by_key = {sc.get('key'): sc for sc in adv.get('scenes', [])}
+                for t in trans:
+                    ns = by_key.get(t.get('to_key'))
+                    if ns:
+                        nxt.append((t.get('to_key'), t.get('when', ''), ns))
+                if nxt:
+                    lines += ["", "--- THE STORY COMING UP (every reachable exit, whole — pressure, not a rail) ---"]
+                    for nk, when, ns in nxt:
+                        lines.append(f"[{nk}] {ns.get('title', '')}" + (f" — when: {when}" if when else ""))
+                        if ns.get('location'):
+                            lines.append(f"  Location: {ns['location']}")
+                        if ns.get('gm_notes'):
+                            lines.append(f"  GM notes: {ns['gm_notes']}")
+                        if ns.get('read_aloud'):
+                            lines.append(f"  READ-ALOUD: {ns['read_aloud']}")
+
+        lines += ["", "Persist state the moment it changes; append a chronicle entry at scene close "
+                      "(origin stamps inline); re-read this dossier after any scene change or context compaction: "
+                      "bash tools/gm-session.sh dossier"]
+        return "\n".join(lines)
+
+    # Small renderers reused by the dossier; each degrades to [] quietly.
+    def _world_index_lines(self):
+        try:
+            lines = []
+            from book_bible import load_bible
+            bible = load_bible(self.campaign_dir)
+            index = bible.get("index") or {}
+            for bucket, label in (("npcs", "NPCs"), ("locations", "Locations"),
+                                  ("items", "Items"), ("monsters", "Monsters")):
+                entries = [e for e in (index.get(bucket) or []) if isinstance(e, dict) and e.get("name")]
+                if entries:
+                    lines.append(f"{label}:")
+                    for e in entries:
+                        note = str(e.get("note") or "").strip()
+                        lines.append(f"  {e['name']}" + (f" — {note}" if note else ""))
+            if lines:
+                return ["", "--- WORLD INDEX (named things that exist; scan before inventing a name) ---"] + lines
+        except Exception:
+            pass
+        return []
+
+    def _threat_clock_lines(self):
+        try:
+            from threat_clocks import ThreatClocks
+            clocks = ThreatClocks(str(self.campaign_dir)).list_clocks()
+            if clocks:
+                out = ["", "--- THREAT CLOCKS ---"]
+                for c in clocks:
+                    out.append(f"- {c.get('name')}: {c.get('filled', 0)}/{c.get('segments', '?')}"
+                               + (" ⚠ FULL" if c.get('filled', 0) >= c.get('segments', 1) else ""))
+                return out
+        except Exception:
+            pass
+        return []
+
+    def _pending_consequence_lines(self):
+        try:
+            data = self.json_ops.load_json("consequences.json") or {}
+            pend = [c for c in (data.get('consequences') or data if isinstance(data, list) else data.get('consequences', []))
+                    if isinstance(c, dict) and not c.get('resolved')]
+            if pend:
+                return ["", "--- PENDING CONSEQUENCES ---"] + [
+                    f"- {c.get('description', '?')} (trigger: {c.get('trigger', '?')})" for c in pend]
+        except Exception:
+            pass
+        return []
+
+    def _story_thread_lines(self):
+        try:
+            plots = self.json_ops.load_json("plots.json") or {}
+            items = plots.get('plots', plots) if isinstance(plots, dict) else {}
+            out = []
+            for pname, body in (items.items() if isinstance(items, dict) else []):
+                if isinstance(body, dict) and body.get('status') not in ('completed', 'failed'):
+                    out.append(f"- {pname} [{body.get('status', '?')}]: {body.get('description', '')}")
+            if out:
+                return ["", "--- STORY THREADS ---"] + out
+        except Exception:
+            pass
+        return []
+
+
 def main():
     """CLI interface for session management"""
     import argparse
@@ -1585,6 +1798,10 @@ def main():
 
     # Full session context
     context_parser = subparsers.add_parser('context', help='Get full session context (one-command startup)')
+    subparsers.add_parser('dossier', help='The living campaign document — whole, event-driven')
+    chron_parser = subparsers.add_parser('chronicle', help='Append a story-so-far entry (at scene close)')
+    chron_parser.add_argument('entry', help='Prose entry; origin stamps [BOOK x.y]/[ADAPTED]/[INVENTED] inline')
+    chron_parser.add_argument('--scene', help='Scene label for the heading')
     context_parser.add_argument('--full', action='store_true', help='Show full context with less truncation')
 
     choices_parser = subparsers.add_parser('choices', help='Toggle the action-menu play style')
@@ -1660,6 +1877,11 @@ def main():
         for entry in history:
             print(entry)
 
+    elif args.action == 'dossier':
+        print(manager.get_dossier())
+    elif args.action == 'chronicle':
+        result = manager.chronicle_add(args.entry, scene=args.scene)
+        print(f"[SUCCESS] Chronicle entry appended ({result['entry_chars']} chars)")
     elif args.action == 'context':
         print(manager.get_full_context(full=getattr(args, 'full', False)))
 

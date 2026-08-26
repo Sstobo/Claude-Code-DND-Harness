@@ -43,7 +43,7 @@ shift
 
 # Every action the case below handles, in one place: the guard and the
 # unknown-action message both read this, so they cannot drift apart.
-VALID_ACTIONS="start end status move context choices dice world-tick world-tick-rollback world-tick-log save restore list-saves delete-save history"
+VALID_ACTIONS="start end status move context choices dice world-tick world-tick-rollback world-tick-log save restore list-saves delete-save history dossier chronicle"
 
 is_valid_action() {
     local valid
@@ -192,6 +192,18 @@ case "$ACTION" in
                 echo "$CONTEXT"
             fi
         fi
+        ;;
+
+    dossier)
+        # The living campaign document. Event-driven: session start, scene/location
+        # change, after a context compaction, on demand. Whole sections, no caps.
+        $PYTHON_CMD "$LIB_DIR/session_manager.py" dossier
+        ;;
+
+    chronicle)
+        # Append a story-so-far entry at scene close, origin stamps inline.
+        # ACTION was already shifted off at the top of the script.
+        $PYTHON_CMD "$LIB_DIR/session_manager.py" chronicle "$@"
         ;;
 
     context)

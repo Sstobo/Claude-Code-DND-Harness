@@ -69,6 +69,11 @@ if [ "$ACTION" = "party" ]; then
     exit $?
 fi
 
+if [ "$ACTION" = "stale" ]; then
+    $PYTHON_CMD "$LIB_DIR/npc_manager.py" stale "$@"
+    exit $?
+fi
+
 # All other actions require a name as first argument
 if [ "$#" -lt 1 ]; then
     echo "Error: Action '$ACTION' requires a name argument"
@@ -263,6 +268,11 @@ case "$ACTION" in
 
     appearance)
         $PYTHON_CMD "$LIB_DIR/npc_manager.py" appearance "$NAME" "$@"
+        ;;
+
+    checked)
+        # Mark an NPC canon-checked (resets their improvised-beat counter).
+        $PYTHON_CMD "$LIB_DIR/npc_manager.py" checked "$NAME" "$@"
         ;;
 
     set-appearance)
