@@ -7,7 +7,7 @@ sources:
   - { resource: /lib/dice.py }
   - { resource: /tools/gm-combat.sh }
   - { resource: /.claude/skills/gm-combat/SKILL.md }
-generated: { by: claude-opus-5, at: 2026-08-26T18:48:13Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:55:17Z }
 verified: { by: claude-opus-5, at: 2026-08-26T18:47:54Z }
 ---
 
@@ -84,6 +84,25 @@ a lockpick read identically at the table — only the label and the verdict diff
 disadvantage roll, not just on a bare `1d20`. Without that a crit rolled with advantage
 — Reckless Attack, flanking, a prone target, which is most crits a barbarian ever
 rolls — came back as an ordinary hit and never doubled its dice.
+
+## The round panel
+
+`header()` renders the board: enemies and allies in initiative order with block meters
+and the health words the output format calls for, then a two-line hero block read from
+`character.json` (level, race, class, XP, gold) with the conditions and any death-save
+tally. The turn marker lives in the roster and moves down to the hero block on the PC's
+turn. Location comes off `campaign-overview.json`; a missing sheet or location degrades
+to a roster-only panel rather than failing.
+
+**It has no right border, and must not grow one.** `█` (U+2588) and `✓` are
+East-Asian-Width *ambiguous*, so a closed box aligns on one player's font and drifts a
+column on the next. An open rule cannot drift. For the same reason the two right-hand
+columns of the hero block align to whichever head is longer (`_cols`) instead of to a
+guessed constant — a long name or a stacked condition list pushes them over rather than
+colliding with them.
+
+The staged attack block stays unframed on the same logic plus one more: a box would
+collapse the dead air that makes the roll land.
 
 ## What the resolver deliberately does not track
 

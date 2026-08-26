@@ -67,8 +67,29 @@ Four goblins added four times become "Goblin", "Goblin 2", "Goblin 3", "Goblin 4
 each takes damage separately, so use those names. `--ac`, `--init`, and a name argument
 override a stat block (a scaled elite, a named boss).
 
-The header is the truth. Print it when the fight starts, and whenever the player has
-lost the thread.
+`header` renders the round panel — the board the player reads between beats:
+
+```
+── ROUND 2 ────────────────────────── the whispering wood ──
+ ▸ Giant Spider   [████████████]  26/26  AC14  HEALTHY
+   Lion           [███░░░░░░░░░]   7/26  AC12  BLOODIED
+   Brother Anselm +[██████████░░]  20/24  AC16  HEALTHY
+────────────────────────────────────────────────────────────────
+   KORDAN  lvl5 half-orc barbarian  HP [█████████░░░] 39/50  AC13
+   status: charmed · raging         XP 8000    GP 46
+────────────────────────────────────────────────────────────────
+```
+
+Enemies and allies (`+`) sit in initiative order with the turn marker; the hero gets
+the block below, and the marker moves down there on their turn. **Show the panel once
+per round**, after the last combatant has acted — not after every swing, which turns
+the fight into a spreadsheet. Show it again whenever the player has lost the thread.
+
+The panel has no right border on purpose: `█` is an ambiguous-width character, so a
+closed box drifts a column on whatever font the player is running. Do not add one.
+
+The staged attack block above stays **unboxed** for the same reason it has dead air in
+it — a frame would collapse the pause that makes the roll land.
 
 ## 2. ROUND — one turn at a time, 5e action economy
 

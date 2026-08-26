@@ -463,3 +463,36 @@ def test_next_turn_steps_over_the_fallen_but_not_the_dying(dcc_world):
     names = [m._load()["combatants"][i]["name"] for i in order]
     assert names == ["Anselm", "Kordan", "Anselm"], names
     assert m._load()["round"] == 2, "one wrap in three turns, so one new round"
+
+
+def test_the_round_panel_shows_the_board_and_stays_open_on_the_right(dcc_world):
+    """The HUD is deliberately borderless on the right — a closed box drifts on
+    fonts that render █ double-width."""
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=20)
+    m.add_combatant("Bandit", hp=11, ac=12, initiative=15)
+    m.join_pc(initiative=1)
+    m.modify_hp("Bandit", -11)
+    m.modify_hp("Goblin", -4)
+
+    panel = m.header()
+    assert "── ROUND 1 " in panel
+    assert "Bandit" in panel and "DEAD" in panel
+    assert "WOUNDED" in panel or "BLOODIED" in panel
+    assert "TANDY" in panel, "the PC gets the hero block, not a roster row"
+    for line in panel.splitlines():
+        assert not line.endswith(("│", "║")), f"no right border: {line!r}"
+
+
+def test_the_panel_marks_the_heros_turn_and_their_death_saves(dcc_world):
+    m = CombatManager(dcc_world)
+    m.start()
+    m.add_combatant(stat_block=GOBLIN_ARMED, initiative=1)
+    m.join_pc(initiative=20)
+    # Exactly to 0: no overkill, so this is the dying gate rather than massive damage.
+    m.modify_hp("Tandy", -72)
+
+    panel = m.header()
+    assert "▸ TANDY" in panel, "the turn marker moves to the hero block"
+    assert "death saves 0✓/0✗" in panel

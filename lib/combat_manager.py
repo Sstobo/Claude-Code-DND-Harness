@@ -171,13 +171,50 @@ def _warn_sheet(err: Exception) -> None:
     print(f"[WARNING] PC hit points not mirrored to character.json: {err}", file=sys.stderr)
 
 
+PANEL_WIDTH = 64
+
+
+def _bar(current: int, maximum: int, width: int = 12) -> str:
+    """The block meter alone. `█` is ambiguous-width, which is why the panel it
+    sits in has no right border to drift."""
+    if maximum <= 0:
+        return "░" * width
+    filled = max(0, min(width, round(width * current / maximum)))
+    return f"{'█' * filled}{'░' * (width - filled)}"
+
+
 def _hp_bar(current: int, maximum: int, width: int = 12) -> str:
     if maximum <= 0:
         return ""
-    filled = max(0, min(width, round(width * current / maximum)))
     ratio = current / maximum
     mark = "✓" if ratio > 0.6 else "⚠" if ratio > 0.25 else "⚠⚠"
-    return f"{'█' * filled}{'░' * (width - filled)} {current}/{maximum} {mark}"
+    return f"[{_bar(current, maximum, width)}] {current}/{maximum} {mark}"
+
+
+def _condition_label(current: int, maximum: int) -> str:
+    """The enemy health words the output format calls for (CLAUDE.md)."""
+    if current <= 0 or maximum <= 0:
+        return "DEAD"
+    ratio = current / maximum
+    return ("HEALTHY" if ratio > 0.75 else "WOUNDED" if ratio > 0.5
+            else "BLOODIED" if ratio > 0.25 else "CRITICAL")
+
+
+def _cols(left: str, right: str, at: int = 34, gap: int = 2) -> str:
+    """Two columns with a guaranteed gap — a long name pushes the right column
+    over rather than colliding with it. The panel is open on the right, so
+    overflow costs alignment on one line and never breaks the frame."""
+    if not right:
+        return left
+    return left + " " * max(gap, at - len(left)) + right
+
+
+def _rule(left: str = "", right: str = "") -> str:
+    """A horizontal rule with optional inset labels, exactly PANEL_WIDTH wide."""
+    left = f"── {left} " if left else "──"
+    right = f" {right} ──" if right else "──"
+    fill = max(2, PANEL_WIDTH - len(left) - len(right))
+    return f"{left}{'─' * fill}{right}"
 
 
 class CombatManager(EntityManager):
@@ -594,22 +631,79 @@ class CombatManager(EntityManager):
         self._save({})  # clear — combat is over
         return summary
 
+    def _sheet(self) -> Dict[str, Any]:
+        """The PC's sheet, for the hero panel. Missing is fine — the roster still renders."""
+        try:
+            from player_manager import PlayerManager
+            return PlayerManager(self._base)._load_character() or {}
+        except Exception:
+            return {}
+
+    def _where(self) -> str:
+        """Current location, for the panel's top rule. Blank when unknown."""
+        overview = self.json_ops.load_json("campaign-overview.json") or {}
+        pos = overview.get("player_position")
+        return (pos.get("current_location", "") if isinstance(pos, dict) else "") or ""
+
     def header(self) -> str:
+        """The round panel — a roguelike HUD, deliberately open on the right.
+
+        No right border: `█` and `✓` are ambiguous-width, so a closed box drifts a
+        column on whatever font the player happens to run. An open rule cannot.
+        """
         data = self._load()
         if not data.get('combatants'):
             return "(no active combat)"
-        lines = [f"⚔ COMBAT — Round {data.get('round', 1)}"]
-        for i, c in enumerate(data['combatants']):
-            marker = '>' if i == data.get('turn_index', 0) else ' '
-            side = {'pc': '★', 'ally': '+'}.get(c.get('side'), '·')
-            dead = ' 💀' if c.get('hp_current', 1) <= 0 else ''
-            cond = f" [{', '.join(c['conditions'])}]" if c.get('conditions') else ""
-            saves = c.get('death_saves')
-            saves = (f" (death saves {saves['successes']}✓/{saves['failures']}✗)"
-                     if saves else "")
-            lines.append(f"{marker} {c.get('initiative', 0):>2} {side} {c['name']}: "
-                         f"{c['hp_current']}/{c['hp_max']} HP, AC {c['ac']}{cond}{dead}{saves}")
+
+        combatants = data['combatants']
+        turn = data.get('turn_index', 0)
+        pc = next((c for c in combatants if c.get('side') == 'pc'), None)
+        lines = [_rule(f"ROUND {data.get('round', 1)}", self._where().lower())]
+
+        for i, c in enumerate(combatants):
+            if c is pc:
+                continue
+            marker = '▸' if i == turn else ' '
+            name = f"{c['name']} +" if c.get('side') == 'ally' else c['name']
+            hp = f"{c['hp_current']}/{c['hp_max']}"
+            lines.append(f" {marker} {name:<15}[{_bar(c['hp_current'], c['hp_max'])}] "
+                         f"{hp:>6}  AC{c['ac']:<3} {_condition_label(c['hp_current'], c['hp_max'])}")
+
+        if pc:
+            lines += [_rule()] + self._hero_lines(pc, combatants.index(pc) == turn)
+        lines.append(_rule())
         return "\n".join(lines)
+
+    def _hero_lines(self, pc: Dict[str, Any], is_turn: bool) -> List[str]:
+        """The two-line hero panel: who they are and what shape they are in."""
+        sheet = self._sheet()
+        same = str(sheet.get('name', '')).lower() == pc['name'].lower()
+        title = " ".join(str(x) for x in (
+            f"lvl{sheet.get('level')}" if same and sheet.get('level') else "",
+            sheet.get('race', '') if same else "",
+            sheet.get('class', '') if same else "") if x).lower()
+
+        marker = '▸' if is_turn else ' '
+        head = f" {marker} {pc['name'].upper()}  {title}".rstrip()
+
+        status = list(pc.get('conditions') or [])
+        saves = pc.get('death_saves')
+        if saves:
+            status.append(f"death saves {saves['successes']}✓/{saves['failures']}✗")
+        tail = ""
+        if same:
+            xp = sheet.get('xp')
+            xp = xp.get('current') if isinstance(xp, dict) else xp
+            tail = "    ".join(x for x in (f"XP {xp}" if xp is not None else "",
+                                           f"GP {sheet.get('gold')}" if sheet.get('gold') is not None else "") if x)
+        status_head = f"   status: {' · '.join(status) if status else 'normal'}"
+        # Both right columns start at the same place — whichever head is longer sets it.
+        at = max(34, len(head) + 2, len(status_head) + 2)
+        return [
+            _cols(head, f"HP [{_bar(pc['hp_current'], pc['hp_max'])}] "
+                        f"{pc['hp_current']}/{pc['hp_max']}  AC{pc['ac']}", at=at),
+            _cols(status_head, tail, at=at),
+        ]
 
 
 def main():
