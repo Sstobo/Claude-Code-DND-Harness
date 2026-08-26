@@ -121,6 +121,10 @@ carries an origin stamp inline — `[BOOK x.y]` (the module said it), `[ADAPTED]
 (the module bent to this table), `[INVENTED]` (yours) — written WHILE the scene
 is still verbatim in context, never reconstructed later. The chronicle is
 additive narrative; mechanical state still goes through the state tools.
+**The prep ritual:** `gm-session.sh start` prints a GM-private prep block —
+what tonight must honor, what it will test, what not to contradict, and one
+strong start — read it before the first beat and never show a line of it to the
+player.
 **Canon drift:** `bash tools/gm-npc.sh stale` lists NPCs improvised past their
 last canon check; after re-grounding one in the book, `gm-npc.sh checked "<name>"`.
 

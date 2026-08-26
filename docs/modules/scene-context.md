@@ -11,7 +11,7 @@ sources:
   - { resource: /tools/gm-context.sh }
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
-generated: { by: claude-fable-5, at: 2026-08-26T18:29:38Z }
+generated: { by: claude-fable-5, at: 2026-08-26T19:33:01Z }
 verified: { by: claude-opus-5, at: 2026-08-26T18:02:35Z }
 ---
 
@@ -24,7 +24,7 @@ most common way a beat comes out flat.
 
 | Command | Code | Returns |
 |---|---|---|
-| `gm-session.sh context` | `SessionManager.get_full_context` (`lib/session_manager.py:592`) | The **session brief** — everything below, as formatted prose for the model |
+| `gm-session.sh context` | `SessionManager.get_full_context` (`lib/session_manager.py:803`) | The **session brief** — everything below, as formatted prose for the model |
 | `gm-context.sh ["loc"]` | `SceneContext.build` (`lib/scene_context.py:38`) | The **place brief** — this location, NPCs present, named entities, plus grounded source passages |
 
 Neither contains the other. The session brief has no source passages; the place brief has
@@ -32,7 +32,7 @@ no history, threads, clocks, voice, or rules. Narrating a scene generally wants 
 
 ## What the session brief carries, and why each block exists
 
-`get_full_context` (`lib/session_manager.py:592`) assembles, in order: header (campaign, session #, location, time) ·
+`get_full_context` (`lib/session_manager.py:803`) assembles, in order: header (campaign, session #, location, time) ·
 **PRIMER** (play pack, when set) · play style (pacing, action menu, player-rolls dice, RAG inspiration) · **failure (one informing sentence)** · scene-image gate + chronicler · **narrative voice** · **world index** ·
 **adventure** (only when the campaign has an `adventure.json`) ·
 **previously on** + where-we-paused + open threads · **the world remembers** · story threads · **ready threads** (dormant seeded plots whose linked NPC/place is now present, or whose clock matured) · key facts · threat
@@ -119,7 +119,7 @@ Ten of those blocks carry design decisions that are not obvious from reading the
   grouped by non-empty bucket. It is emitted only when at least one bucket has an entry;
   an absent or all-empty `index` prints no header at all.
 - **ADVENTURE is only for a campaign running a converted module.** `_adventure_block`
-  (`lib/session_manager.py:1039`) renders the current scene from `adventure.json` — title,
+  (`lib/session_manager.py:1284`) renders the current scene from `adventure.json` — title,
   location, GM notes, boxed read-aloud, encounters, checks — plus one `Next per the book:`
   line and the reminder that `gm-adventure.sh advance|jump` moves the pointer. Schema
   knowledge stays in `lib/adventure.py`; the brief only renders what

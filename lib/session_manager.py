@@ -144,6 +144,11 @@ class SessionManager(EntityManager):
             f.write(f"## Session Started: {summary['timestamp']}\n\n")
 
         print(f"[SUCCESS] Session started at {summary['timestamp']}")
+
+        # The prep ritual: three things to hold plus one image to open on,
+        # assembled from live state. GM-private — see _prep_block.
+        for line in self._prep_lines():
+            print(line)
         return summary
 
     def end_session(self, summary: str, cliffhanger: str = None,
@@ -256,6 +261,205 @@ class SessionManager(EntityManager):
             lines.append(f"Canon drift: {len(stale_npcs)} NPC(s) need re-grounding "
                          f"(worst \"{worst[0]}\", {worst[1]} beats) — gm-npc.sh stale")
         return lines
+
+    # ------------------------------------------------------- the prep ritual
+    # A GM who runs a good session sat down beforehand and answered three
+    # questions: what did this table already establish that I must not fumble,
+    # what pressure is already loaded, and what image am I opening on. The
+    # harness has always KNOWN the answers — they sit in the chronicle, the
+    # consequence queue, the clocks and the scene pointer — and nothing ever
+    # asked. So sessions opened on a recap instead of an image, and the pressure
+    # that had been quietly building went unread until something tripped it.
+    #
+    # `start` now assembles those answers from live state. Deterministic string
+    # work over files already on disk: no model call, nothing invented, nothing
+    # written back. It is PREP, not narration — the block is labelled GM-private
+    # and none of it is ever said out loud (gm-craft, "Prep is GM-private").
+
+    PREP_HEADER = "--- TONIGHT'S PREP (GM-PRIVATE — read before the first beat, never read aloud) ---"
+
+    # A boundary leaving fewer words than this is an abbreviation, not a sentence.
+    _PREP_MIN_WORDS = 4
+
+    @staticmethod
+    def _prep_sentence(text: str, limit: int = 220, whole: bool = False) -> str:
+        """One line out of a blob: whitespace collapsed, capped at `limit`.
+
+        Cuts at the EARLIEST sentence end by default — an opening image wants
+        one clean image, and scanning per-punctuation returned whichever mark
+        happened to be checked first rather than the one that comes first.
+        A boundary that would leave a fragment ("Dr. Sallow met them at the
+        pier." → "Dr.") is skipped and the scan continues. `whole=True` keeps
+        the run of text and only caps it, which is what established facts
+        need: half a fact is a wrong fact.
+        """
+        flat = " ".join(str(text or "").split())
+        if not flat:
+            return ""
+        if not whole:
+            at = 0
+            while at < limit:
+                ends = [i for i in (flat.find(e, at) for e in (". ", "! ", "? "))
+                        if i >= 0]
+                if not ends:
+                    break
+                i = min(ends)
+                if i >= limit:
+                    break
+                if len(flat[:i].split()) >= SessionManager._PREP_MIN_WORDS:
+                    return flat[:i + 1]
+                at = i + 1
+        return flat if len(flat) <= limit else flat[:limit - 3].rstrip() + "..."
+
+    @staticmethod
+    def _chronicle_tail(chronicle: str) -> str:
+        """The last thing the chronicle says happened.
+
+        The LAST LINE, not the last entry: one entry is several stamped lines
+        appended in a single call, and the GM needs the one the table stopped
+        on. Headings (`## <stamp> — <scene>`) are skipped.
+        """
+        for line in reversed((chronicle or "").splitlines()):
+            line = line.strip()
+            if line and not line.startswith("#"):
+                return line
+        return ""
+
+    @classmethod
+    def _prep_block(cls, chronicle: str = "", facts: List[str] = None,
+                    consequences: Dict[str, Any] = None,
+                    clocks: Dict[str, Any] = None,
+                    scene: Dict[str, Any] = None,
+                    location: str = "") -> List[str]:
+        """Pure prep assembly over already-loaded state (unit-testable).
+
+        Four lines — must honor / will test / do not contradict / one strong
+        start — each built only from the sources it actually has. Every source
+        is optional and degrades on its own: no chronicle.md drops "must
+        honor", no clocks or unresolved consequences drops "will test", empty
+        facts.json drops "do not contradict", and no adventure.json (or a scene
+        carrying no read_aloud) leaves the strong start as location plus "open
+        mid-motion", with no quoted image. A campaign holding none of
+        them returns [] rather than a header over nothing.
+        """
+        facts = [f for f in (facts or []) if str(f).strip()]
+        tail = cls._chronicle_tail(chronicle)
+        lines = []
+
+        if tail:
+            lines.append("Tonight must honor: "
+                         + cls._prep_sentence(tail, 300, whole=True))
+
+        pressure = []
+        clocks = clocks if isinstance(clocks, dict) else {}
+        consequences = consequences if isinstance(consequences, dict) else {}
+        for name, c in clocks.items():
+            if not isinstance(c, dict):
+                continue
+            try:
+                cur, mx = int(c.get('current', 0) or 0), int(c.get('max', 0) or 0)
+            except (TypeError, ValueError):
+                continue  # a hand-edited clock ("current": "four") drops its own line
+            if mx > 0 and cur * 2 >= mx:
+                pressure.append(f"the \"{name}\" clock at {cur}/{mx}"
+                                + (" (FULL — a beat is due)" if cur >= mx else ""))
+        waiting = [c for c in (consequences.get('active') or [])
+                   if isinstance(c, dict) and not c.get('resolved')]
+        for c in waiting[:2]:
+            pressure.append(f"{cls._prep_sentence(c.get('consequence', ''), 140)} "
+                            f"(waiting on: {c.get('trigger', '?')})")
+        if len(waiting) > 2:
+            pressure.append(f"+{len(waiting) - 2} more waiting on a trigger")
+        if pressure:
+            lines.append("Tonight will test: " + " · ".join(pressure))
+
+        if facts:
+            lines.append("Do not contradict: " + " · ".join(
+                cls._prep_sentence(f, 200, whole=True) for f in facts[:2]))
+
+        scene = scene if isinstance(scene, dict) else {}
+        where = scene.get('location') or location
+        skey, stitle = str(scene.get('key', '')), str(scene.get('title', ''))
+        title = stitle if stitle.startswith(skey) else f"{skey} {stitle}".strip()
+        # ONLY read_aloud. gm_notes is bookkeeping ("if the party failed the
+        # check in 1.4...") and the chronicle tail is already the must-honor
+        # line — offering either as the opening image handed the GM a bad start
+        # or the same sentence twice. No read_aloud, no image clause.
+        image = cls._prep_sentence(scene.get('read_aloud', ''))
+        if title or where or image:
+            opening = "One strong start: open mid-motion"
+            if title:
+                opening += f" on {title}"
+            if where:
+                opening += f" at {where}"
+            if image:
+                opening += f" — {image}"
+            opening = opening.rstrip(" —")
+            if opening[-1] not in ".!?":
+                opening += "."
+            lines.append(opening + " No recap, no menu of what happened last"
+                                   " time; the first thing they hear is already"
+                                   " underway.")
+
+        return (["", cls.PREP_HEADER] + lines) if lines else []
+
+    def _prep_lines(self) -> List[str]:
+        """Load the prep block's sources; any that are missing simply drop out.
+
+        Guarded like every sibling line-builder (`_session_health`): prep is a
+        courtesy printed after `start` has already done its work, so a shape
+        nobody anticipated costs the block, never the start command.
+        """
+        try:
+            return self._prep_block(**self._prep_sources())
+        except Exception:
+            return []
+
+    def _prep_sources(self) -> Dict[str, Any]:
+        """The prep block's inputs, read off disk."""
+        scene = {}
+        try:
+            from adventure import AdventureManager
+            manager = AdventureManager(self._wsd)
+            if manager.campaign_dir is not None and manager.exists():
+                adv = manager.load()
+                cur = (adv.get('progress') or {}).get('current_scene')
+                scene = manager._scene(adv, cur) or {}
+        except Exception:
+            scene = {}
+
+        # _key_facts renders category by category, so its tail is the last
+        # category's last fact rather than the newest thing anyone wrote down.
+        # Prep wants recency, and every stored fact carries a timestamp.
+        #
+        # Unlike _key_facts this DOES whitelist: "do not contradict" shows two
+        # lines, and the import writes its own diagnostics into facts.json
+        # (location_reconcile's dropped_references bucket, same shape), which
+        # would push real continuity off a two-line list.
+        stored = self.json_ops.load_json("facts.json") or {}
+        stamped = []
+        if isinstance(stored, dict):
+            for cat, items in stored.items():
+                if cat not in self.KEY_FACT_CATEGORIES:
+                    continue
+                for it in (items if isinstance(items, list) else []):
+                    if isinstance(it, dict):
+                        stamped.append((str(it.get('timestamp', '')),
+                                        it.get('fact', it.get('text', it.get('event', '')))))
+                    elif it:
+                        stamped.append(("", str(it)))
+        newest = [txt for _, txt in sorted(stamped, key=lambda s: s[0], reverse=True) if txt]
+
+        campaign = self.json_ops.load_json(self.campaign_file) or {}
+        pos = campaign.get('player_position') or {}
+        return dict(
+            chronicle=self._chronicle(),
+            facts=newest,
+            consequences=self.json_ops.load_json("consequences.json") or {},
+            clocks=self.json_ops.load_json("threat-clocks.json") or {},
+            scene=scene,
+            location=pos.get('current_location', '') if isinstance(pos, dict) else '',
+        )
 
     def get_status(self) -> Dict[str, Any]:
         """
@@ -868,9 +1072,15 @@ class SessionManager(EntityManager):
             lines.append("")
             lines.append("--- THREAT CLOCKS ---")
             for clock_name, c in clocks.items():
-                cur, mx = int(c.get('current', 0)), int(c.get('max', 1))
+                # Per-clock guard: one hand-edited value must cost its own line,
+                # never the section (and never the whole brief — this path used
+                # to raise straight out of the per-beat context).
+                try:
+                    cur, mx = int(c.get('current', 0)), int(c.get('max', 1))
+                except (TypeError, ValueError):
+                    continue
                 bar = "●" * cur + "○" * max(0, mx - cur)
-                flag = "  ⚠ FULL — a beat is due" if cur >= mx else ""
+                flag = "  ⚠ FULL — a beat is due" if mx > 0 and cur >= mx else ""
                 lines.append(f"{clock_name}: [{bar}] {cur}/{mx}{flag}")
 
         # --- Character ---
@@ -1713,27 +1923,36 @@ class SessionManager(EntityManager):
         return []
 
     def _threat_clock_lines(self):
+        # Shipped broken: imported a class named ThreatClocks (it is
+        # ThreatClockManager) and read filled/segments (the store writes
+        # current/max) — and the bare except made the section silently never
+        # render. Caught by a ticket implementer reading past it.
         try:
-            from threat_clocks import ThreatClocks
-            clocks = ThreatClocks(str(self.campaign_dir)).list_clocks()
+            from threat_clocks import ThreatClockManager
+            clocks = ThreatClockManager(self._wsd).get_clocks()
             if clocks:
                 out = ["", "--- THREAT CLOCKS ---"]
-                for c in clocks:
-                    out.append(f"- {c.get('name')}: {c.get('filled', 0)}/{c.get('segments', '?')}"
-                               + (" ⚠ FULL" if c.get('filled', 0) >= c.get('segments', 1) else ""))
-                return out
+                for name, c in clocks.items():
+                    try:
+                        cur, mx = int(c.get('current', 0)), int(c.get('max', 1))
+                    except (TypeError, ValueError):
+                        continue  # one bad clock costs its own line, not the section
+                    out.append(f"- {name}: {cur}/{mx}" + (" ⚠ FULL" if mx > 0 and cur >= mx else ""))
+                return out if len(out) > 2 else []
         except Exception:
             pass
         return []
 
     def _pending_consequence_lines(self):
+        # The store's shape is {"active": [...], "resolved": [...]} — the first
+        # cut guessed a "consequences" key and rendered nothing, silently.
         try:
             data = self.json_ops.load_json("consequences.json") or {}
-            pend = [c for c in (data.get('consequences') or data if isinstance(data, list) else data.get('consequences', []))
+            pend = [c for c in (data.get('active') or [])
                     if isinstance(c, dict) and not c.get('resolved')]
             if pend:
                 return ["", "--- PENDING CONSEQUENCES ---"] + [
-                    f"- {c.get('description', '?')} (trigger: {c.get('trigger', '?')})" for c in pend]
+                    f"- {c.get('consequence', '?')} (trigger: {c.get('trigger', '?')})" for c in pend]
         except Exception:
             pass
         return []

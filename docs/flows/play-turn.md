@@ -10,7 +10,8 @@ sources:
   - { resource: /.claude/settings.json }
   - { resource: /lib/play_pack.py }
   - { resource: /tools/gm-playpack.sh }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T12:24:29Z }
+  - { resource: /lib/session_manager.py }
+generated: { by: claude-opus-4-8[1m], at: 2026-08-26T19:10:53Z }
 verified: { by: cursor-grok-4.6, at: 2026-08-14T18:59:59Z }
 ---
 
@@ -75,6 +76,21 @@ active (else campaign selection — `gm-campaign.sh list`, then `switch <name>`)
 active campaign have a `character.json` (else identity-first onboarding). Each failure has a
 specific destination — see [onboarding and the death hand-off](onboarding-and-death.md) and
 [install and setup](../playbooks/install-and-setup.md).
+
+`gm-session.sh start` then hands the GM a **prep block before the first beat**
+(`SessionManager._prep_block`), assembled from state already on disk: the last
+line of `chronicle.md` (what tonight must honor), clocks at or past half plus
+consequences still waiting on a trigger (what tonight will test), the two newest
+facts by timestamp (what not to contradict), and the current `adventure.json`
+scene's title, location and `read_aloud` (one strong start). With no module —
+every `/new-game` world — the strong start is the current location and "open
+mid-motion" with no quoted image, because the only other text on hand is the
+chronicle tail already spent on the must-honor line. No model call and no
+write — deterministic string assembly, and each line drops out on its own when its
+file is absent, so a campaign with no chronicle and no module still gets the lines
+it can fill. It is labelled GM-PRIVATE because it is prep, not narration: no line
+of it is ever read to the player (see `.claude/skills/gm-craft`, "Running an
+Adapted Module").
 
 The "exists but none active" state is its own branch because it is not a broken install and
 `/setup` does not fix it. `world-state/active-campaign.txt` is what every tool resolves state
