@@ -165,14 +165,23 @@ uv run python lib/world_bible.py review
 Ask them: **looks right — play it** / **change something**.
 `uv run python lib/world_bible.py confirm` only after they say so.
 
-Chronicler (once):
+Chronicler (once) — the art style is a per-campaign decision locked HERE, and
+`gm-image.sh generate` refuses to render until it is set:
 
 ```bash
 bash tools/gm-image.sh chronicler \
   --name "<in-world artist>" \
   --style "In the style of ..." \
+  --era "<the book's century/tech level: what may and may NOT appear in frame>" \
   --persona "..."
 ```
+
+**Let the player pick the style** with AskUserQuestion — 3 fully-specified looks drawn
+from this book (references, medium, palette, light; never generic "fantasy art") plus
+free text. It is their gallery for the whole campaign. The `--era` rail is separate from `--style` on purpose: style is the brush, era is
+the props. State it as what may and may NOT appear in frame ("Hyborian bronze age:
+bronze blades, no steel plate, no gunpowder"). Without it the model reaches for its
+default century and drops anachronisms into the scene.
 
 ---
 
@@ -207,6 +216,19 @@ bash tools/gm-playpack.sh set --json '{
 }'
 bash tools/gm-playpack.sh stage
 ```
+
+**Lock the look of the people in the room** — these 2–4 are the faces the player
+meets in the first five minutes, and an image refuses to render a named character
+with no block. 11 fields, fixed order, fixed vocabulary tokens rather than prose,
+grounded in the book wherever the book says anything:
+
+```bash
+bash tools/gm-npc.sh set-appearance "<Name>" --race "..." --sex "..." --size "..." \
+  --color "..." --hair "..." --eyes "..." --face "..." --shirt "..." --pants "..." \
+  --gear "..." --short_description "..."
+```
+
+Only these people. Offstage names get a block when play walks up to them.
 
 **Give the story a spine — seed the antagonist's clock.** A stage without a
 countdown is inert. Seed **at least one** threat clock whose aim completes

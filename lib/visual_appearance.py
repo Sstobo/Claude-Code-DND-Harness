@@ -5,10 +5,19 @@ Every character in the world (the PC and every NPC) carries a structured
 has no memory between calls; this block is the single source of truth the
 scene-illustrator injects into every prompt that contains that character.
 
-The field set is FIXED and ORDERED. Authored at creation (world-gen / NPC-gen /
-character-creation) and updated whenever a character's look changes in play
-(new gear, wounds, a haircut, aging). One module so the PC and NPC paths can
-never drift apart.
+The field set is FIXED and ORDERED, and it is authored BEFORE a character's
+first image — never derived from one afterwards. Once authored it is frozen:
+it changes only on an explicit in-world event (new armor, a scar, a haircut),
+never by re-deriving it from a fresh scene prompt. Re-derivation is how looks
+drift.
+
+Write values as fixed vocabulary tokens, not prose: "olive-green", not
+"a sort of mottled greenish tone". The model re-reads identical words as an
+identical instruction; paraphrase reads as a new character.
+
+One module so the PC and NPC paths can never drift apart. The CLI flags on
+`gm-npc.sh set-appearance` / `gm-player.sh set-appearance` are generated from
+VISUAL_FIELDS, so adding a field here adds it everywhere.
 """
 
 from __future__ import annotations
@@ -16,18 +25,25 @@ from __future__ import annotations
 # The exact, ordered field set. Do NOT add/remove keys without updating the
 # scene-illustrator agent, the creation docs, and the extraction schema.
 VISUAL_FIELDS = (
-    "sex",        # male / female / nonbinary / n/a (construct, swarm, etc.)
-    "age",        # "late 20s", "ancient", "adolescent"
-    "race",       # cultural/fantasy race or ethnicity ("Human", "Half-Orc")
-    "species",    # biological kind ("human", "rat-changeling", "ooze", "AI drone")
-    "hair",       # color, length, style, condition ("" if none — bald, slime, metal)
-    "face",       # shape, skin tone, marks, default expression
-    "eyes",       # color + what they do ("brown, darting"; "no eyes — sensor cluster")
-    "clothing",   # every visible garment: color, fit, wear, branding
-    "gear",       # visible weapons/items, how carried; note barefoot here if so
-    "demeanor",   # posture, body language, vibe (scrappy / regal / broken)
-    "size",       # build + scale ("small, slight"; "towering, 9ft"; "tiny, cat-sized")
+    "race",              # cultural/fantasy race or kind ("Half-Orc", "ooze", "AI drone")
+    "sex",               # male / female / nonbinary / n/a (construct, swarm)
+    "size",              # build + scale ("small, slight"; "towering, 7ft, heavy")
+    "color",             # skin/hide/chassis colour ("olive-green", "ash-grey")
+    "hair",              # colour, length, style ("" if none — bald, slime, metal)
+    "eyes",              # colour + what they do ("dark brown, deep-set")
+    "face",              # shape, marks, default expression
+    "shirt",             # upper body: garment, colour, condition
+    "pants",             # lower body: garment, colour, footwear (note barefoot here)
+    "gear",              # visible weapons/items and how they're carried
+    "short_description",  # the silhouette at thumbnail size: one shape, one colour, one prop
 )
+
+# Fields the old 11-field schema carried that this one folds elsewhere.
+# Kept so existing campaigns keep their authored looks instead of blanking.
+_LEGACY_MAP = {
+    "clothing": "shirt",   # old single garment field → upper body
+    "species": "race",     # old biological kind → race, when race is empty
+}
 
 
 def empty_template() -> dict:
@@ -38,21 +54,24 @@ def empty_template() -> dict:
 def normalize(va) -> dict:
     """Coerce arbitrary input to the canonical key set, in order.
 
-    Unknown keys are dropped; missing keys are filled blank; values are
-    stringified and trimmed. Always returns all VISUAL_FIELDS.
+    Legacy keys (``clothing``, ``species``) migrate into their replacement when
+    that replacement is empty; other unknown keys are dropped. Missing keys are
+    filled blank; values are stringified and trimmed.
     """
     src = va if isinstance(va, dict) else {}
     out = {}
     for k in VISUAL_FIELDS:
         v = src.get(k, "")
         out[k] = ("" if v is None else str(v)).strip()
+    for old, new in _LEGACY_MAP.items():
+        if not out[new] and src.get(old):
+            out[new] = str(src[old]).strip()
     return out
 
 
 def is_blank(va) -> bool:
     """True if no field carries any content (nothing authored yet)."""
-    n = normalize(va)
-    return not any(n.values())
+    return not any(normalize(va).values())
 
 
 def merge(existing, updates: dict) -> dict:
@@ -65,39 +84,42 @@ def merge(existing, updates: dict) -> dict:
 
 
 def format_line(name: str, va) -> str:
-    """Render a one-line 'character bible' string for an image prompt.
+    """Render the block as one prompt-ready spec line.
 
-    Skips blank fields so a partially-authored block still reads naturally.
-    Returns "" if the block is entirely blank.
+    Emitted as ``key: value`` pairs in fixed order — a spec sheet, not prose —
+    so the same character reaches the model as the same string every time.
+    Blank fields are skipped; a wholly blank block returns "".
     """
     n = normalize(va)
-    if not any(n.values()):
-        return ""
+    parts = [f"{k}: {n[k]}" for k in VISUAL_FIELDS if n[k]]
+    return f"{name} — " + "; ".join(parts) + "." if parts else ""
 
-    # race + species fold together when both present / when redundant.
-    race, species = n["race"], n["species"]
-    if race and species and race.lower() != species.lower():
-        kind = f"{race} ({species})"
-    else:
-        kind = race or species
 
-    parts = []
-    ident = ", ".join(p for p in (n["sex"], n["age"], kind) if p)
-    if ident:
-        parts.append(ident)
-    if n["hair"]:
-        parts.append(f"{n['hair']} hair")
-    if n["face"]:
-        parts.append(n["face"])
-    if n["eyes"]:
-        parts.append(f"{n['eyes']} eyes")
-    if n["clothing"]:
-        parts.append(f"wearing {n['clothing']}")
-    if n["gear"]:
-        parts.append(n["gear"])
-    if n["demeanor"]:
-        parts.append(f"{n['demeanor']} demeanor")
-    if n["size"]:
-        parts.append(f"{n['size']} build")
+def demo() -> None:
+    """Self-check: field order, legacy migration, merge, blank handling."""
+    assert empty_template() == {k: "" for k in VISUAL_FIELDS}
+    assert is_blank({}) and is_blank({"race": "  "}) and format_line("X", {}) == ""
 
-    return f"{name} — " + "; ".join(parts) + "."
+    legacy = {"species": "half-orc", "clothing": "fur harness", "age": "30s",
+              "sex": "male", "hair": "black"}
+    n = normalize(legacy)
+    assert n["race"] == "half-orc", n           # species folded in
+    assert n["shirt"] == "fur harness", n       # clothing folded in
+    assert "age" not in n and "demeanor" not in n
+    assert list(n) == list(VISUAL_FIELDS)       # order is stable
+
+    # An explicit race wins over the legacy species value.
+    assert normalize({"race": "Half-Orc", "species": "orc"})["race"] == "Half-Orc"
+
+    merged = merge(n, {"eyes": "dark brown", "hair": "", "bogus": "x"})
+    assert merged["eyes"] == "dark brown" and merged["hair"] == "black"
+    assert "bogus" not in merged
+
+    line = format_line("Kordan", merged)
+    assert line.startswith("Kordan — race: half-orc; sex: male; "), line
+    assert line.index("hair:") < line.index("eyes:") < line.index("shirt:"), line
+    print("visual_appearance demo OK")
+
+
+if __name__ == "__main__":
+    demo()

@@ -15,7 +15,7 @@ in-world background). Honour the book's flavour, but keep the 5e mechanics under
 5. **Abilities**: Roll or assign ability scores
 6. **Spells** (if applicable): For spellcasting classes - THOROUGH selection
 7. **Gear**: Starting equipment based on class/background
-8. **Look**: Author `visual_appearance` (all 11 keys)
+8. **Look**: Author `visual_appearance` (all 11 keys, fixed order)
 9. **Confirm**: Display complete character sheet
 10. **Save**: Store via save-json
 
@@ -195,7 +195,7 @@ Save this character? (yes/no)
 When user confirms "yes", execute (the saved JSON MUST include `hp` and a fully-authored
 `visual_appearance` block — it is the locked look every future image renders):
 ```bash
-bash tools/gm-player.sh save-json '{"name":"Character Name","race":"Race","class":"Class","level":1,"stats":{"str":15,"dex":14,"con":13,"int":12,"wis":10,"cha":8},"hp":{"current":10,"max":10},"ac":16,"skills":{"athletics":5},"equipment":["Longsword","Shield"],"features":["Fighting Style"],"spells":{"cantrips":[],"level_1":[]},"background":"Background","alignment":"Alignment","bonds":"Bonds text","flaws":"Flaws text","ideals":"Ideals text","traits":"Traits text","visual_appearance":{"sex":"female","age":"late 20s","race":"Race","species":"human","hair":"color, length, style","face":"shape, skin tone, marks, default expression","eyes":"color + what they do","clothing":"every visible garment, color, fit, wear, branding","gear":"visible weapons/items, how carried; note if barefoot","demeanor":"posture, body language, vibe","size":"build + scale"}}'
+bash tools/gm-player.sh save-json '{"name":"Character Name","race":"Race","class":"Class","level":1,"stats":{"str":15,"dex":14,"con":13,"int":12,"wis":10,"cha":8},"hp":{"current":10,"max":10},"ac":16,"skills":{"athletics":5},"equipment":["Longsword","Shield"],"features":["Fighting Style"],"spells":{"cantrips":[],"level_1":[]},"background":"Background","alignment":"Alignment","bonds":"Bonds text","flaws":"Flaws text","ideals":"Ideals text","traits":"Traits text","visual_appearance":{"race":"Race","sex":"female","size":"build + scale","color":"skin/hide colour","hair":"colour, length, style","eyes":"colour + what they do","face":"shape, marks, default expression","shirt":"upper body: garment, colour, condition","pants":"lower body: garment, colour, footwear","gear":"visible weapons/items, how carried","short_description":"the silhouette at thumbnail size: one shape, one colour, one prop"}}'
 ```
 
 ### Important Notes
@@ -211,10 +211,12 @@ bash tools/gm-player.sh save-json '{"name":"Character Name","race":"Race","class
 
 ## Shared: visual_appearance, dice, save
 
-**`visual_appearance` is REQUIRED** and has EXACTLY these 11 keys:
-`sex, age, race, species, hair, face, eyes, clothing, gear, demeanor, size`.
+**`visual_appearance` is REQUIRED** and has EXACTLY these 11 keys, in this fixed
+order: `race, sex, size, color, hair, eyes, face, shirt, pants, gear, short_description`.
 Ask the player how they picture their character (or infer it) and fill every field —
-never leave the look blank. Replace all placeholder values with the real character data.
+never leave the look blank; `gm-image.sh generate` refuses to render a named
+character with no block. Replace all placeholder values with the real character data.
+Write fixed vocabulary tokens, not prose — "olive-green", not "a sort of mottled greenish tone" — so the same character reaches the image model as the same string every time. Once authored the block is FROZEN: it changes only on an explicit in-world event (new armour, a scar, a haircut), never re-derived to suit a new scene.
 
 **Dice** (any random element):
 ```bash

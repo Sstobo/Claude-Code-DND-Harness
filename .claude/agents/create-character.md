@@ -25,7 +25,7 @@ in-world background). Honour the book's flavour, but keep the 5e mechanics under
 5. **Abilities**: Roll or assign ability scores
 6. **Spells** (if applicable): For spellcasting classes
 7. **Gear**: Starting equipment based on class/background
-8. **Look**: Author `visual_appearance` (all 11 keys)
+8. **Look**: Author `visual_appearance` (all 11 keys, fixed order)
 9. **Confirm**: Display complete character sheet
 10. **Save**: Store via save-json
 
@@ -118,7 +118,7 @@ Save this character? (yes/no)
 
 When user confirms "yes", execute (MUST include `hp` and all 11 `visual_appearance` keys):
 ```bash
-./tools/gm-player.sh save-json '{"name":"Character Name","race":"Race","class":"Class","level":1,"stats":{"str":15,"dex":14,"con":13,"int":12,"wis":10,"cha":8},"hp":{"current":10,"max":10},"ac":16,"skills":{"athletics":5},"equipment":["Longsword","Shield"],"features":["Fighting Style"],"background":"Background","alignment":"Alignment","bonds":"Bonds text","flaws":"Flaws text","ideals":"Ideals text","traits":"Traits text","visual_appearance":{"sex":"male","age":"middle-aged","race":"Mountain Dwarf","species":"dwarf","hair":"long braided iron-grey beard, balding","face":"ruddy weathered skin, broad nose, stern","eyes":"deep-set brown, steady","clothing":"dented chain mail, green cloak","gear":"longsword and round shield, both well-used","demeanor":"stoic, planted, immovable","size":"short and broad, heavily muscled"}}'
+./tools/gm-player.sh save-json '{"name":"Character Name","race":"Race","class":"Class","level":1,"stats":{"str":15,"dex":14,"con":13,"int":12,"wis":10,"cha":8},"hp":{"current":10,"max":10},"ac":16,"skills":{"athletics":5},"equipment":["Longsword","Shield"],"features":["Fighting Style"],"background":"Background","alignment":"Alignment","bonds":"Bonds text","flaws":"Flaws text","ideals":"Ideals text","traits":"Traits text","visual_appearance":{"race":"Mountain Dwarf","sex":"male","size":"short and broad, heavily muscled","color":"ruddy weathered skin","hair":"long braided iron-grey beard, balding","eyes":"deep-set brown, steady","face":"broad nose, stern set","shirt":"dented chain mail over green wool","pants":"heavy leather breeches, iron-shod boots","gear":"longsword and round shield, both well-used","short_description":"squat grey-bearded dwarf, green cloak, round shield"}}'
 ```
 
 Or use the Python script directly:
@@ -138,10 +138,10 @@ uv run python features/character-creation/save_character.py '<character_json>'
 
 ## Shared: visual_appearance, dice, save
 
-**Always author `visual_appearance` (all 11 keys: sex, age, race, species, hair,
-face, eyes, clothing, gear, demeanor, size).** Ask the player how they picture
-their character — never leave it blank. This block is what keeps the character
-on-model (right sex, right look) in every generated image.
+**Always author `visual_appearance` (all 11 keys, in this fixed order: race, sex, size, color, hair, eyes, face, shirt, pants, gear, short_description).** Ask the player how they picture their character — never leave it blank. This
+block is what keeps the character on-model (right sex, right size, right gear) in
+every generated image, and `gm-image.sh generate` REFUSES to render a named
+character who has no block. Write fixed vocabulary tokens, not prose — "olive-green", not "a sort of mottled greenish tone" — so the same character reaches the image model as the same string every time. Once authored the block is FROZEN: it changes only on an explicit in-world event (new armour, a scar, a haircut), never re-derived to suit a new scene.
 
 **Dice** (any random element):
 ```bash

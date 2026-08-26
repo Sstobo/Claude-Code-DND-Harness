@@ -13,7 +13,7 @@ sources:
   - { resource: /lib/world_bible.py }
   - { resource: /lib/session_manager.py }
   - { resource: /lib/play_pack.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-19T15:55:41Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
 verified: { by: claude-fable-5, at: 2026-08-13T14:27:33Z }
 ---
 
@@ -145,9 +145,9 @@ A dictionary keyed by NPC name.
     "character_sheet": null,
 
     "aliases": ["name variants recorded by the integrity gate"],
-    "visual_appearance": {"sex": "", "age": "", "race": "", "species": "", "hair": "",
-                          "face": "", "eyes": "", "clothing": "", "gear": "",
-                          "demeanor": "", "size": ""},
+    "visual_appearance": {"race": "", "sex": "", "size": "", "color": "", "hair": "",
+                          "eyes": "", "face": "", "shirt": "", "pants": "", "gear": "",
+                          "short_description": ""},
     "goal": "string", "secret": "string", "current_mood": "neutral",
     "voice": "string — how they SOUND (not their lines; those are `context`)",
     "bonds": {},

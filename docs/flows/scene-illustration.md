@@ -7,7 +7,7 @@ sources:
   - { resource: /lib/visual_appearance.py }
   - { resource: /tools/gm-image.sh }
   - { resource: /.claude/agents/scene-illustrator.md }
-generated: { by: claude-opus-5, at: 2026-08-14T14:46:17Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
 ---
 
 # Illustrating a scene
@@ -18,7 +18,7 @@ look like one artist drew one cast is state on disk, injected into every prompt.
 ## The path
 
 1. **Gate.** The session brief reports `Scene images: ENABLED` or `DISABLED` based purely
-   on `OPENAI_API_KEY` being set. Disabled means never call the tool and never mention
+   on `XAI_API_KEY` (or `OPENAI_API_KEY`) being set. Disabled means never call the tool and never mention
    images — an unmentioned absence, not an apology.
 2. **Spawn `scene-illustrator` in the background** with a one-line beat brief and the
    campaign's locked art style passed verbatim. The slow API call stays off the critical
@@ -85,21 +85,53 @@ does not ride along are deliberate: not passing `--character` for that person, o
 
 ## The appearance block is a fixed, ordered field list
 
-`VISUAL_FIELDS` is 11 keys: sex, age, race, species, hair, face, eyes, clothing, gear,
-demeanor, size. It is fixed so the PC and NPC paths cannot drift apart — one module
-(`lib/visual_appearance.py`) normalizes, merges, and formats for both, and the extraction
-schema mirrors it deliberately. `race` and `species` are separate on purpose (cultural vs
-biological), and "barefoot" belongs under `gear`.
+`VISUAL_FIELDS` is 11 keys in this order: race, sex, size, color, hair, eyes, face, shirt, pants, gear, short_description.
+It is fixed so the PC and NPC paths cannot drift apart — one module
+(`lib/visual_appearance.py`) normalizes, merges, and formats for both; the CLI flags on
+`set-appearance` are generated from the tuple; and the extraction schema mirrors it
+deliberately. `color` is skin/hide/chassis colour, "barefoot" belongs under `pants`, and
+`short_description` is the silhouette that survives at thumbnail size (one shape, one
+colour, one prop). `format_line` emits `key: value` pairs in fixed order — a spec sheet,
+not prose — so the same character reaches the model as the same string every time. Legacy
+blocks migrate on read: `clothing` → `shirt`, `species` → `race` when race is empty; `age`
+and `demeanor` are dropped.
 
-Author a block at character creation; update it when the look changes
-(`gm-player.sh set-appearance` / `gm-npc.sh set-appearance`). A character in frame with no
-block gets one authored first, not skipped.
+Author the block BEFORE the first image, never derived from one afterwards, and freeze it
+afterwards — it changes only on an explicit in-world event (new armour, a scar, a
+haircut). `generate` FAILS CLOSED: a `--character` with a blank block raises rather than
+rendering, because an invented look that is never written down makes the second image of
+that character a different person.
+
+## Two gates, both fail closed
+
+`generate_image` refuses rather than rendering something that will drift:
+
+- **No art style locked** (`chronicler.json` has no `style`) → raises. The gallery
+  signature is a per-campaign decision the PLAYER makes at world creation (`/new-game`
+  Phase A asks, Phase D locks; `/import` Step 4; `/import-module` Step 8), never
+  improvised per image. `--no-style-lock` is the deliberate escape for a dream or
+  flashback.
+
+`chronicler.json` is `{name, style, era, persona}`. `style` and `era` are both appended
+to every prompt by `build_prompt` and they do different jobs: style is the brush
+(references, medium, palette, light), era is the props (century, tech level, what may
+and may not appear in frame). Only `style` gates rendering; `era` is optional but is
+what stops a modern badge landing on a bronze-age sheriff.
+- **A `--character` with a blank `visual_appearance`** → raises, naming them and
+  printing the `set-appearance` command. `--no-appearance-lock` is the deliberate
+  escape for a transformation or disguise.
+
+Both exist because the failure is silent otherwise: an un-styled render inherits the
+image model's house look, and an un-authored character is invented once and forgotten,
+so their next appearance is a different person.
 
 ## Cost is estimated locally and can be unknown
 
 `_COST` (`lib/image_gen.py:123`) is a hardcoded table keyed by quality × size, used only
 for the spend log — nothing is billed here, and an unrecognized combination logs `?`
-rather than failing. Defaults are `gpt-image-2`, `medium`, `1536x1024`, each overridable
+rather than failing. With `XAI_API_KEY` set the backend is xAI Grok Imagine (`XAI_IMAGE_MODEL`, default
+`grok-imagine-image-quality`; no size/quality knobs, 3 retries, 90s timeout, and one
+moderation-softening retry). Otherwise defaults are `gpt-image-2`, `medium`, `1536x1024`, each overridable
 by env var. `gm-image.sh log` reads the per-campaign `_gen-log.jsonl`.
 
 Logging is wrapped so it can never break a successful generation

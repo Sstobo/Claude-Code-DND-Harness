@@ -32,11 +32,12 @@ if [ "$#" -lt 1 ]; then
     echo "  chronicler                 - Show this campaign's in-world chronicler"
     echo "      --name <text>            Set the chronicler's name"
     echo "      --style <text>           Set the locked art-style signature (auto-added to every prompt)"
+    echo "      --era <text>             Set the era/genre rail (auto-added; blocks anachronistic props)"
     echo "      --persona <text>         Set the chronicler's voice/persona"
     echo "  log                        - Show this campaign's generation/spend log"
     echo ""
     echo "Examples:"
-    echo "  gm-image.sh chronicler --name \"Astreus\" --style \"rough Frazetta-esque ink wash, sword-and-sorcery woodcut\" --persona \"a drunk court-scholar who follows your deeds and exaggerates the gore\""
+    echo "  gm-image.sh chronicler --name \"Astreus\" --style \"rough Frazetta-esque ink wash, sword-and-sorcery woodcut\" --era \"Hyborian bronze age — bronze blades, no steel plate, no gunpowder\" --persona \"a drunk court-scholar who follows your deeds and exaggerates the gore\""
     echo "  gm-image.sh generate --title \"The Sunken Crypt\" --prompt \"A flooded stone crypt lit by green torchlight, dark fantasy, cinematic\""
     echo "  gm-image.sh log"
     exit 1
@@ -68,8 +69,8 @@ case "$ACTION" in
             exit 1
         fi
 
-        if ! check_env OPENAI_API_KEY; then
-            error "OPENAI_API_KEY not set. Add it to .env (OPENAI_API_KEY=sk-...) to enable images."
+        if [ -z "$XAI_API_KEY" ] && [ -z "$OPENAI_API_KEY" ]; then
+            error "No image key set. Add XAI_API_KEY (xAI Grok Imagine) or OPENAI_API_KEY to .env.local."
             exit 1
         fi
 
@@ -92,17 +93,19 @@ case "$ACTION" in
         # (the deep campaign path wraps in the terminal, which breaks the click target).
         success "Image generated: ${TITLE:-untitled}"
         echo "  open: file://$SHORT_PATH"
-        echo "  est cost: \$$COST ($QUALITY $SIZE)"
+        MODEL=$(echo "$RESULT" | $PYTHON_CMD -c "import sys,json; print(json.load(sys.stdin)['model'])")
+        echo "  est cost: \$$COST ($MODEL)"
         ;;
 
     chronicler)
         require_active_campaign
 
-        NAME="" ; STYLE="" ; PERSONA="" ; ANY_SET=0
+        NAME="" ; STYLE="" ; PERSONA="" ; ERA="" ; ANY_SET=0
         while [ "$#" -gt 0 ]; do
             case "$1" in
                 --name)    NAME="$2"    ; ANY_SET=1 ; shift 2 ;;
                 --style)   STYLE="$2"   ; ANY_SET=1 ; shift 2 ;;
+                --era)     ERA="$2"     ; ANY_SET=1 ; shift 2 ;;
                 --persona) PERSONA="$2" ; ANY_SET=1 ; shift 2 ;;
                 *) error "Unknown flag: $1" ; exit 1 ;;
             esac
@@ -116,6 +119,7 @@ case "$ACTION" in
         ARGS=(--set-chronicler)
         [ -n "$NAME" ]    && ARGS+=(--name "$NAME")
         [ -n "$STYLE" ]   && ARGS+=(--style "$STYLE")
+        [ -n "$ERA" ]     && ARGS+=(--era "$ERA")
         [ -n "$PERSONA" ] && ARGS+=(--persona "$PERSONA")
         $PYTHON_CMD "$LIB_DIR/image_gen.py" "${ARGS[@]}"
         exit $?

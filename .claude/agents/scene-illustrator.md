@@ -22,11 +22,20 @@ bash tools/gm-image.sh appearance "<name>" # one per character in frame
 
 - The `style` is locked at campaign creation — never invent, change, or drift it.
   Open the prompt with it verbatim ("In the style of ...:"), unless the brief
-  calls for a deliberate break (see Generate). If none is set, stop
-  and tell the GM to lock one (`gm-image.sh chronicler --style`); don't improvise.
-- For each character in frame, read their appearance line and reproduce it (sex,
-  race, build, hair, signature gear are binding). If one has no `visual_appearance`
-  yet, author it first: `gm-player.sh set-appearance` (PC) / `gm-npc.sh set-appearance` (NPC).
+  calls for a deliberate break (see Generate). If none is set, `generate` REFUSES —
+  tell the GM to lock one (`gm-image.sh chronicler --style`); never improvise your own.
+- For each character in frame, read their appearance line and reproduce it. Every
+  field is binding, in this fixed order:
+  `race, sex, size, color, hair, eyes, face, shirt, pants, gear, short_description`.
+- **A character with no `visual_appearance` cannot be rendered — `generate` refuses.**
+  The FIRST time anyone appears in an image, author all 11 fields and persist them
+  before generating: `gm-npc.sh set-appearance "<name>" --race "..." --sex "..."` etc.
+  (PC: `gm-player.sh set-appearance`). Write fixed vocabulary tokens, not prose —
+  "olive-green", not "a sort of mottled greenish tone" — and make
+  `short_description` the silhouette that survives at thumbnail size: one shape,
+  one colour, one prop.
+- Once authored, the block is FROZEN. Update a field only on an explicit in-world
+  change (new armour, a scar, a haircut) — never re-derive it to suit a new scene.
 
 ## Generate
 
@@ -62,6 +71,6 @@ chronicler's voice. Nothing else.
 
 - NEVER put game UI, HUD, health bars, or text/letters in the image (say so in the prompt).
 - Be explicit over clever — a long concrete prompt beats a short evocative one.
-- If images are DISABLED (no OPENAI_API_KEY) or a moderation block hits, report it
+- If images are DISABLED (no XAI_API_KEY / OPENAI_API_KEY) or a moderation block hits, report it
   plainly and stop. To clear a moderation block, soften the gore nouns in the
   scene — NEVER the locked style words.

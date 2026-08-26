@@ -15,9 +15,9 @@ NPC_SCHEMA = {
     # ground in the source; leave unknowns "". Keys are FIXED (see
     # lib/visual_appearance.py VISUAL_FIELDS).
     "visual_appearance": {
-        "sex": "", "age": "", "race": "", "species": "", "hair": "",
-        "face": "", "eyes": "", "clothing": "", "gear": "",
-        "demeanor": "", "size": ""
+        "race": "", "sex": "", "size": "", "color": "", "hair": "",
+        "eyes": "", "face": "", "shirt": "", "pants": "", "gear": "",
+        "short_description": ""
     },
     "stats": {  # Optional combat stats
         "ac": None,

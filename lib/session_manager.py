@@ -727,9 +727,10 @@ class SessionManager(EntityManager):
                 line += " Frame every image as their work and keep them consistent."
                 lines.append("  Chronicler: " + line)
             else:
-                lines.append("  Chronicler: none yet — name one the first time you "
-                             "illustrate and persist it with `bash tools/gm-image.sh "
-                             "chronicler --name \"...\" --style \"...\" --persona \"...\"`.")
+                lines.append("  Chronicler: NONE — images REFUSE to render until the "
+                             "campaign's art style is locked. Set it once, in this world's "
+                             "voice: `bash tools/gm-image.sh chronicler --name \"...\" "
+                             "--style \"In the style of ...\" --persona \"...\"`.")
         else:
             lines.append("Scene images: DISABLED (no XAI_API_KEY / OPENAI_API_KEY) — do NOT "
                          "call gm-image.sh and do NOT mention images; narrate in text only.")

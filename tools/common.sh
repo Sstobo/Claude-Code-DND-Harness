@@ -222,9 +222,11 @@ check_env() {
     return 0
 }
 
-# Load .env file if it exists
-if [ -f "$PROJECT_ROOT/.env" ]; then
-    set -a
-    source "$PROJECT_ROOT/.env"
-    set +a
-fi
+# Load .env / .env.local if they exist (.env.local wins — it's the gitignored one)
+for env_file in "$PROJECT_ROOT/.env" "$PROJECT_ROOT/.env.local"; do
+    if [ -f "$env_file" ]; then
+        set -a
+        source "$env_file"
+        set +a
+    fi
+done

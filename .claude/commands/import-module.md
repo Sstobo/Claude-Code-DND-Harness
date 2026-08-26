@@ -203,6 +203,33 @@ bash tools/gm-npc.sh tag-location "<Name>" "<the scene's location>"
 
 Dedup by name first: one entry per person, even if they appear in five scenes.
 
+Leave `visual_appearance` blank here — a look is authored the first time someone is
+actually illustrated, not for 37 names the party may never meet. Images fail closed
+on a blank block, so nobody slips through un-authored.
+
+### Lock the chronicler + art style (once, do not skip)
+
+The gallery signature is a per-campaign decision made at import, never improvised
+per image — `gm-image.sh generate` REFUSES to render until it is set. Read the
+module's own tone and commit:
+
+**Let the player pick** with AskUserQuestion — offer 3 fully-specified looks drawn from
+this module's own tone (references, medium, palette, light; never generic "fantasy art")
+plus free text.
+
+```bash
+bash tools/gm-image.sh chronicler \
+  --name "<the in-world artist who 'makes' every image>" \
+  --style "In the style of ... — the player's pick, verbatim; specific enough that two images read as one artist's hand" \
+  --era "<the module's century/tech level: what may and may NOT appear in frame>" \
+  --persona "<their voice/bias — grim, sarcastic, reverent, unreliable>"
+```
+
+The `--era` rail is separate from `--style` on purpose: style is the brush, era is
+the props. State it as what may and may NOT appear in frame ("Hyborian bronze age:
+bronze blades, no steel plate, no gunpowder"). Without it the model reaches for its
+default century and drops anachronisms into the scene.
+
 ---
 
 ## Step 9: Make the source usable at play time (do not skip)

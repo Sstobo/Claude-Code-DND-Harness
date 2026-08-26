@@ -12,6 +12,7 @@ sources:
   - { resource: /lib/play_pack.py }
   - { resource: /lib/adventure.py }
 generated: { by: claude-opus-5, at: 2026-08-26T16:47:37Z }
+verified: { by: claude-opus-5, at: 2026-08-26T18:02:35Z }
 ---
 
 # Scene context — the two doors

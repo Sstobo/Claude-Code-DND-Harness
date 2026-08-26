@@ -97,7 +97,8 @@ def load_chronicler(campaign_dir=None):
         return None
 
 
-def save_chronicler(*, name=None, style=None, persona=None, campaign_dir=None) -> dict:
+def save_chronicler(*, name=None, style=None, persona=None, era=None,
+                    campaign_dir=None) -> dict:
     """Merge-update the campaign's chronicler. Only provided fields change."""
     campaign_dir = campaign_dir or resolve_campaign_dir()
     if campaign_dir is None:
@@ -109,6 +110,8 @@ def save_chronicler(*, name=None, style=None, persona=None, campaign_dir=None) -
         data["style"] = style
     if persona is not None:
         data["persona"] = persona
+    if era is not None:
+        data["era"] = era
     _chronicler_path(campaign_dir).write_text(
         json.dumps(data, indent=2) + "\n", encoding="utf-8")
     return data
@@ -116,6 +119,13 @@ def save_chronicler(*, name=None, style=None, persona=None, campaign_dir=None) -
 
 API_URL = "https://api.openai.com/v1/images/generations"
 DEFAULT_MODEL = os.environ.get("OPENAI_IMAGE_MODEL", "gpt-image-2")
+
+# xAI Grok Imagine — used instead of OpenAI whenever XAI_API_KEY is set.
+# Same shape of endpoint, but no size/quality knobs: model + prompt + n only.
+XAI_API_URL = "https://api.x.ai/v1/images/generations"
+XAI_MODEL = os.environ.get("XAI_IMAGE_MODEL", "grok-imagine-image-quality")
+XAI_TIMEOUT = 90
+XAI_ATTEMPTS = 3
 DEFAULT_QUALITY = os.environ.get("OPENAI_IMAGE_QUALITY", "medium")
 DEFAULT_SIZE = os.environ.get("OPENAI_IMAGE_SIZE", "1536x1024")  # cinematic landscape
 REQUEST_TIMEOUT = 180  # gpt-image-2 can take up to ~2 min on complex prompts
@@ -153,7 +163,7 @@ def _next_path(images_dir: Path, title: str) -> Path:
     """Sequenced filename: NNNN-slug.png, continuing the highest existing index."""
     images_dir.mkdir(parents=True, exist_ok=True)
     highest = 0
-    for p in images_dir.glob("[0-9][0-9][0-9][0-9]-*.png"):
+    for p in images_dir.glob("[0-9][0-9][0-9][0-9]-*.*"):
         try:
             highest = max(highest, int(p.name[:4]))
         except ValueError:
@@ -178,7 +188,7 @@ def _short_link(out_path: Path, campaign_dir: str) -> Path | None:
         tag = "".join(w[:1] for w in Path(campaign_dir).name.split("-"))[:6] or "gm"
         seq = out_path.name[:4]
         SHORTLINK_DIR.mkdir(parents=True, exist_ok=True)
-        link = SHORTLINK_DIR / f"{tag}-{seq}.png"
+        link = SHORTLINK_DIR / f"{tag}-{seq}{out_path.suffix}"
         if link.is_symlink() or link.exists():
             link.unlink()
         link.symlink_to(out_path.resolve())
@@ -237,6 +247,12 @@ def build_prompt(prompt: str, characters=None, campaign_dir=None, *,
         style = (chronicler or {}).get("style", "").strip()
         if style and style.lower() not in final.lower():
             final = f"{final.rstrip()}\n\nConsistent art style (campaign signature): {style}."
+        # The era rail: without it the model reaches for its default century and
+        # drops a modern badge or a Victorian lamp into a bronze-age scene.
+        era = (chronicler or {}).get("era", "").strip()
+        if era and era.lower() not in final.lower():
+            final = (f"{final.rstrip()}\n\nEra and genre (every garment, weapon, prop and "
+                     f"structure must belong to it — no anachronisms): {era}.")
 
     return final
 
@@ -256,11 +272,15 @@ def generate_image(prompt: str, *, title: str = "", quality: str = DEFAULT_QUALI
     Returns {path, rel_path, cost, model, quality, size, title}. Raises
     ImageGenError for actionable problems (no campaign, no key, moderation).
     """
-    api_key = os.environ.get("OPENAI_API_KEY")
+    xai_key = os.environ.get("XAI_API_KEY")
+    api_key = xai_key or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise ImageGenError(
-            "OPENAI_API_KEY not set. Add it to .env (OPENAI_API_KEY=sk-...) to enable images."
+            "No image API key set. Add XAI_API_KEY (xAI Grok Imagine) or "
+            "OPENAI_API_KEY to .env.local to enable images."
         )
+    if xai_key:
+        model = XAI_MODEL
 
     campaign_dir = resolve_campaign_dir()
     if campaign_dir is None:
@@ -269,36 +289,46 @@ def generate_image(prompt: str, *, title: str = "", quality: str = DEFAULT_QUALI
     if not prompt or not prompt.strip():
         raise ImageGenError("Empty prompt — describe the scene to illustrate.")
 
+    # Author before render, never after. A character with no stored look would
+    # be invented by the model and forgotten, so the SECOND image of them is a
+    # different person. Fail closed and make the caller persist the block first.
+    if appearance_lock and characters:
+        missing = [c for c in characters if not appearance_line(c, campaign_dir)]
+        if missing:
+            names = ", ".join(f'"{m}"' for m in missing)
+            fields = " ".join(f"--{f} \"...\"" for f in va_mod.VISUAL_FIELDS)
+            raise ImageGenError(
+                f"No visual_appearance stored for {names}. Author it FIRST so they "
+                f"look the same in every future image, then re-run:\n"
+                f"  bash tools/gm-npc.sh set-appearance \"<name>\" {fields}\n"
+                f"  (the PC: bash tools/gm-player.sh set-appearance {fields})")
+
+    # The art style is a per-campaign decision made ONCE at world creation, not
+    # improvised per image. Without it every render drifts to the model's house
+    # look and the gallery stops reading as one artist's hand.
     chronicler = load_chronicler(campaign_dir)
+    if style_lock and not (chronicler or {}).get("style", "").strip():
+        raise ImageGenError(
+            "No art style locked for this campaign. Every image drifts without one. "
+            "Lock it ONCE, then re-run:\n"
+            '  bash tools/gm-image.sh chronicler --name "<in-world artist>" '
+            '--style "In the style of ..." --persona "<their voice>"')
+
     final_prompt = build_prompt(prompt, characters, campaign_dir,
                                 style_lock=style_lock, appearance_lock=appearance_lock,
                                 chronicler=chronicler)
 
-    payload = json.dumps({
-        "model": model,
-        "prompt": final_prompt,
-        "size": size,
-        "quality": quality,
-        "n": 1,
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        API_URL,
-        data=payload,
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-
-    try:
-        with urllib.request.urlopen(req, timeout=REQUEST_TIMEOUT) as resp:
-            body = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        raise ImageGenError(_format_http_error(e)) from e
-    except urllib.error.URLError as e:
-        raise ImageGenError(f"Network error reaching OpenAI: {e.reason}") from e
+    if xai_key:
+        body = _request_with_retries(
+            XAI_API_URL, api_key, final_prompt,
+            lambda p: {"model": model, "prompt": p, "n": 1, "response_format": "b64_json"},
+            timeout=XAI_TIMEOUT, attempts=XAI_ATTEMPTS)
+    else:
+        body = _request_with_retries(
+            API_URL, api_key, final_prompt,
+            lambda p: {"model": model, "prompt": p, "size": size,
+                       "quality": quality, "n": 1},
+            timeout=REQUEST_TIMEOUT, attempts=1)
 
     try:
         b64 = body["data"][0]["b64_json"]
@@ -308,9 +338,23 @@ def generate_image(prompt: str, *, title: str = "", quality: str = DEFAULT_QUALI
 
     images_dir = Path(campaign_dir) / "images"
     out_path = _next_path(images_dir, title)
+    if image_bytes[:3] == b"\xff\xd8\xff":  # xAI hands back JPEG, not PNG
+        out_path = out_path.with_suffix(".jpg")
     out_path.write_bytes(image_bytes)
 
-    cost = estimate_cost(quality, size)
+    if xai_key:
+        # xAI has no size/quality knobs — don't log OpenAI's dials as if it did.
+        quality, size = "-", "-"
+
+    # xAI publishes no per-image price we can pin here; log it as unknown unless
+    # the operator sets XAI_IMAGE_COST_USD.
+    if xai_key:
+        try:
+            cost = float(os.environ["XAI_IMAGE_COST_USD"])
+        except (KeyError, ValueError):
+            cost = None
+    else:
+        cost = estimate_cost(quality, size)
     record = {
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "file": out_path.name,
@@ -337,22 +381,76 @@ def generate_image(prompt: str, *, title: str = "", quality: str = DEFAULT_QUALI
     }
 
 
+def _soften(prompt: str) -> str:
+    """Rewrite a moderation-rejected prompt into a tamer register and retry.
+
+    ponytail: a mechanical prefix, not an LLM rewrite. A GM prompt gets blocked
+    for gore/horror wording; asking for the same scene rendered non-graphically
+    clears it. Swap in a model rewrite only if this stops being enough.
+    """
+    tame = ("Tasteful, non-graphic, PG-13 illustration — no blood, no gore, "
+            "no explicit content. ")
+    return prompt if prompt.startswith(tame) else tame + prompt
+
+
+def _is_moderation(err_msg: str) -> bool:
+    low = err_msg.lower()
+    return "moderation" in low or "content policy" in low or "blocked" in low
+
+
+def _request_with_retries(url: str, api_key: str, prompt: str, build_payload,
+                          *, timeout: int, attempts: int) -> dict:
+    """POST the image request, retrying transient failures and moderation blocks.
+
+    On a moderation rejection the prompt is softened and re-sent; on a 429/5xx or
+    network blip it's re-sent as-is after a short backoff. The last error is
+    raised as an ImageGenError with the actionable message.
+    """
+    current = prompt
+    last = "request failed"
+    for attempt in range(attempts):
+        payload = json.dumps(build_payload(current)).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Authorization": f"Bearer {api_key}",
+                     "Content-Type": "application/json"},
+            method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            last = _format_http_error(e)
+            retryable = _is_moderation(last) or e.code == 429 or e.code >= 500
+            if _is_moderation(last):
+                current = _soften(current)
+        except urllib.error.URLError as e:
+            last = f"Network error reaching the image API: {e.reason}"
+            retryable = True
+        if not retryable or attempt == attempts - 1:
+            raise ImageGenError(last)
+        time.sleep(2 * attempt + 1)
+    raise ImageGenError(last)  # unreachable; keeps the return type honest
+
+
 def _format_http_error(e: "urllib.error.HTTPError") -> str:
     """Turn an OpenAI HTTP error into an actionable one-line message."""
     try:
         err = json.loads(e.read().decode("utf-8")).get("error", {})
     except Exception:
         err = {}
+    if isinstance(err, str):  # xAI returns a bare string here
+        err = {"message": err}
     code = err.get("code")
     msg = err.get("message", "")
     if code == "moderation_blocked":
         stage = (err.get("moderation_details") or {}).get("moderation_stage", "input")
         return f"Image blocked by content moderation ({stage}). Revise the prompt and retry."
     if e.code == 401:
-        return "OpenAI rejected the API key (401). Check OPENAI_API_KEY in .env."
+        return ("Image API rejected the key (401). Check XAI_API_KEY / "
+                "OPENAI_API_KEY in .env.local.")
     if e.code == 429:
-        return "OpenAI rate limit / quota hit (429). Wait and retry, or check billing."
-    return f"OpenAI error {e.code}: {msg or 'request failed'}"
+        return "Image API rate limit / quota hit (429). Wait and retry, or check billing."
+    return f"Image API error {e.code}: {msg or 'request failed'}"
 
 
 def main() -> None:
@@ -379,6 +477,7 @@ def main() -> None:
     parser.add_argument("--name", help="Chronicler name (with --set-chronicler)")
     parser.add_argument("--style", help="Locked art-style signature (with --set-chronicler)")
     parser.add_argument("--persona", help="Chronicler persona/voice (with --set-chronicler)")
+    parser.add_argument("--era", help="Era/genre the world sits in (with --set-chronicler)")
     args = parser.parse_args()
 
     if args.appearance is not None:
@@ -402,17 +501,20 @@ def main() -> None:
             print(f"Chronicler: {chronicler.get('name', '(unnamed)')}")
             if chronicler.get("persona"):
                 print(f"  persona: {chronicler['persona']}")
+            if chronicler.get("era"):
+                print(f"  era:     {chronicler['era']}")
             if chronicler.get("style"):
                 print(f"  style:   {chronicler['style']}")
         return
 
     if args.set_chronicler:
-        if args.name is None and args.style is None and args.persona is None:
-            print("[ERROR] --set-chronicler needs at least one of --name/--style/--persona",
+        if all(v is None for v in (args.name, args.style, args.persona, args.era)):
+            print("[ERROR] --set-chronicler needs at least one of --name/--style/--persona/--era",
                   file=sys.stderr)
             sys.exit(1)
         try:
-            data = save_chronicler(name=args.name, style=args.style, persona=args.persona)
+            data = save_chronicler(name=args.name, style=args.style,
+                                   persona=args.persona, era=args.era)
         except ImageGenError as e:
             print(f"[ERROR] {e}", file=sys.stderr)
             sys.exit(1)

@@ -42,7 +42,25 @@ Build logical additions that:
 - **Physical Details**: Scars, clothing, mannerisms
 - Focus on logical character development based on their role and connections in the world
 
-### Step 4: UPDATE & TAG
+### Step 4: LOCK THE LOOK
+You have the source text in hand — that is the cheapest moment to fix how this
+person looks forever. If `gm-npc.sh appearance "[Name]"` comes back empty, author
+all 11 fields now, in this order: `race, sex, size, color, hair, eyes, face, shirt, pants, gear, short_description`.
+
+```bash
+bash tools/gm-npc.sh set-appearance "<Name>" --race "..." --sex "..." --size "..." \
+  --color "..." --hair "..." --eyes "..." --face "..." --shirt "..." --pants "..." \
+  --gear "..." --short_description "..."
+```
+
+Fixed vocabulary tokens, not prose ("olive-green", not "a sort of mottled greenish
+tone"), and `short_description` is the silhouette at thumbnail size: one shape, one
+colour, one prop. Ground every field in the source where the source says anything;
+invent only what it leaves open. Once authored it is FROZEN — it changes only on an
+explicit in-world event (new armour, a scar, a haircut), never re-derived to suit a
+scene. Images REFUSE to render a named character with no block.
+
+### Step 5: UPDATE & TAG
 - Apply enhancement: `./tools/gm-npc.sh update "[Name]" "[new detail or event]"`
 - Tag by location: `./tools/gm-npc.sh tag-location "[Name]" location1 location2`
 - Tag by quest: `./tools/gm-npc.sh tag-quest "[Name]" quest-name`

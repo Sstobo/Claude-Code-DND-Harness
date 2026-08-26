@@ -10,7 +10,7 @@ sources:
   - { resource: /lib/agent_extractor.py }
   - { resource: /lib/json_ops.py }
   - { resource: /tests/test_json_wrappers_player.py }
-generated: { by: claude-opus-4-8[1m], at: 2026-08-15T12:24:29Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
 verified: { by: claude-fable-5, at: 2026-08-13T15:15:46Z }
 ---
 
@@ -27,6 +27,9 @@ wrapper is what supplies the campaign resolution below.
 
 Every wrapper sources it, and inherits:
 
+- **Environment files** — `.env` then `.env.local` are sourced with `set -a`, so their keys
+  reach the Python side as real environment variables. `.env.local` loads second and wins;
+  it is the gitignored one, which is where secrets like `XAI_API_KEY` belong.
 - **`PYTHON_CMD`** — `uv run python` if `uv` is on PATH, else `python3`, else `python`.
   This is why project instructions say never to call bare `python`: the wrapper already
   chose, and choosing differently skips the venv.

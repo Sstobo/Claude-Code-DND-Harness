@@ -125,6 +125,20 @@ What good expansion tends to include:
 ./tools/gm-npc.sh status "[Name]"
 ```
 
+An NPC the player will actually stand in front of gets their look locked at the
+same time — 11 fields, fixed order, fixed vocabulary tokens rather than prose:
+
+```bash
+./tools/gm-npc.sh set-appearance "[Name]" --race "..." --sex "..." --size "..." \
+  --color "..." --hair "..." --eyes "..." --face "..." --shirt "..." --pants "..." \
+  --gear "..." --short_description "..."
+```
+
+`short_description` is the silhouette at thumbnail size (one shape, one colour, one
+prop). Once authored the block is FROZEN — it changes only on an explicit in-world
+event. Images refuse to render a named character who has none. Background names
+nobody will meet can stay blank.
+
 
 ### Facts:
 ```bash

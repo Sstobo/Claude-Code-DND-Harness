@@ -6,7 +6,7 @@ sources:
   - { resource: /install.sh }
   - { resource: /pyproject.toml }
   - { resource: /.claude/commands/setup.md }
-generated: { by: claude-opus-5, at: 2026-08-13T13:52:08Z }
+generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
 ---
 
 # Install and setup
@@ -55,7 +55,9 @@ Enumerated from `os.environ.get` across `lib/` and `tools/`:
 
 | Variable | Read by | Effect |
 |---|---|---|
-| `OPENAI_API_KEY` | `image_gen`, `session_manager` | the **only** gate on scene images. Absent → the session brief says DISABLED |
+| `XAI_API_KEY` | `image_gen`, `session_manager` | preferred image backend (xAI Grok Imagine). Either this or `OPENAI_API_KEY` gates scene images; absent both → the session brief says DISABLED |
+| `XAI_IMAGE_MODEL` | `image_gen` | default `grok-imagine-image-quality` |
+| `OPENAI_API_KEY` | `image_gen`, `session_manager` | fallback image backend, used only when `XAI_API_KEY` is unset |
 | `OPENAI_IMAGE_MODEL` | `image_gen` | default `gpt-image-2` |
 | `OPENAI_IMAGE_QUALITY` | `image_gen` | default `medium` |
 | `OPENAI_IMAGE_SIZE` | `image_gen` | default `1536x1024` |
@@ -64,7 +66,7 @@ Enumerated from `os.environ.get` across `lib/` and `tools/`:
 
 The `.env` that `/setup` writes contains only `DEFAULT_CAMPAIGN_NAME` and
 `DEFAULT_STARTING_LOCATION` — neither of which appears in the table above. Add
-`OPENAI_API_KEY` by hand to turn images on.
+`XAI_API_KEY` by hand to turn images on.
 
 ## Python is always `uv run python`
 
@@ -75,4 +77,4 @@ The `.env` that `/setup` writes contains only `DEFAULT_CAMPAIGN_NAME` and
 ## Related
 
 - [Testing](testing.md)
-- [Illustrating a scene](../flows/scene-illustration.md) — what `OPENAI_API_KEY` unlocks
+- [Illustrating a scene](../flows/scene-illustration.md) — what an image API key unlocks

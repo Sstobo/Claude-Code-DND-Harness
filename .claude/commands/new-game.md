@@ -33,6 +33,26 @@ Howard; high fantasy → Tolkien / Le Guin; sci-fantasy → Gibson; whimsical �
 Pratchett). Store as `voice_exemplar`. This is what makes narration read like a
 real author instead of a generic narrator.
 
+Then ask the **art direction** question — the player picks how their world LOOKS,
+the same way they picked how it sounds. Use **AskUserQuestion**, offer 3 fully-specified
+styles drawn from the premise and genre bend they just gave you (never generic
+"fantasy art" — name references, medium, palette, light), plus free text. Examples of
+the specificity required:
+
+- *Sword-and-sorcery:* "Frazetta oil painting — heavy muscular figures, lurid torch-lit
+  shadow, dust and blood, sunset palette of ochre and dried blood."
+- *Space opera:* "1977 Star Wars production painting — Ralph McQuarrie gouache, matte
+  hard light, lived-in scuffed hardware, bleached desert and gunmetal."
+- *Folk horror:* "Wet 1970s British TV film stock — desaturated greens, overcast flat
+  light, grain, wrongness at the edge of frame."
+
+Store their pick as `art_style`, and store the **era** it implies as `art_era` — the
+world's technological and cultural century, stated as what may and may NOT appear in
+frame ("Hyborian bronze age: bronze blades, no steel plate, no gunpowder, no printed
+cloth"). The era is a separate rail from the style: style is the brush, era is the
+props. Without it the image model reaches for its default century and drops a modern
+badge or a Victorian street lamp into a bronze-age scene.
+
 Genre bend options:
 
 - *Sword-and-sorcery (Conan):* magic = blood/curse-priced and villainous; bronze-age
@@ -53,7 +73,8 @@ Write `world-seed.json` to the campaign dir:
   "premise": "...", "tone": "...", "magic": "...", "setting": "...",
   "genre_bend": "<the distinct commitments, in a sentence or two>",
   "voice_exemplar": "<author/work to channel, e.g. 'Robert E. Howard'>",
-  "art_style": "In the style of <a distinctive, fully-specified look> — a mashup of two unexpected references often lands ('In the style of Frank Miller's Batman but rendered in smudged charcoal', 'In the style of a gilded medieval illuminated manuscript but depicting cyberpunk megacities'), or commit hard to one strong style the world already implies. Either way it must be specific enough that two images read as one artist's hand. This is the campaign's locked gallery signature, set ONCE here.",
+  "art_style": "<THE PLAYER'S PICK, verbatim — 'In the style of ...', fully specified: references, medium, palette, light. Specific enough that two images read as one artist's hand. This is the campaign's locked gallery signature, set ONCE here.>",
+  "art_era": "<the century/tech level the style implies, as what may and may NOT appear in frame — 'Hyborian bronze age: bronze blades, no steel plate, no gunpowder'>",
   "chronicler_name": "<the in-world artist who 'makes' every image, fits the tone>",
   "chronicler_persona": "<their voice/bias — grim, sarcastic, reverent, unreliable>"
 }
@@ -164,26 +185,30 @@ decision, not an in-play improvisation) from the seed's `art_style` /
 ```bash
 bash tools/gm-image.sh chronicler \
   --name "<chronicler_name>" \
-  --style "<art_style — MUST start with 'In the style of ...'; a distinctive, fully-specified look>" \
+  --style "<art_style — MUST start with 'In the style of ...'; the player's pick, verbatim>" \
+  --era "<art_era — what may and may NOT appear in frame>" \
   --persona "<chronicler_persona>"
 ```
 
 The `scene-illustrator` agent READS this locked style and opens every prompt with
 it — it never picks its own. Make it specific enough that two images read as one
 artist's hand (a surprising mashup is one way there, not the only one). This single
-chronicler record carries BOTH halves of the image identity — the **art style**
-(`--style`) and the **art narrator** (`--name` / `--persona`, the in-world entity
-who "makes" every picture). Lock both now; they never change in play.
+chronicler record carries all three parts of the image identity — the **art style**
+(`--style`, the brush), the **era** (`--era`, the props and tech level that bound every
+frame), and the **art narrator** (`--name` / `--persona`, the in-world entity who
+"makes" every picture). Lock them now; they never change in play, and
+`gm-image.sh generate` REFUSES to render until the style is set.
 
 **Author a `visual_appearance` block for every NPC in the play pack** (and the PC
 at `/create-character`). It is the locked look every future image renders, with
-EXACTLY these 11 keys: `sex, age, race, species, hair, face, eyes, clothing,
-gear, demeanor, size`. Ground each field in the bible; leave unknowns "". Author
-only the people on this stage — the rest get a block when they walk on:
+EXACTLY these 11 keys, in this fixed order: `race, sex, size, color, hair, eyes, face, shirt, pants, gear, short_description`.
+Ground each field in the bible; leave unknowns "". Author only the people on this
+stage — the rest get a block the first time they walk on (an image REFUSES to
+render a named character who has none):
 ```bash
 bash tools/gm-npc.sh set-appearance "<NPC name>" \
-  --sex "..." --age "..." --race "..." --species "..." --hair "..." \
-  --face "..." --eyes "..." --clothing "..." --gear "..." --demeanor "..." --size "..."
+  --race "..." --sex "..." --size "..." --color "..." --hair "..." --eyes "..." \
+  --face "..." --shirt "..." --pants "..." --gear "..." --short_description "..."
 ```
 
 Update `campaign-overview.json` (date/time, `session_count: 0`, and
