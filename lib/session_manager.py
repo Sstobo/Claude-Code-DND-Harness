@@ -874,7 +874,17 @@ class SessionManager(EntityManager):
                          "what happens as a result — "
                          "true to the roll (nat 20 fantastic, nat 1 horrible, meet/beat the "
                          "target = success, below = failure with a real cost). GM still rolls "
-                         "hidden/NPC dice the same way.")
+                         "hidden/NPC dice the same way.\n"
+                         "ATTACKS WORK THE SAME WAY, AND THIS IS THE ONE THAT GETS LOST. "
+                         "\"I attack\" is the player DECLARING a target, not pressing the "
+                         "button. Never resolve a swing in the same reply that announces it. "
+                         "End the reply on the pressable line — e.g. \"You go for the guard "
+                         "on the left. +7 to hit, 2d6+6 with rage, and you need 17 or better. "
+                         "Press 1 to swing, or take another action.\" — and STOP. The swing "
+                         "resolves on their NEXT message, in a reply of its own, through "
+                         "`gm-combat.sh attack`. The roll IS the game; burying it mid-"
+                         "paragraph in a reply the player did not trigger is what makes it "
+                         "stop feeling like D&D.")
 
         # Informing, not adjudicating — caps and judgment live in skills / gm-craft.
         lines.append("Failure: failure should cost something; decide the stake before the roll.")

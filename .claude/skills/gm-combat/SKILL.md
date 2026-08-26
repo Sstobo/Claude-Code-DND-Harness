@@ -133,6 +133,16 @@ misses on a natural 1, applies the damage through the 5e dying gate, and hands b
 staged block — target first, dead air, then the result. **Paste that output into
 narration as it stands.** Never summarise it, never put the outcome above the target.
 
+**When player-rolls mode is on, the swing is its own turn.** "I attack" declares the
+target; it does not press the button. End the reply on the pressable line and STOP —
+
+> You go for the guard on the left. **+7** to hit, **2d6+6** with rage, and you need
+> **17** or better. Press **1** to swing, or take another action.
+
+— and resolve it on their next message, in a reply of its own. Resolving a swing inside
+the same reply that announced it buries the roll in a paragraph the player never
+triggered, and the roll is the whole reason they are here.
+
 For the PC, you supply the numbers from the sheet and attribute every point:
 
 ```bash
