@@ -105,6 +105,9 @@ FIVE_E_ANCHORS = {
         # into a wall of numbers the player never got to trigger.
         "ONE TURN PER REPLY",
         "THE SWING IS ITS OWN TURN",
+        # An inbound blade is not a menu — offering alternatives beside it lets the
+        # player spend the ENEMY's turn escaping the enemy's turn.
+        "BRACE, DON'T CHOOSE",
     ],
     "gm-levelup": [
         "## XP Thresholds",

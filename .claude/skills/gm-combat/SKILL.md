@@ -34,6 +34,15 @@ enemy's and the player has no decision to make, give them a button: *"Press 1 wh
 ready and her second blade comes."* Asking a player to invent a line just to advance
 the enemy's turn makes them do your job.
 
+**AN INBOUND ATTACK IS NOT A MENU. BRACE, DON'T CHOOSE.** When it is the enemy's turn
+and a blade is already coming, the press acknowledges it — *"Brace. Press 1."* — and
+that is the ONLY option you offer. Never list alternatives beside an inbound attack
+("or talk to the sheriff", "or turn on the wizard"), because a player who picks one has
+just used the enemy's turn to escape the enemy's turn, and the fight stops being a
+fight. Their real choices belong on THEIR turn, and their reaction options (Shield,
+an opportunity attack, a readied action) are reactions — offer those by name or not at
+all. The world does not wait for a decision that was never theirs to make.
+
 **The roll block speaks from the side of whoever is swinging.** The player IS the PC, so
 their own attacks read "you need to beat 17 / You rolled 25" and an enemy's read
 "To get through your guard, Lena needs to beat 13 / Lena rolled 24". `gm-combat.sh
