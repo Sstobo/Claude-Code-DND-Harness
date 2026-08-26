@@ -105,6 +105,14 @@ is one per round, on a trigger, and can fire on someone else's turn.
 Actions worth naming out loud: Attack · Cast a Spell · Dash · Disengage · Dodge · Help ·
 Hide · Ready · Shove/Grapple (Athletics vs Athletics or Acrobatics).
 
+**ONE TURN PER REPLY. This is the pacing rule that matters most in a fight.** A beat is
+a single combatant's turn — one attacker, one target, one resolution — and it ends the
+reply. Do not chain the hero's swing and the enemies' answer into one message; do not
+run three monsters' turns in a row because it is "their round". The player must see
+each roll land on its own, with a pause after it, or the fight turns into a wall of
+numbers scrolling past and every individual die stops mattering. The hero swings and
+you stop. Their next message brings the answer, and you stop again.
+
 `bash tools/gm-combat.sh next-turn` advances the pointer and rolls the round over. It
 steps over the fallen on its own, but a **dying hero still gets a turn** — that turn is
 their death save. Call it once per combatant, or the round counter is fiction.
