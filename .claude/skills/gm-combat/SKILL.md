@@ -47,7 +47,12 @@ can no longer do about it:
 > *Nothing left to do but be in the way of it. Press 1.*
 > *She has stopped talking. Press 1.*
 The press is the same; the sentence in front of it is narration and should read like
-it. Never list alternatives beside an inbound attack
+it.
+
+**Set the press on its own line, always** — a blank line above it, nothing after it.
+Never let it trail off the end of a narration paragraph or ride inside a numbered
+option, where it reads as punctuation instead of a prompt. The player is scanning for
+the thing they can act on; give it air and let it be the last thing on the screen. Never list alternatives beside an inbound attack
 ("or talk to the sheriff", "or turn on the wizard"), because a player who picks one has
 just used the enemy's turn to escape the enemy's turn, and the fight stops being a
 fight. Their real choices belong on THEIR turn, and their reaction options (Shield,
