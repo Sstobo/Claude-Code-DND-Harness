@@ -50,9 +50,33 @@ The press is the same; the sentence in front of it is narration and should read 
 it.
 
 **Set the press on its own line, always** — a blank line above it, nothing after it.
-Never let it trail off the end of a narration paragraph or ride inside a numbered
-option, where it reads as punctuation instead of a prompt. The player is scanning for
-the thing they can act on; give it air and let it be the last thing on the screen. Never list alternatives beside an inbound attack
+Never let it trail off the end of a narration paragraph, where it reads as punctuation
+instead of a prompt. The player is scanning for the thing they can act on; give it air
+and let it be the last thing on the screen.
+
+### The two prompts, and they are never mixed up
+
+**A real choice is numbered.** Three options, then the escape hatch, exactly as the
+output format requires:
+
+```
+1. Take the one on the left — +7 to hit, 2d6+6 with rage, you need 10 or better.
+2. Drop the greatsword and let her talk.
+3. Back out through the shutters.
+Or something else...
+```
+
+**An acknowledgement is not numbered, because there is nothing to choose between.**
+Never say "press 1" for it — "1" means "option 1", and there is no option 2. Close the
+message with this bar, copied exactly, so it is the same shape every single time:
+
+```
+──────────────────── ▶ ANY KEY TO CONTINUE ─────────────────────
+```
+
+It is 64 characters, the same width as the round panel, so the two read as one
+interface. The situational line goes in the narration ABOVE it — *"He is already inside
+your reach."* — and the bar is the last thing in the message, every time. Never list alternatives beside an inbound attack
 ("or talk to the sheriff", "or turn on the wizard"), because a player who picks one has
 just used the enemy's turn to escape the enemy's turn, and the fight stops being a
 fight. Their real choices belong on THEIR turn, and their reaction options (Shield,

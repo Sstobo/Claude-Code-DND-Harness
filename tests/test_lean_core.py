@@ -108,6 +108,9 @@ FIVE_E_ANCHORS = {
         # An inbound blade is not a menu — offering alternatives beside it lets the
         # player spend the ENEMY's turn escaping the enemy's turn.
         "BRACE, DON'T CHOOSE",
+        # The acknowledgement prompt is one fixed shape, 64 wide to match the panel.
+        # "press 1" for it is wrong — 1 means option 1, and there is no option 2.
+        "──────────────────── ▶ ANY KEY TO CONTINUE ─────────────────────",
     ],
     "gm-levelup": [
         "## XP Thresholds",
