@@ -46,9 +46,11 @@ Every turn runs the same loop: **gather context → decide → execute → persi
 
 - **Specialist sub-agents on tap.** A fight starts and a monster-manual agent grabs stats; you cast something and a spell-caster looks up the mechanics; you go shopping and a gear-master handles inventory; a haunting vista appears and a scene-illustrator paints it in the background. They're **book-first** — they read your world's own rules before reaching for anything external — and they spin up invisibly so the story never stops.
 
+- **Combat the model cannot fudge.** Every swing goes through one resolver: it reads the attacker's to-hit and damage off the fetched stat block, compares them to the target's stored AC, doubles the dice on a natural 20, and applies the damage through the 5e dying gate. The GM never does the arithmetic, so the numbers cannot drift between the block that was fetched and the story that gets told. It fails closed too: a creature with no stat block raises an error rather than inventing a bonus. Between beats you get the board as an ASCII panel, and the roll itself arrives staged, target first, then a pause, then the result.
+
 - **Real stakes.** The character can die. Telegraphed, earned, never by GM fiat — but death is a valid forward outcome, and when it lands the harness runs a hand-off so the show goes on (take over a party member, roll a newcomer, step in as a canon figure). The world remembers the fallen.
 
-- **An illustrated campaign, drawn in-world.** *If* you drop an `OPENAI_API_KEY` into `.env`, the GM is encouraged to illustrate big beats — a new location, a boss reveal, a haunting vista, your styled flourish — with real generated images, presented diegetically as the work of an **in-world chronicler**: a named artist with a locked art style and persona, both designed at world-creation time to fit your plot and tone. The same hand "draws" every image across the campaign, so your gallery reads like one artist's sketchbook of your story. No key, no problem — the GM just keeps narrating in text and never mentions images.
+- **An illustrated campaign, drawn in-world.** *If* you drop an `XAI_API_KEY` (or an `OPENAI_API_KEY`) into `.env.local`, the GM is encouraged to illustrate big beats — a new location, a boss reveal, a haunting vista, your styled flourish — with real generated images, presented diegetically as the work of an **in-world chronicler**: a named artist with a locked art style and persona, both designed at world-creation time to fit your plot and tone. The same hand "draws" every image across the campaign, so your gallery reads like one artist's sketchbook of your story. No key, no problem — the GM just keeps narrating in text and never mentions images.
 
 ---
 
@@ -206,7 +208,7 @@ The harness is plumbing you can poke at: bash wrappers (`tools/`) → Python man
 | `gm-npc.sh` | NPCs — creation, updates, mood/goal/voice, party members |
 | `gm-location.sh` | Locations and connections |
 | `gm-plot.sh` | Quest and storyline tracking |
-| `gm-combat.sh` | Persisted, resumable combat tracking |
+| `gm-combat.sh` | The combat rail: initiative, the round panel, attack resolution, death saves |
 | `gm-condition.sh` | Player conditions (poisoned, stunned, etc.) |
 | `gm-consequence.sh` | Schedule future events and triggers |
 | `gm-recall.sh` | Campaign memory — semantic recall, arc entries, memoir |
@@ -218,7 +220,7 @@ The harness is plumbing you can poke at: bash wrappers (`tools/`) → Python man
 | `gm-enhance.sh` | RAG-powered entity enrichment |
 | `gm-extract.sh` | Document import and extraction pipeline |
 | `gm-overview.sh` | Quick world-state summary |
-| `gm-image.sh` | Generate a scene image with gpt-image-2 and print a clickable link |
+| `gm-image.sh` | Generate a scene image and print a clickable link |
 | `gm-reset.sh` | Reset campaign data |
 
 ### Scene Images
@@ -230,7 +232,47 @@ bash tools/gm-image.sh generate --title "The Sunken Crypt" \
   --prompt "A flooded stone crypt lit by green torchlight, dark fantasy, cinematic"
 ```
 
-It calls OpenAI's `gpt-image-2`, saves the PNG into the campaign's `images/` folder, and prints a clickable `file://` link you open to view it (the VS Code terminal linkifies the path). Every generation is logged with an estimated cost — run `gm-image.sh log` for the running total. Requires `OPENAI_API_KEY` in `.env`; without it the GM just keeps narrating in text. Use `--quality low` for quick drafts, `high` for marquee moments.
+It calls xAI's Grok Imagine, or OpenAI's `gpt-image-2` when no xAI key is set, saves the image into the campaign's `images/` folder, and prints a clickable `file://` link you open to view it (the VS Code terminal linkifies the path). Every generation is logged with an estimated cost: run `gm-image.sh log` for the running total. Requires `XAI_API_KEY` or `OPENAI_API_KEY` in `.env.local`; without either the GM just keeps narrating in text and never mentions images. Use `--quality low` for quick drafts, `high` for marquee moments.
+
+### Combat
+
+A fight runs on a fixed rail: cast the encounter, roll the order, take one turn, resolve the swing, handle the fallen, clear up. `gm-combat.sh` owns every number in it. Enemies enter as their **fetched** SRD stat block, so their to-hit and damage are the book's, not a retyped approximation, and initiative is rolled rather than assumed.
+
+Between beats you get the board:
+
+```
+── ROUND 2 ────────────────────────── the whispering wood ──
+ ▸ Giant Spider   [████████████]  26/26  AC14  HEALTHY
+   Lion           [███░░░░░░░░░]   7/26  AC12  BLOODIED
+────────────────────────────────────────────────────────────────
+   KORDAN  lvl5 half-orc barbarian  HP [█████████░░░] 39/50  AC13
+   status: raging                   XP 8000    GP 46
+────────────────────────────────────────────────────────────────
+```
+
+And the roll arrives staged, never collapsed to a line. You are shown the number you have to beat, then a pause, then what you got:
+
+```
+To hit Lion, you need to beat
+
+## [ 12 ]
+
+.
+.
+.
+
+You rolled
+
+## [ 23 ]
+
+16 and 16 — advantage, keep the 16 · +4 from strength · +3 from proficiency
+
+✓ HIT — past the guard by 11.
+
+🎲 Damage: 2d6+6 [3+2] +6 = 11 ▼ Lion [███████░░░░░] 15/26 ⚠
+```
+
+The pause is real, because the message streams. Rolling with advantage, resistance (a raging barbarian halves three damage types), crits doubling the dice, death saves that persist across a resume: all of it resolves in the tool and is narrated from what comes back. One turn per reply, and when the dice are yours the swing waits for you to trigger it.
 
 ### The D&D 5e API
 
