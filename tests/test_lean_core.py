@@ -75,6 +75,20 @@ def test_craft_skill_preserves_the_soul():
     assert "Yes, and" in text and "Persist before narrating" in text
 
 
+def test_craft_skill_holds_the_table_voice():
+    """Narration drifted into literary prose in a live session — withheld subjects,
+    atmospheric throat-clearing, sentences a listener has to re-read. The rule is
+    that a GM speaks aloud to one player who cannot scroll back."""
+    text = (ROOT / ".claude" / "skills" / "gm-craft" / "SKILL.md").read_text(encoding="utf-8")
+    assert "SPEAK IT, DON'T WRITE IT" in text
+    assert "Name the subject before you do anything with it" in text
+
+    # And the always-loaded router carries it too, because a scene can open before
+    # the craft skill is ever loaded.
+    router = _claude_md()
+    assert "not a novelist" in router and 'wait, who?' in router
+
+
 # This fork plays D&D 5e only: no kit gates, no generic-core fallback.
 DND_MECHANICS_SKILLS = ["gm-combat", "gm-levelup", "gm-spellcasting"]
 
