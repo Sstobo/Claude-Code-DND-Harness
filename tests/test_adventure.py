@@ -17,7 +17,9 @@ from pathlib import Path
 
 import pytest
 
-from lib.adventure import AdventureError, AdventureManager, validate_adventure
+from lib.adventure import (REQUIRES_KINDS, AdventureError, AdventureManager,
+                           format_requires_report, validate_adventure)
+from lib.entity_aliases import normalize_entity_name
 
 PROJECT_ROOT = Path(__file__).parent.parent
 
@@ -200,6 +202,442 @@ def test_merge_persists_requires_and_refuses_a_bad_clause(dcc_world):
     with pytest.raises(AdventureError, match="unknown kind 'vibes'"):
         m.merge([{"key": "keep", "requires": [{"kind": "vibes", "note": "q"}]}])
     assert _on_disk(dcc_world)["scenes"][2]["requires"] == [], "bad batch did not persist"
+
+
+# --- adaptation: the book's assumptions vs one real table ----------------
+
+AT05_SPINE = [
+    {"key": "1.2", "title": "Meeting with Lander", "pages": [4]},
+    {"key": "2.3", "title": "The Cogsmith's Shop", "pages": [9]},
+    {"key": "2.17", "title": "The Whispering Grove", "pages": [21]},
+]
+
+# Shaped after AT-05: assumptions repeated across scenes, one borrowed from the
+# module before it, and a quote on every clause.
+AT05_REQUIRES = {
+    "1.2": [
+        {"kind": "party_size", "min": 4, "note": "\"When the characters enter the office\""},
+        {"kind": "npc_with_party", "name": "Puck", "note": "\"Puck flies forward to greet them\""},
+        {"kind": "npc_known", "name": "Sheriff Amelia Waveshield",
+         "note": "\"Sheriff Waveshield will enter from the door\""},
+        {"kind": "pc_level", "min": 1, "note": "\"an adventure for four 1st-level characters\""},
+    ],
+    "2.3": [
+        {"kind": "party_size", "min": 4,
+         "note": "\"the four of them crowd the counter while the cogsmith works\""},
+        {"kind": "item_held", "name": "Chronometer of Harmony",
+         "note": "\"have you secured the Chronometer of Harmony?\""},
+    ],
+    "2.17": [
+        {"kind": "prior_event", "id": "at-04", "note": "\"(Refer to AT-04 The Cogs of Lost Time)\""},
+        {"kind": "npc_with_party", "name": "puck", "note": "\"Puck darts ahead\""},
+    ],
+}
+
+
+@pytest.fixture
+def solo_world(tmp_path):
+    """A table of one, against a book written for a party of four.
+
+    A level-1 PC with a starter kit, nobody travelling alongside, one NPC on file
+    they have a history with (events on the record) and one they do not. This is
+    what a single player importing AT-05 actually walks in with.
+    """
+    base = tmp_path / "world-state"
+    campaign = base / "campaigns" / "solo"
+    campaign.mkdir(parents=True)
+    (base / "active-campaign.txt").write_text("solo\n")
+    (campaign / "character.json").write_text(json.dumps({
+        "name": "Wren", "race": "Halfling", "class": "Rogue", "level": 1,
+        "hp": {"current": 8, "max": 8},
+        "equipment": ["Sling", "Traveler's clothes", "Thieves' tools"],
+    }))
+    (campaign / "npcs.json").write_text(json.dumps({
+        "Puck": {"is_party_member": False, "events": []},
+        "Sheriff Amelia Waveshield": {"events": [{"event": "Warned them off the docks"}]},
+    }))
+    return str(base)
+
+
+def _at05(world_dir, requires=AT05_REQUIRES):
+    m = AdventureManager(world_dir)
+    m.init(AT05_SPINE, meta={"title": "The Whispering Wood (AT-05)", "levels": "1-3"})
+    if requires:
+        m.merge([{"key": k, "requires": r} for k, r in requires.items()])
+    return m
+
+
+def _unmet(report):
+    """The unmet classes, derived. The payload carries ONE list of classes, each
+    with its own `met` — a second list of the same dicts doubled every class in
+    `--json`."""
+    return [g for g in report["groups"] if not g["met"]]
+
+
+def test_requires_report_unions_and_dedups_clauses_across_scenes(solo_world):
+    report = _at05(solo_world).requires_report()
+    by_kind = {g["kind"]: g for g in report["groups"]}
+
+    assert report["clauses"] == 8, "every clause counted"
+    assert len(report["groups"]) == 6, "deduped to one class per kind+value"
+    assert by_kind["party_size"]["scenes"] == ["1.2", "2.3"]
+    assert "crowd the counter" in by_kind["party_size"]["quote"], "strongest quote wins the group"
+    assert by_kind["npc_with_party"]["scenes"] == ["1.2", "2.17"], "'puck' and 'Puck' are one NPC"
+
+
+def test_two_spellings_of_one_npc_are_one_question(solo_world):
+    """The book calls her "Sheriff Waveshield" in one scene and "Sheriff Amelia
+    Waveshield" in the next. That is one person, so it is one thing to ask the
+    player about — and neither lowercasing nor the normalizer can fold it, because
+    "sheriff" is not on the honorific list the normalizer strips. The fold comes
+    from the campaign's own record of her, the same identity the judge answers on.
+    """
+    npcs = Path(solo_world) / "campaigns" / "solo" / "npcs.json"
+    npcs.write_text(json.dumps({"Sheriff Amelia Waveshield": {
+        "aliases": ["Sheriff Waveshield"],
+        "events": [{"event": "Warned them off the docks"}]}}))
+    m = _at05(solo_world, requires={
+        "1.2": [{"kind": "npc_known", "name": "Sheriff Waveshield",
+                 "note": "\"Sheriff Waveshield will enter from the door\""}],
+        "2.3": [{"kind": "npc_known", "name": "Sheriff Amelia Waveshield",
+                 "note": "\"Sheriff Amelia Waveshield already knows their faces\""}],
+    })
+
+    groups = m.requires_report()["groups"]
+    assert len(groups) == 1, [g["value"] for g in groups]
+    assert groups[0]["scenes"] == ["1.2", "2.3"], "both scenes hang off the one class"
+    assert groups[0]["met"] is True, "and the class is judged against that same record"
+
+    lowered = {"Sheriff Waveshield".lower(), "Sheriff Amelia Waveshield".lower()}
+    normalized = {normalize_entity_name(n) for n in
+                  ("Sheriff Waveshield", "Sheriff Amelia Waveshield")}
+    assert len(lowered) == 2 and len(normalized) == 2, \
+        "the fold is one neither .lower() nor the normalizer can produce"
+
+    npcs.write_text(json.dumps({}))
+    assert len(m.requires_report()["groups"]) == 2, \
+        "a name the campaign has no record of stays two strangers, and two questions"
+
+
+def test_the_solo_newcomer_meets_only_what_this_table_can_meet(solo_world):
+    report = _at05(solo_world).requires_report()
+
+    assert {g["kind"] for g in _unmet(report)} == {
+        "party_size", "npc_with_party", "item_held", "prior_event"}
+    assert {g["kind"] for g in report["groups"] if g["met"]} == {"npc_known", "pc_level"}
+    assert report["unmet_count"] == len(_unmet(report))
+    assert "unmet" not in report, "no second copy of every class in the payload"
+
+    unmet = {g["kind"]: g for g in _unmet(report)}
+    assert "the party numbers 1" in unmet["party_size"]["detail"]
+    assert unmet["prior_event"]["flag"] == "other_module", "AT-04 can never be played here"
+    assert "Chronometer" in unmet["item_held"]["quote"], "the book's own words reach the question"
+
+
+def test_binding_stamps_once_and_a_second_run_changes_nothing(solo_world):
+    m = _at05(solo_world)
+    first = m.requires_report()
+    assert first["binding"] == "bound"
+
+    stamp = _on_disk(solo_world)["meta"]["adaptation"]
+    assert stamp["matched_to_pc"] is True and stamp["pc"] == "Wren" and stamp["decided_at"]
+
+    text = _adventure_path(solo_world).read_text()
+    written_at = _adventure_path(solo_world).stat().st_mtime_ns
+
+    second = m.requires_report()
+    assert second["binding"] == "already-bound"
+    assert _unmet(second) == _unmet(first), "the standing report says the same thing"
+    assert _adventure_path(solo_world).read_text() == text
+    assert _adventure_path(solo_world).stat().st_mtime_ns == written_at, "nothing re-decided"
+
+
+def test_a_report_without_a_pc_is_provisional_and_stamps_nothing(solo_world):
+    (Path(solo_world) / "campaigns" / "solo" / "character.json").unlink()
+    report = _at05(solo_world).requires_report()
+
+    assert report["binding"] == "awaiting-pc"
+    assert report["table"]["party_size"] == 0
+    assert {g["kind"] for g in _unmet(report)} == {
+        "party_size", "npc_with_party", "item_held", "prior_event", "pc_level"}
+    assert "adaptation" not in _on_disk(solo_world)["meta"], "no PC, no binding"
+    assert "PROVISIONAL" in format_requires_report(report)
+
+
+def test_a_legacy_open_schema_sheet_is_a_real_pc(solo_world):
+    """identity_onboarding wrote sheets in the open shape, and the runtime reads
+    them through character_schema.to_flat on load. Read raw, the name is buried
+    under `identity` and the book waits forever for a PC who is already at the
+    table — level 0, nothing carried, never bound."""
+    (Path(solo_world) / "campaigns" / "solo" / "character.json").write_text(json.dumps({
+        "identity": {"name": "Wren", "race": "Halfling", "class": "Rogue"},
+        "vitals": {"hp": {"current": 30, "max": 30}, "ac": 15},
+        "attributes": {"DEX": 18},
+        "progression": {"level": 5, "xp": 6500},
+        "inventory": {"gold": 12, "items": ["Sling", "Chronometer of Harmony"]},
+        "conditions": [],
+    }))
+    report = _at05(solo_world).requires_report()
+
+    assert report["binding"] == "bound" and report["pc"] == "Wren"
+    assert report["table"]["pc_level"] == 5, "the level lives under `progression`"
+    met = {g["kind"] for g in report["groups"] if g["met"]}
+    assert "item_held" in met, "and the kit under `inventory.items`"
+    assert {g["kind"] for g in _unmet(report)} == {"party_size", "npc_with_party", "prior_event"}
+
+
+def test_binding_keeps_the_rulings_made_before_it(solo_world):
+    """`adapt` is available before a PC exists, and those answers are decisions
+    too — the stamp joins them rather than starting the rulings list over."""
+    m = _at05(solo_world)
+    m.adapt("party_size", "Solo run: halve every enemy count")
+    assert m.requires_report()["binding"] == "bound"
+
+    adaptation = _on_disk(solo_world)["meta"]["adaptation"]
+    assert adaptation["matched_to_pc"] is True
+    assert [r["ruling"] for r in adaptation["rulings"]] == ["Solo run: halve every enemy count"]
+
+
+def test_adapt_writes_a_ruling(solo_world):
+    m = _at05(solo_world)
+    result = m.adapt("npc_with_party", "Puck rides with the sheriff; he catches up at 2.17",
+                     value="Puck")
+
+    assert result["replaced"] is False and result["rulings"] == 1
+    assert _on_disk(solo_world)["meta"]["adaptation"]["rulings"] == [
+        {"kind": "npc_with_party", "name": "Puck",
+         "ruling": "Puck rides with the sheriff; he catches up at 2.17"}]
+    assert m.validate() == []
+
+
+def test_adapt_rejects_an_unknown_kind_and_lists_the_valid_set(solo_world):
+    m = _at05(solo_world)
+    with pytest.raises(AdventureError) as exc:
+        m.adapt("party_mood", "everyone is cheerful about it")
+
+    assert "unknown adaptation kind 'party_mood'" in str(exc.value)
+    missing = [k for k in REQUIRES_KINDS if k not in str(exc.value)]
+    assert not missing, f"the error never names: {missing}"
+    assert "adaptation" not in _on_disk(solo_world)["meta"], "the bad ruling did not persist"
+
+
+def test_adapt_refuses_a_ruling_with_no_text(solo_world):
+    with pytest.raises(AdventureError, match="a ruling needs text"):
+        _at05(solo_world).adapt("party_size", "   ")
+
+
+def test_re_ruling_the_same_scope_replaces_it(solo_world):
+    """Two standing answers to one assumption is a table nobody can read back."""
+    m = _at05(solo_world)
+    m.adapt("party_size", "Halve every enemy count")
+    m.adapt("party_size", "Give Wren a hireling instead")
+
+    rulings = _on_disk(solo_world)["meta"]["adaptation"]["rulings"]
+    assert len(rulings) == 1 and rulings[0]["ruling"] == "Give Wren a hireling instead"
+
+
+def test_rulings_on_different_values_of_one_kind_stand_side_by_side(solo_world):
+    m = _at05(solo_world)
+    m.adapt("npc_with_party", "Puck joins them at 2.17", value="Puck")
+    m.adapt("npc_with_party", "Lander stays in his office", value="Lander")
+    assert len(_on_disk(solo_world)["meta"]["adaptation"]["rulings"]) == 2
+
+
+def test_a_min_kind_takes_its_scope_value_as_a_number(solo_world):
+    m = _at05(solo_world)
+    m.adapt("party_size", "Halve every enemy count", value="4")
+    assert _on_disk(solo_world)["meta"]["adaptation"]["rulings"][0]["min"] == 4
+
+    with pytest.raises(AdventureError, match="takes a number"):
+        m.adapt("pc_level", "Level them to 3 before this scene", value="fifth")
+
+
+def test_rulings_survive_a_later_merge_and_revalidate(solo_world):
+    """Converter batches keep arriving after the table has ruled. `merge` rewrites
+    scenes; the stamp and its rulings live under `meta` and must come through."""
+    m = _at05(solo_world)
+    m.requires_report()
+    m.adapt("item_held", "The chronometer is in Lander's safe — they have to ask for it",
+            value="Chronometer of Harmony")
+    m.merge([{"key": "2.3", "read_aloud": "Cogs turn behind the counter."}])
+
+    adaptation = _on_disk(solo_world)["meta"]["adaptation"]
+    assert adaptation["matched_to_pc"] is True and adaptation["pc"] == "Wren"
+    assert len(adaptation["rulings"]) == 1
+    assert m.validate() == [], "the stamp and its rulings pass the schema"
+
+
+@pytest.mark.parametrize("scene_id, met, flag", [
+    ("1.2", True, None),                   # played
+    ("2.3", False, "not_yet_played"),      # a scene of this book they have not reached
+    ("at-04", False, "other_module"),      # another book's scene — never playable here
+    ("1.7", False, "unresolved"),          # matches nothing: a mis-converted key
+])
+def test_prior_event_says_why_an_earlier_beat_is_missing(solo_world, scene_id, met, flag):
+    """Three unmet cases look identical on disk and are nothing alike at the table,
+    and the one that means "the converter typo'd a key" is flagged, never a crash."""
+    m = _at05(solo_world, requires={"2.17": [
+        {"kind": "prior_event", "id": scene_id, "note": "\"(Refer to AT-04)\""}]})
+    m.jump("1.2")
+    m.advance()
+
+    group = m.requires_report()["groups"][0]
+    assert group["met"] is met and group["flag"] == flag
+
+
+@pytest.mark.parametrize("scene_id, flag", [
+    # A typo inside the live book's own part-1..part-4 family. Read as a product
+    # code it becomes a standing adaptation — a permanent ruling about a scene
+    # that was only ever a mis-typed key.
+    ("part-5", "unresolved"),
+    # Real product codes, and neither is shaped like a scene key of this book:
+    # the season folded into the letters, and a citation carrying the title.
+    ("DDAL05-01", "other_module"),
+    ("AT-04 The Cogs of Lost Time", "other_module"),
+])
+def test_a_prior_event_id_is_read_against_this_books_own_key_families(solo_world, scene_id, flag):
+    """The whispering-wood book keys its scenes two ways, part-N and N.M. An id
+    wearing one of those shapes belongs to this book whatever else it looks like."""
+    m = AdventureManager(solo_world)
+    m.init([{"key": k, "title": k} for k in
+            ("part-1", "1.1", "1.2", "part-2", "2.1", "part-3", "part-4")])
+    m.merge([{"key": "2.1", "requires": [
+        {"kind": "prior_event", "id": scene_id, "note": "\"they have already done this\""}]}])
+
+    report = m.requires_report()
+    group = report["groups"][0]
+    assert group["met"] is False
+    assert group["flag"] == flag, group["detail"]
+    # The next-step hint is pasted verbatim, and this class is about ONE id.
+    assert f'--value "{scene_id}"' in format_requires_report(report)
+
+
+def test_narrative_is_unmeetable_by_design(solo_world):
+    m = _at05(solo_world, requires={"1.2": [
+        {"kind": "narrative", "note": "\"My anticipation for your return has been keen.\""}]})
+    group = m.requires_report()["groups"][0]
+    assert group["met"] is False and group["flag"] == "unmeetable"
+
+
+def test_a_book_whose_scenes_carry_no_requires_still_binds(solo_world):
+    """0 of the live book's 43 scenes carry the key. The union has to read that as
+    "this book assumes nothing", bind, and stay valid."""
+    m = _at05(solo_world, requires=None)
+    report = m.requires_report()
+
+    assert report["groups"] == [] and report["clauses"] == 0
+    assert report["binding"] == "bound"
+    assert "nothing to adapt" in format_requires_report(report)
+    assert m.validate() == []
+
+
+def test_an_unreadable_clause_is_counted_not_silently_dropped(solo_world):
+    """A hand-edited book can carry clauses the reader cannot type. The report
+    still runs (that IS the adaptation pass) and points at `validate`."""
+    m = _at05(solo_world, requires=None)
+    adv = _on_disk(solo_world)
+    adv["scenes"][0]["requires"] = [{"kind": "party_size", "min": 0, "note": "q"},
+                                    "a bare string",
+                                    {"kind": "party_mood", "note": "q"}]
+    _adventure_path(solo_world).write_text(json.dumps(adv))
+
+    report = m.requires_report()
+    assert report["malformed_clauses"] == 3 and report["groups"] == []
+    assert report["binding"] == "bound", "a conversion gap does not block the binding"
+    assert "run `validate`" in format_requires_report(report)
+
+
+def test_a_malformed_standing_ruling_is_named_and_blocks_nothing(solo_world):
+    """A ruling nobody can act on is law on disk until someone sees it, and the
+    report is the only place a GM would look. It used to raise out of BOTH the
+    report and `adapt`, so the one command that shows the problem and the one
+    command that fixes it were the two commands it broke."""
+    m = _at05(solo_world, requires=None)
+    adv = _on_disk(solo_world)
+    adv["meta"]["adaptation"] = {"rulings": [
+        {"kind": "party_mood", "ruling": "everyone is cheerful about it"},
+        {"kind": "party_size", "min": 4, "ruling": "Solo run: halve every enemy count"},
+    ]}
+    _adventure_path(solo_world).write_text(json.dumps(adv))
+
+    report = m.requires_report()
+    assert report["binding"] == "bound", "a bad ruling does not block the binding"
+    assert any("ruling #1 has unknown kind 'party_mood'" in p
+               for p in report["ruling_problems"]), report["ruling_problems"]
+    rendered = format_requires_report(report)
+    assert "party_mood" in rendered and "[UNREADABLE]" in rendered
+    assert "Solo run: halve every enemy count" in rendered, "the good ruling still reads"
+
+    result = m.adapt("npc_with_party", "Puck catches up at 2.17", value="Puck")
+    assert result["rulings"] == 3, "the player's answer is recorded regardless"
+    assert any("party_mood" in u for u in result["unreadable"]), "and names what it left alone"
+
+    # `adapt` refuses to write an unknown kind, so re-ruling can never replace this
+    # one. Removal is the only way back that is not hand-editing JSON.
+    assert m.unadapt("party_mood")["rulings"] == 2
+    assert [r["kind"] for r in _on_disk(solo_world)["meta"]["adaptation"]["rulings"]] == [
+        "party_size", "npc_with_party"]
+    assert m.validate() == []
+
+    with pytest.raises(AdventureError, match="no standing party_mood ruling"):
+        m.unadapt("party_mood")
+
+
+def test_remove_drops_only_the_scope_it_names(solo_world):
+    m = _at05(solo_world)
+    m.adapt("npc_with_party", "Puck catches up at 2.17", value="Puck")
+    m.adapt("npc_with_party", "Lander stays in his office", value="Lander")
+
+    m.unadapt("npc_with_party", value="Puck")
+    rulings = _on_disk(solo_world)["meta"]["adaptation"]["rulings"]
+    assert [r["name"] for r in rulings] == ["Lander"]
+
+
+# --- adaptation schema --------------------------------------------------
+
+def test_a_well_formed_adaptation_block_validates():
+    adv = {"meta": {"adaptation": {"matched_to_pc": True, "pc": "Wren",
+                                   "decided_at": "2026-08-26T19:00:00Z",
+                                   "rulings": [{"kind": "party_size", "min": 4,
+                                                "ruling": "Halve every enemy count"},
+                                               {"kind": "narrative",
+                                                "ruling": "Wren never met the duke"}]}},
+           "scenes": [{"key": "a", "title": "A"}], "progress": {}}
+    assert validate_adventure(adv) == []
+
+
+def test_an_adventure_with_no_adaptation_block_is_valid():
+    adv = {"meta": {"title": "Lost Mine"}, "scenes": [{"key": "a", "title": "A"}], "progress": {}}
+    assert validate_adventure(adv) == []
+
+
+def test_a_malformed_ruling_is_named_by_validate():
+    """A ruling is law for the rest of the campaign. One nobody can act on is
+    worse than none, so the schema names it the way it names a bad clause."""
+    adv = {"meta": {"adaptation": {"matched_to_pc": True, "rulings": [
+        {"kind": "party_mood", "ruling": "cheerful"},
+        {"kind": "party_size", "ruling": ""},
+        {"kind": "npc_with_party", "name": "   ", "ruling": "Puck joins later"},
+        "a bare string",
+        {"kind": ["party_size"], "ruling": "halve it"},
+    ]}}, "scenes": [{"key": "a", "title": "A"}], "progress": {}}
+    errors = validate_adventure(adv)
+
+    assert any("ruling #1 has unknown kind 'party_mood'" in e for e in errors), errors
+    assert any("ruling #2 (party_size) needs a non-empty string 'ruling'" in e for e in errors), errors
+    assert any("ruling #3 (npc_with_party) needs a non-empty string 'name'" in e for e in errors), errors
+    assert any("ruling #4 must be an object" in e for e in errors), errors
+    assert any("ruling #5 needs a string 'kind'" in e for e in errors), errors
+
+
+@pytest.mark.parametrize("adaptation, wanted", [
+    ("bound", "meta.adaptation must be an object"),
+    ({"rulings": {"party_size": "halve it"}}, "meta.adaptation.rulings must be a list"),
+])
+def test_an_unusable_adaptation_container_is_rejected(adaptation, wanted):
+    adv = {"meta": {"adaptation": adaptation}, "scenes": [{"key": "a", "title": "A"}],
+           "progress": {}}
+    assert wanted in validate_adventure(adv), validate_adventure(adv)
 
 
 # --- init + merge -------------------------------------------------------
@@ -587,6 +1025,41 @@ def test_wrapper_status_and_advance(wrapper_campaign):
     jump = _run("tools/gm-adventure.sh", "jump", "nowhere")
     assert jump.returncode != 0
     assert "unknown scene 'nowhere'" in jump.stdout + jump.stderr
+
+
+def test_wrapper_requires_report_binds_then_records_a_ruling(wrapper_campaign):
+    (wrapper_campaign / "adventure.json").write_text(json.dumps({
+        "meta": {"title": "The Whispering Wood (AT-05)"},
+        "scenes": [{"key": "1.2", "title": "Meeting with Lander", "transitions": [],
+                    "requires": [{"kind": "party_size", "min": 4,
+                                  "note": "\"When the characters enter the office\""}]}],
+        "progress": {"current_scene": "1.2", "completed": []},
+    }))
+    (wrapper_campaign / "character.json").write_text(json.dumps(
+        {"name": "Wren", "level": 1, "equipment": []}))
+
+    report = _run("tools/gm-adventure.sh", "requires-report")
+    assert report.returncode == 0, report.stderr
+    assert "BOUND to Wren" in report.stdout
+    assert "party_size" in report.stdout and "the party numbers 1" in report.stdout
+    assert "When the characters enter the office" in report.stdout, "the book's quote is shown"
+
+    again = _run("tools/gm-adventure.sh", "requires-report", "--json")
+    assert again.returncode == 0, again.stderr
+    assert json.loads(again.stdout)["data"]["binding"] == "already-bound"
+
+    adapt = _run("tools/gm-adventure.sh", "adapt", "--kind", "party_size",
+                 "--ruling", "Solo run: halve every enemy count", "--json")
+    assert adapt.returncode == 0, adapt.stderr
+    saved = json.loads(adapt.stdout)["data"]
+    assert saved["ruling"]["ruling"] == "Solo run: halve every enemy count"
+    assert saved["bound"] is True
+
+    bad = _run("tools/gm-adventure.sh", "adapt", "--kind", "vibes", "--ruling", "whatever")
+    output = bad.stdout + bad.stderr
+    assert bad.returncode != 0
+    assert "unknown adaptation kind 'vibes'" in output and "party_size" in output
+    assert "Traceback" not in output
 
 
 def test_merge_cli_rejects_an_unusable_kind_without_a_traceback(wrapper_campaign, tmp_path):

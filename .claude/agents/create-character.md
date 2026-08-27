@@ -94,6 +94,50 @@ Every hero has a past...
 
 - HP at Level 1 = Hit Die max + Constitution modifier
 - Example: Wizard (d6) with 14 CON (+2) = 6 + 2 = 8 HP
+- Each level after 1st = (average of the hit die, rounded up) + CON mod
+  (d6 -> 4, d8 -> 5, d10 -> 6, d12 -> 7)
+
+### Building ABOVE Level 1 (do not skip)
+
+A module may require the party to start at level 3, 5, 8. Building such a
+character is NOT "a level-1 character with a bigger number in the level field."
+Everything the class earned on the way up must actually be on the sheet.
+
+**Pull the authoritative data first — never build a levelled character from
+memory:**
+```bash
+uv run python features/character-creation/api/get_class_levels.py <class> <level>
+```
+It returns `prof_bonus`, `ability_score_bonuses` (CUMULATIVE count of ASIs
+earned by that level), the features gained, spell slots, and class_specific
+counters (rage_count, sneak_attack dice, brutal_critical_dice, ...). Run it for
+the target level, and read the features of EVERY level at or below it.
+
+Before you save, walk this checklist:
+
+1. **Proficiency bonus** = the API's `prof_bonus`, not +2. It scales every save,
+   every proficient skill, and every attack roll on the sheet.
+2. **ASIs — the most commonly missed thing.** `ability_score_bonuses: N` means
+   the character is owed N improvements (each +2 to one score, +1 to two, or a
+   feat). ASK the player how to spend each one; do not silently leave them
+   unspent, and do not spend them yourself. If a base score is exactly
+   `array value + racial bonus` at level 4+, the ASI was forgotten.
+3. **Subclass.** Most classes choose one at level 1-3. Fetch its features:
+   `curl -s https://www.dnd5eapi.co/api/2014/subclasses/<index>/levels`. Only
+   include features at or below the character's level.
+4. **Cumulative features.** List every feature from levels 1..N, not just the
+   top level's. Equally: do NOT include features from above N — no Brutal
+   Critical on a level-5 barbarian, no Extra Attack (2) on a level-5 fighter.
+5. **Class counters** (rages/day, sneak attack dice, ki points, superiority
+   dice) come from `class_specific` at that exact level.
+6. **Spell slots and spells known/prepared** come from the API's `spellcasting`
+   block for that level, not from the level-1 table.
+7. **XP** should match the level threshold (3=900, 4=2700, 5=6500, 6=14000,
+   7=23000, 8=34000, 9=48000, 10=64000).
+8. **Starting gear and gold** should suit a character of that level, not a
+   level-1 purse.
+
+State the level-up decisions you made and flag every ASI back to the player.
 
 ### Final Character Sheet
 
