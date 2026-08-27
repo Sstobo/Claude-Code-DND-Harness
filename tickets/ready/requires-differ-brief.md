@@ -47,6 +47,14 @@ framing: the note instructs adaptation, never narration of the mismatch.
 - [ ] item_held matches through entity aliases (not raw string equality)
 - [ ] Live AT-05 scene 1.2 + whispering-wood state shows the four real unmet clauses
 
+**Implementation notes from review tracing (2026-08-26):** every consumer reads
+`scene.get('requires', [])` — the every-scene-carries-every-field invariant is
+FALSE on disk (whispering-wood: 0/43 scenes carry the key, and merge only
+defaults it on genuinely new keys). And a `prior_event` id may be a scene key,
+a foreign module code (at-04), or a converter typo of a scene key — the differ
+treats an id that matches no completed scene and no known module pattern as
+unmet-with-a-flag, never as a crash or a silent pass.
+
 ## Out of scope
 
 One-scene-ahead horizon (shipped in dossier). Diegetic prose rules (diegetic-adaptation-craft).
