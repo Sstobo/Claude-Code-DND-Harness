@@ -138,3 +138,5 @@ Append-only, newest first. One line per board-level event. See `README.md`.
 - 2026-08-13T15:47Z  created: 13 tickets → ready (state-of-the-table T0+T1, 7×p0 + 6×p1)  [team-lead]
 - 2026-08-13T15:45Z  prd: state-of-the-table v1 active  [team-lead]
 - 2026-08-13T15:44Z  tracker scaffolded  [team-lead]- 2026-08-26T18:36:11Z  module-fidelity PRD + 11 tickets sliced to ready/ (phases 3+4 of the four-lens review synthesis)  [ss-modfid]
+
+- 2026-08-27T00:00:00Z  readme-promises PRD + 15 tickets → needs-triage (six-agent read-only audit of every README claim; 3 false, 8 prose-only, sheets unstandardized)  [readme-audit]
