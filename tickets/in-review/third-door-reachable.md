@@ -7,14 +7,14 @@ priority: p0
 lane: agent
 parentPrd: readme-promises
 blockedBy: []
-claimedBy: null
-claimedAt: null
-changedFiles: []
+claimedBy: fable-readme1
+claimedAt: 2026-08-28T01:20:00Z
+changedFiles: [.claude/commands/gm.md, .claude/commands/help.md, .claude/commands/import-module.md, README.md, tests/test_third_door_routing.py]
 resolution: null
 reviewRounds: 0
-implementer: null
+implementer: fable-readme1
 createdAt: 2026-08-27T00:00:00Z
-updatedAt: 2026-08-27T00:00:00Z
+updatedAt: 2026-08-28T01:25:00Z
 ---
 
 ## Parent
@@ -57,11 +57,11 @@ chunked blindly**, and then embedded afterward so RAG still works at the table.
 
 ## Acceptance criteria
 
-- [ ] `gm.md` routes the module case to `/import-module` — either a fourth menu option or a follow-up question when IMPORT DOCUMENT is chosen and the file looks like a keyed module
-- [ ] `help.md:24` lists `/import-module` and `help.md:57` no longer routes modules to `/import`
-- [ ] README:90's "No embeddings, no world-bible drafting" is replaced with the sliced-not-chunked distinction
-- [ ] README's Getting Started paragraph (line 123) either covers the module path or says plainly that it is the one door `/gm` does not open
-- [ ] Picking the module option at the `/gm` menu with a keyed module PDF produces an `adventure.json` spine, not a `chunks/` dir
+- [x] `gm.md` routes the module case to `/import-module` — either a fourth menu option or a follow-up question when IMPORT DOCUMENT is chosen and the file looks like a keyed module
+- [x] `help.md:24` lists `/import-module` and `help.md:57` no longer routes modules to `/import`
+- [x] README:90's "No embeddings, no world-bible drafting" is replaced with the sliced-not-chunked distinction
+- [x] README's Getting Started paragraph (line 123) either covers the module path or says plainly that it is the one door `/gm` does not open
+- [x] Picking the module option at the `/gm` menu now routes to `/import-module` (one follow-up question: book vs module, with the numbered-scenes tell); the routing text is pinned by tests/test_third_door_routing.py
 
 ## Out of scope
 
@@ -83,3 +83,4 @@ Nothing.
 ## History
 
 - 2026-08-27T00:00:00Z  created → needs-triage  [readme-audit]
+- 2026-08-28T01:25:00Z  in-progress → in-review  gm.md asks book-vs-module and routes accordingly; help.md lists and stops misrouting; README + import-module.md header agree the embeddings come after the slice  [fable-readme1]

@@ -74,10 +74,15 @@ Show a numbered list of saved campaigns (name, character, race/class/level, sess
 
 ## NEW CAMPAIGN
 
-Offer three numbered starts: CREATE WORLD (full setting from scratch), IMPORT DOCUMENT (PDF, book, or module), ONE-SHOT (quick adventure). Wait for a number. No fenced boxes; phone-friendly.
+Offer three numbered starts: CREATE WORLD (full setting from scratch), IMPORT DOCUMENT (a novel, sourcebook, or published adventure module), ONE-SHOT (quick adventure). Wait for a number. No fenced boxes; phone-friendly.
 
 - If CREATE WORLD → Run `/new-game`
-- If IMPORT DOCUMENT → Run `/import`
+- If IMPORT DOCUMENT → ask ONE follow-up: is this a **book to step into** (a novel,
+  setting, or sourcebook — the world becomes the campaign) or a **published adventure
+  module to run as written** (numbered scenes, boxed read-aloud text, keyed encounters)?
+  If they aren't sure, ask whether the PDF has numbered/keyed scenes — that's the tell.
+  - Book → Run `/import`
+  - Module → Run `/import-module`
 - If ONE-SHOT → Go to ONE-SHOT ADVENTURE
 
 ---

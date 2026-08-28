@@ -87,7 +87,7 @@ Got a favorite novel, a classic adventure module, a weird pulp paperback from th
 
 ## Run a published adventure — `/import-module`
 
-A published adventure module is a different animal from a novel: the author already cut it into numbered scenes, boxed read-aloud text, and keyed encounters. `/import-module` respects that. Instead of indexing the text for retrieval, it slices the PDF along the author's own scene boundaries and converts each scene into structured JSON: the read-aloud text, the GM notes, the exits, the encounters. The result is `adventure.json`, an ordered spine with a pointer at where the table currently is. Each scene rides into play as written, and the pointer advances as you clear it. No embeddings, no world-bible drafting; the module is the world, and the mechanics are 5e as always.
+A published adventure module is a different animal from a novel: the author already cut it into numbered scenes, boxed read-aloud text, and keyed encounters. `/import-module` respects that. Instead of chunking the text blindly, it slices the PDF along the author's own scene boundaries and converts each scene into structured JSON: the read-aloud text, the GM notes, the transitions, the encounters. The result is `adventure.json`, an ordered spine with a pointer at where the table currently is. Each scene rides into play as written, and you advance the pointer as the table clears it. The sliced text is then embedded too, so lookups at the table still reach the module's own words — but the spine, not retrieval, is what drives play. The mechanics are 5e as always.
 
 ## How a campaign is synthesized
 
@@ -97,7 +97,7 @@ All three doors converge on the same campaign shape: a folder under `world-state
 
 **From scratch (`/new-game`):** the same pipeline, except the canon is authored instead of extracted. Your questionnaire answers become a world-seed, the seed becomes the World Bible, and the bible becomes `campaign_rules` and one staged opening, with your approval at the skeleton stage before anything is committed.
 
-**From a module (`/import-module`):** no synthesis at all; the module's own scene structure becomes the spine, and the GM runs it as published.
+**From a module (`/import-module`):** no world-bible authoring; the module's own scene structure becomes the spine, the sliced scenes are embedded for table-time lookups, and the GM runs it as published.
 
 In every case the campaign file is a journal of where the table has been, not an encyclopedia of the source. The world grows outward from play, one stage at a time.
 
@@ -120,7 +120,7 @@ Then:
 1. Run `claude` to launch Claude Code
 2. Run `/gm`
 
-`/gm` is the only command you need. It offers a New Adventure (author an original world, import a book from `source-material/`, or spin up a quick one-shot), then builds your character and runs the game. Once a world exists, the first question is "Who are you in this world?": a character lifted from the source, an original of your own, or a nameless traveler who wanders in. The mechanics are handled behind the scenes.
+`/gm` is the only command you need. It offers a New Adventure (author an original world, import a book or published module from `source-material/`, or spin up a quick one-shot), then builds your character and runs the game. Once a world exists, the first question is "Who are you in this world?": a character lifted from the source, an original of your own, or a nameless traveler who wanders in. The mechanics are handled behind the scenes.
 
 ---
 

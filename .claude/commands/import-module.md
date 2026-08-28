@@ -19,8 +19,10 @@ and `bash tools/gm-adventure.sh advance|jump` moves the pointer.
 - `file-path` — the module PDF
 - `campaign-name` — optional (a short name from the module title: `whispering-wood`)
 
-**This command never runs `gm-extract.sh prepare`, never builds embeddings, never
-runs the extractor swarm, and never drafts a ruleset.** Mechanics are 5e, hardcoded.
+**This command never runs `gm-extract.sh prepare` (blind chunking), never runs
+the extractor swarm, and never drafts a ruleset.** Mechanics are 5e, hardcoded.
+The spine drives play; embeddings come AFTER the slice (Step 9, `gm-extract.sh
+add`) so table-time lookups reach the module's own words.
 
 ---
 

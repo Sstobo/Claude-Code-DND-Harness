@@ -141,3 +141,4 @@ Append-only, newest first. One line per board-level event. See `README.md`.
 
 - 2026-08-27T00:00:00Z  readme-promises PRD + 15 tickets → needs-triage (six-agent read-only audit of every README claim; 3 false, 8 prose-only, sheets unstandardized)  [readme-audit]
 - 2026-08-28T01:10:00Z  in-review: readme-front-door-facts + sheet-validate-on-write — implemented, suite green minus 2 pre-existing ticketed failures  [fable-readme1]
+- 2026-08-28T01:25:00Z  in-review: third-door-reachable — /gm and /help now route modules to /import-module; routing pinned by test  [fable-readme1]

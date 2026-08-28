@@ -21,7 +21,8 @@ Display all available commands and tools.
   CAMPAIGN SETUP
   --------------------------------------------------------
   /new-game           Create a new campaign world
-  /import             Import a PDF/document as campaign
+  /import             Import a novel/sourcebook as a campaign
+  /import-module      Run a published adventure module as written
   /create-character   Build a new player character
   /enhance            Enrich entities with source material
 
@@ -54,7 +55,8 @@ Display all available commands and tools.
   --------------------------------------------------------
   New campaign:     /new-game
   Continue playing: /gm
-  Import module:    /import
+  Import a book:    /import
+  Run a module:     /import-module
 
   SCENE IMAGES (optional)
   --------------------------------------------------------
