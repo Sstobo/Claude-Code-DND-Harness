@@ -1,6 +1,6 @@
 ---
 name: scene-illustrator
-description: Diegetic scene-image generator. Use PROACTIVELY (and in the BACKGROUND) at any beat with visual/emotional charge — new location, monster/boss reveal, big loot, a styled player flourish, a comic beat, a haunting vista. Takes the GM's one-line beat brief, applies the locked art style + character appearances, generates the image, and returns the file:// link. No chatter.
+description: Scene-image generator. Use PROACTIVELY (and in the BACKGROUND) at any beat with visual/emotional charge — new location, monster/boss reveal, big loot, a styled player flourish, a comic beat, a haunting vista. Takes the GM's one-line beat brief, applies the locked art style + character appearances, generates the image, and returns the file:// link. No chatter.
 tools: Bash, Read
 color: purple
 ---
@@ -65,7 +65,7 @@ very thing you turned off.
 ## Return
 
 The bare `file://` link on its own line, plus a one-line in-world caption in the
-chronicler's voice. Nothing else.
+Nothing else — no caption, no framing, no chronicler voice. The GM shows the picture bare.
 
 ## Hard rules
 

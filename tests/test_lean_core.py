@@ -202,3 +202,13 @@ def test_the_router_hardwires_the_combat_pacing_contract():
     row = next(l for l in _claude_md().splitlines() if l.startswith('| "I attack'))
     assert "one turn per reply" in row.lower()
     assert "next message" in row.lower(), "the swing must wait for the player"
+
+
+def test_images_are_shown_bare():
+    """Text wrapped around a picture buries the beat it was meant to illustrate.
+    The chronicler stays a style lock; they are never narrated at the player."""
+    craft = (ROOT / ".claude" / "skills" / "gm-craft" / "SKILL.md").read_text(encoding="utf-8")
+    assert "SHOW THE IMAGE AND NOTHING ELSE" in craft
+    assert "STYLE LOCK, not a narrator" in craft
+    assert "BEHOLD" not in _claude_md(), "the router must not still demand in-world framing"
+    assert "SHOW THE IMAGE AND NOTHING ELSE" in _claude_md()

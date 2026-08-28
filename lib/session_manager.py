@@ -931,13 +931,15 @@ class SessionManager(EntityManager):
             lines.append("Scene images: ENABLED — illustrate GENEROUSLY and with glee "
                          "(images cost ~$0.04; lean toward YES). New location, monster/boss "
                          "reveal, big loot, a styled flourish, a funny beat, a quiet vista — "
-                         "any beat with a real visual or emotional charge earns one. Present "
-                         "it DIEGETICALLY: frame the picture as an artifact made by an in-world "
-                         "chronicler whose style fits this world's voice (e.g. \"BEHOLD, the "
-                         "battle as set down by the scholar Astreus —\") and keep that same "
-                         "artist + art-style across the campaign so it reads like one artbook. "
-                         "Run `bash tools/gm-image.sh generate --title \"...\" --prompt \"...\"`, "
-                         "then show the file:// link. (See gm-craft → Diegetic Illustration.) "
+                         "any beat with a real visual or emotional charge earns one. "
+                         "SHOW THE IMAGE AND NOTHING ELSE — no caption, no title read out, no "
+                         "in-world framing, no paragraph about who painted it. The picture is "
+                         "the beat; text wrapped around it buries the story it was meant to "
+                         "illustrate. Deliver it on its own and let the narration stand "
+                         "separately. Run `bash tools/gm-image.sh generate --title \"...\" "
+                         "--prompt \"...\"`, then show the file:// link bare. The campaign's "
+                         "chronicler still LOCKS the art style so the gallery reads as one "
+                         "hand; they are never narrated to the player. "
                          "Skip only truly flat beats and don't re-shoot the same static room.")
             chronicler = self.json_ops.load_json("chronicler.json") or {}
             if chronicler.get("name"):
