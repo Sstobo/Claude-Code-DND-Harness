@@ -22,6 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from entity_manager import EntityManager
 from character_schema import to_flat
+from schemas import assert_valid_character
 
 
 def _default_vitals() -> Dict[str, Any]:
@@ -96,7 +97,9 @@ class IdentityOnboarding(EntityManager):
         The builder works in the structured open shape; to_flat converts it to the
         canonical flat shape the runtime reads (and preserves extras like voice/
         origin/concept at the top level)."""
-        return self.json_ops.save_json("character.json", to_flat(char))
+        flat = to_flat(char)
+        assert_valid_character(flat, source="identity_onboarding")
+        return self.json_ops.save_json("character.json", flat)
 
     def archive_character(self) -> Optional[str]:
         """Archive the outgoing character.json to fallen/, the way become() does."""

@@ -79,8 +79,11 @@ outcome is genuinely certain (trivial, or literally impossible).
   consequence (fail forward — the situation changes, sometimes for the worse,
   sometimes to death per Stakes & Death). Never quietly fudge a bad roll into a
   good outcome. The dice are why the world feels real.
-- **Show every check as the staged block, never a one-liner.** Pass the DC and
-  attribute the bonus, then paste the tool's output straight into narration:
+- **NO EXCEPTIONS: show every check as the staged block, never a one-liner, every
+  single time — not most of the time, not when it's convenient.** Running the roll
+  and then writing your own sentence about the result instead of pasting the tool's
+  actual output is the single most common way this rule gets broken; do not do it.
+  Pass the DC and attribute the bonus, then paste the tool's output straight into narration:
   `uv run python lib/dice.py "1d20+7" --dc 15 --from "strength:4" --from "your training in athletics:3"`.
   It renders the target FIRST, then dead air, then the result and the margin. The
   pause is real because your message streams — so never collapse the block, never

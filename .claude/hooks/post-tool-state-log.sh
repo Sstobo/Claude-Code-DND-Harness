@@ -22,4 +22,16 @@ case "$CMD" in
         ;;
 esac
 
+# A --dc roll is a promise: the model committed to paste this exact staged block
+# into narration (CLAUDE.md → Dice). This can't be enforced on the model's outgoing
+# text (no hook inspects that), so it's logged instead — every rolled DC is provable
+# after the fact, and a skipped block shows up as a roll with no matching narration.
+case "$CMD" in
+    *dice.py*--dc*)
+        mkdir -p "$DIR/.ship-it" 2>/dev/null
+        printf '%s DC-ROLL: %s\n' "$(date -u +%FT%TZ 2>/dev/null)" "$CMD" \
+            >> "$DIR/.ship-it/dice-rolls.log" 2>/dev/null
+        ;;
+esac
+
 exit 0

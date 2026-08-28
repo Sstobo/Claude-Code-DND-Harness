@@ -23,32 +23,19 @@ classifiers = [
     "Topic :: Games/Entertainment :: Role-Playing",
 ]
 
-# Core dependencies only - minimal for basic functionality
+# Core dependencies — document extraction. Everything else the harness needs is
+# stdlib: the Claude calls are Claude Code's, and the HTTP the tools do is urllib.
 dependencies = [
-    "anthropic>=0.76.0",
     "pdfplumber>=0.11.9",
     "pypdf2>=3.0.1",
     "python-docx>=1.2.0",
-    "python-dotenv>=1.0.0",
-    "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]
-# Voice features (ElevenLabs TTS)
-voice = [
-    "elevenlabs>=2.8.1",
-]
-
 # RAG-based document extraction
 rag = [
     "sentence-transformers>=2.2.0",
     "chromadb>=0.4.0",
-]
-
-# Full installation (all features)
-full = [
-    "gm-claude[voice]",
-    "gm-claude[rag]",
 ]
 
 # Development dependencies
@@ -61,10 +48,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Sstobo/Claude-Code-Game-Master"
-Documentation = "https://github.com/Sstobo/Claude-Code-Game-Master/wiki"
-Repository = "https://github.com/Sstobo/Claude-Code-Game-Master"
-Issues = "https://github.com/Sstobo/Claude-Code-Game-Master/issues"
+Homepage = "https://github.com/Sstobo/Claude-Code-DND-Harness"
+Documentation = "https://github.com/Sstobo/Claude-Code-DND-Harness/wiki"
+Repository = "https://github.com/Sstobo/Claude-Code-DND-Harness"
+Issues = "https://github.com/Sstobo/Claude-Code-DND-Harness/issues"
 Author = "https://www.linkedin.com/in/sean-stobo/"
 
 [build-system]

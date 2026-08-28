@@ -7,12 +7,10 @@
 #   ./install.sh --auto   Non-interactive (installs everything, full extras)
 #
 # What it installs (if missing):
-#   - Homebrew (macOS only)
-#   - Python 3.11+
-#   - uv (fast Python package manager)
-#   - jq (JSON processor used by tools)
-#   - All Python dependencies from pyproject.toml
-#   - Claude Code (npm package) — if Node.js is available
+#   macOS:  Homebrew, Python 3.11+, uv, jq, the Python dependencies
+#   Linux:  uv and the Python dependencies. Python 3.11+ and jq must already be
+#           present — the script prints the apt/dnf/pacman command and stops.
+# Claude Code itself is never installed; the script prints the npm command.
 
 set -e
 
@@ -239,30 +237,24 @@ main() {
     EXTRAS_FLAG=""
 
     if [ "$AUTO_MODE" = true ]; then
-        info "Auto mode: installing full dependencies (core + rag + voice)"
+        info "Auto mode: installing all extras (core + rag + dev)"
         EXTRAS_FLAG="--all-extras"
     else
         echo
         echo "  Select what to install:"
         echo "    1) Core only         — basic GM tools, dice, session management"
+        echo "                           (no PDF import, no /import, no semantic recall)"
         echo "    2) Core + RAG        — adds PDF import & semantic search (recommended)"
-        echo "    3) Full              — core + RAG + voice (ElevenLabs TTS)"
-        echo "    4) Full + Dev tools  — everything + linting & formatting"
+        echo "    3) Core + RAG + Dev  — everything + linting & formatting"
         echo
-        echo -n "  Choice [1-4] (default: 2): "
+        echo -n "  Choice [1-3] (default: 2): "
         read -r choice
 
         case "$choice" in
             1) EXTRAS_FLAG="";;
             3) EXTRAS_FLAG="--all-extras";;
-            4) EXTRAS_FLAG="--all-extras";;
             *) EXTRAS_FLAG="--extra rag";;  # default to 2
         esac
-
-        # Dev extras on top if choice 4
-        if [ "$choice" = "4" ]; then
-            EXTRAS_FLAG="--all-extras"
-        fi
     fi
 
     info "Running: uv sync $EXTRAS_FLAG"
@@ -320,12 +312,12 @@ ENVEOF
         FAIL=$((FAIL + 1))
     fi
 
-    # Anthropic SDK import
-    if uv run python -c "import anthropic" 2>/dev/null; then
-        ok "Anthropic SDK importable"
+    # Core dependency import (the canary for "did uv sync run")
+    if uv run python -c "import pdfplumber" 2>/dev/null; then
+        ok "Core dependencies importable"
         PASS=$((PASS + 1))
     else
-        err "Anthropic SDK import failed"
+        err "Core dependency import failed"
         FAIL=$((FAIL + 1))
     fi
 

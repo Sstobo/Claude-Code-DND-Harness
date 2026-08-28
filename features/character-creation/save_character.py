@@ -16,6 +16,7 @@ sys.path.insert(0, str(lib_path))
 
 from campaign_manager import CampaignManager
 from world_kit import WorldKit
+from schemas import assert_valid_character, CharacterShapeError
 import visual_appearance as va_mod
 
 def calculate_modifier(score):
@@ -188,6 +189,11 @@ def save_character(character_data):
         characters_dir = Path("world-state/characters")
         characters_dir.mkdir(parents=True, exist_ok=True)
         file_path = characters_dir / f"{char_id}.json"
+
+    try:
+        assert_valid_character(character, source="create-character")
+    except CharacterShapeError as e:
+        return {"error": str(e)}
 
     try:
         with open(file_path, 'w') as f:

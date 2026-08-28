@@ -14,6 +14,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from entity_manager import EntityManager
 from character_schema import to_flat, is_open_schema
+from schemas import assert_valid_character
 
 
 class PlayerManager(EntityManager):
@@ -86,9 +87,13 @@ class PlayerManager(EntityManager):
         return raw
 
     def _save_character(self, name: str, data: Dict) -> bool:
-        """Save character data to file using atomic writes via json_ops"""
+        """Save character data to file using atomic writes via json_ops.
+
+        This is the choke point for every mutation verb and for become(), so the
+        shape check goes here rather than in each caller."""
         # Persist in canonical flat shape (no-op if already flat).
         data = to_flat(data)
+        assert_valid_character(data, source="gm-player.sh")
         return self.json_ops.save_json("character.json", data)
 
     def world_kit(self):

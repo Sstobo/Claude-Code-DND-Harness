@@ -105,15 +105,15 @@ In every case the campaign file is a journal of where the table has been, not an
 
 ## Getting started
 
-**Prerequisites:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+**Prerequisites:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (which needs Node.js 18+), plus `curl` and `git`. On Linux you also need Python 3.11+ and `jq` before you start — the installer will not install those for you.
 
 ```bash
-git clone https://github.com/Sstobo/Claude-Code-Game-Master.git
-cd Claude-Code-Game-Master
+git clone https://github.com/Sstobo/Claude-Code-DND-Harness.git
+cd Claude-Code-DND-Harness
 ./install.sh
 ```
 
-The install script sets up Python, uv, jq, and all dependencies, on macOS and Linux, with no prior setup. (You can also just launch Claude Code and ask it to set things up.)
+On macOS the install script bootstraps what it needs: Homebrew, Python, uv, jq, and the Python dependencies. On Linux it installs uv and the Python dependencies, and prints the apt/dnf/pacman command for anything else that is missing. It does not install Claude Code itself. (You can also just launch Claude Code and ask it to set things up.)
 
 Then:
 
@@ -278,11 +278,11 @@ How the harness works lives in [`docs/`](docs/index.md), a knowledge layer where
 
 ### Dependencies
 
-Installed automatically during setup via [uv](https://docs.astral.sh/uv/):
+Installed during setup via [uv](https://docs.astral.sh/uv/). The list is short because most of the harness is stdlib: the Claude calls belong to Claude Code, and the HTTP the tools do is `urllib`.
 
-**Core:** `anthropic` (Claude API client), `pdfplumber` + `pypdf2` (PDF extraction), `python-docx` (Word docs), `python-dotenv` (env loading), `requests` (D&D 5e API).
+**Core:** `pdfplumber` + `pypdf2` (PDF extraction), `python-docx` (Word docs).
 
-**RAG (document import):** `sentence-transformers` (embeddings), `chromadb` (vector index for source lookups).
+**RAG (document import):** `sentence-transformers` (embeddings), `chromadb` (vector index for source lookups). These are the `rag` extra — the default answer at the install prompt, and always installed by `/setup`. Pick "core only" and PDF import will not work.
 
 ---
 

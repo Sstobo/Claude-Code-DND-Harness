@@ -312,23 +312,63 @@ def validate_character(data: Dict[str, Any], kit=None) -> Tuple[bool, List[str]]
         elif not isinstance(xp, (int, float)):
             errors.append("Character: xp must be a number or dict with current/next_level")
 
-    # Validate HP structure
-    hp = data.get('hp', {})
-    if isinstance(hp, dict):
+    # Validate HP structure. Every mutation path assumes hp is a {current,max}
+    # dict — modify_hp writes char['hp']['current'] directly — so a sheet that
+    # reaches disk without one is a KeyError waiting for the first hit taken.
+    hp = data.get('hp')
+    if hp is None:
+        errors.append("Character: missing hp")
+    elif isinstance(hp, dict):
         for key in ['current', 'max']:
             if key in hp and not isinstance(hp[key], (int, float)):
                 errors.append(f"Character: hp.{key} must be a number")
-    elif hp:
+    else:
         errors.append("Character: hp must be a dict with current/max")
 
-    # Validate abilities
-    abilities = data.get('abilities', {})
-    if isinstance(abilities, dict):
-        for stat in ['str', 'dex', 'con', 'int', 'wis', 'cha']:
-            if stat in abilities and not isinstance(abilities[stat], (int, float)):
-                errors.append(f"Character: abilities.{stat} must be a number")
+    # Validate stats. This is where ability scores actually live — `stats` is an
+    # OPEN, kit-defined dict, so the names are not fixed and only the container
+    # and the value types can be checked. (Until 2026-08-27 this block read
+    # data['abilities'], a key no writer has ever emitted, so it never ran.)
+    stats = data.get('stats')
+    if stats is not None:
+        if not isinstance(stats, dict):
+            errors.append("Character: stats must be a dict of <stat>: number")
+        else:
+            for stat, value in stats.items():
+                if not isinstance(value, (int, float)):
+                    errors.append(f"Character: stats.{stat} must be a number")
+
+    # Containers the runtime iterates or indexes without checking first.
+    for field, expected, label in (('equipment', list, 'a list'),
+                                   ('conditions', list, 'a list'),
+                                   ('visual_appearance', dict, 'a dict'),
+                                   ('saves', dict, 'a dict'),
+                                   ('skills', dict, 'a dict')):
+        value = data.get(field)
+        if value is not None and not isinstance(value, expected):
+            errors.append(f"Character: {field} must be {label}")
 
     return len(errors) == 0, errors
+
+
+class CharacterShapeError(ValueError):
+    """A character sheet was about to be written in a shape the runtime cannot read."""
+
+
+def assert_valid_character(data: Dict[str, Any], source: str = "", kit=None) -> None:
+    """Raise unless `data` is a sheet the runtime can actually use.
+
+    Call this at every write choke point. Validation used to run only in
+    /world-check, which meant a malformed sheet was discovered long after the
+    write that caused it — and by then nobody knew which of the writers did it.
+    Fail at the write instead, and name the caller.
+    """
+    valid, errors = validate_character(data, kit=kit)
+    if valid:
+        return
+    where = f" [{source}]" if source else ""
+    raise CharacterShapeError(
+        f"refusing to write an invalid character sheet{where}: " + "; ".join(errors))
 
 
 def validate_world_state(campaign_dir: str) -> Dict[str, List[str]]:
