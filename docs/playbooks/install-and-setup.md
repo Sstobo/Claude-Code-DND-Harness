@@ -6,7 +6,7 @@ sources:
   - { resource: /install.sh }
   - { resource: /pyproject.toml }
   - { resource: /.claude/commands/setup.md }
-generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
+generated: { by: claude-fable-5, at: 2026-08-28T01:00:16Z }
 ---
 
 # Install and setup
@@ -23,7 +23,7 @@ the project dependencies. `/setup` is the lighter in-session repair path — ven
 Verify the install the way the harness itself does:
 
 ```bash
-[ -d ".venv" ] && uv run python -c "import anthropic"
+[ -d ".venv" ] && uv run python -c "import pdfplumber"
 ```
 
 That check failing is what routes a session to `/setup` before it greets you.
@@ -32,9 +32,8 @@ That check failing is what routes a session to `/setup` before it greets you.
 
 | Extra | Contains | Missing it means |
 |---|---|---|
-| *(core)* | `pdfplumber`, `pypdf2`, `python-docx`, `python-dotenv`, `requests`, `anthropic` | nothing works |
+| *(core)* | `pdfplumber`, `pypdf2`, `python-docx` | nothing works |
 | `rag` | `sentence-transformers`, `chromadb` | **`/import` cannot vectorize**, and every source-passage lookup silently returns empty |
-| `voice` | `elevenlabs` | nothing — see below |
 | `dev` | `pytest`, `black`, `ruff`, `mypy`, `pre-commit` | can't run the suite |
 
 `rag` is the one that changes behaviour rather than failing loudly: retrieval degrades to
@@ -42,12 +41,12 @@ empty rather than erroring, so a campaign imported without it looks like a book 
 nothing in it. See [RAG stack](../modules/rag-stack.md). Its first run downloads roughly
 500MB of model files.
 
-**Two declared dependencies have no importer in the codebase:** `anthropic` (core) and
-`elevenlabs` (the `voice` extra). Verified 2026-08-13 — no `import anthropic` or
-`elevenlabs` anywhere in `lib/`, `tools/`, or `features/`. The harness runs *inside* Claude
-Code, so play needs no API key of its own; `anthropic` survives as the venv-health probe
-the startup check uses, and `voice` is a declared-but-unimplemented feature. Re-derive with
-`grep -rn "import anthropic" lib/ tools/ features/` rather than trusting this line.
+The dead dependencies are gone (2026-08-27): `anthropic`, `python-dotenv`, `requests`,
+and the whole `voice`/`elevenlabs` extra had no importer anywhere in `lib/`, `tools/`, or
+`features/` and were dropped from `pyproject.toml`. The harness runs *inside* Claude Code,
+so play needs no API key of its own; the venv-health probe now imports `pdfplumber`, a
+dependency the code actually uses. Re-derive with `grep -rn "import <name>" lib/ tools/
+features/` rather than trusting this line.
 
 ## Every environment variable the code reads
 

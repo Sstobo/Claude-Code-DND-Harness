@@ -140,3 +140,4 @@ Append-only, newest first. One line per board-level event. See `README.md`.
 - 2026-08-13T15:44Z  tracker scaffolded  [team-lead]- 2026-08-26T18:36:11Z  module-fidelity PRD + 11 tickets sliced to ready/ (phases 3+4 of the four-lens review synthesis)  [ss-modfid]
 
 - 2026-08-27T00:00:00Z  readme-promises PRD + 15 tickets → needs-triage (six-agent read-only audit of every README claim; 3 false, 8 prose-only, sheets unstandardized)  [readme-audit]
+- 2026-08-28T01:10:00Z  in-review: readme-front-door-facts + sheet-validate-on-write — implemented, suite green minus 2 pre-existing ticketed failures  [fable-readme1]

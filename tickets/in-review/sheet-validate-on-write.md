@@ -7,14 +7,14 @@ priority: p0
 lane: agent
 parentPrd: readme-promises
 blockedBy: []
-claimedBy: null
-claimedAt: null
-changedFiles: []
+claimedBy: fable-readme1
+claimedAt: 2026-08-28T00:30:00Z
+changedFiles: [lib/schemas.py, lib/player_manager.py, lib/identity_onboarding.py, lib/session_manager.py, features/character-creation/save_character.py, tests/test_character_shape_gate.py, tests/test_character_schema.py, docs/modules/player-character.md]
 resolution: null
 reviewRounds: 0
-implementer: null
+implementer: fable-readme1
 createdAt: 2026-08-27T00:00:00Z
-updatedAt: 2026-08-27T00:00:00Z
+updatedAt: 2026-08-28T01:10:00Z
 ---
 
 ## Parent
@@ -78,12 +78,12 @@ luck.
 
 ## Acceptance criteria
 
-- [ ] `validate_character` type-checks `stats`, `hp`, `equipment`, `visual_appearance` and requires the fields `character_schema` declares canonical
-- [ ] The dead `abilities` check at `lib/schemas.py:325` points at `stats`, or is deleted
-- [ ] All six writers call the validator before persisting; a failing sheet raises with the field named, it does not save
-- [ ] The degenerate cases in the table above (`stats` as a list, `equipment` as a string, missing `hp`) all fail validation
-- [ ] `save_character.py`'s whitelist either accepts `spells` or the create-character example stops passing it
-- [ ] `/world-check` reports the four existing drifted sheets accurately instead of green
+- [x] `validate_character` type-checks `stats`, `hp`, `equipment`, `visual_appearance` and requires the fields `character_schema` declares canonical
+- [x] The dead `abilities` check at `lib/schemas.py:325` points at `stats`, or is deleted
+- [x] All six writers call the validator before persisting; a failing sheet raises with the field named, it does not save
+- [x] The degenerate cases in the table above (`stats` as a list, `equipment` as a string, missing `hp`) all fail validation
+- [ ] `save_character.py`'s whitelist either accepts `spells` or the create-character example stops passing it (NOT done — deferred to sheet-5e-completeness, which owns where spells live)
+- [ ] `/world-check` reports the four existing drifted sheets accurately instead of green (partial — type errors now surface, but missing-optional-key drift is sheet-one-constructor's job)
 
 ## Out of scope
 
@@ -107,3 +107,4 @@ Nothing.
 ## History
 
 - 2026-08-27T00:00:00Z  created → needs-triage  [readme-audit]
+- 2026-08-28T01:10:00Z  in-progress → in-review  gate wired into all six writers incl. become + move; 17-test regression suite; live sheets verified green  [fable-readme1]

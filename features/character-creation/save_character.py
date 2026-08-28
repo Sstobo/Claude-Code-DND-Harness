@@ -121,7 +121,7 @@ def save_character(character_data):
     # `stats` is the legacy alias (and the canonical flat key we persist).
     # race/class stay OPTIONAL even on this 5e-only fork: the nameless-traveler
     # onboarding route saves a sheet before either is chosen and fills them in
-    # later. This matches schemas.validate_character (only name + level).
+    # later. schemas.assert_valid_character gates the final shape at the write.
     required_fields = ['name', 'level']
     for field in required_fields:
         if field not in character_data:

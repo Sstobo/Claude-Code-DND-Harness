@@ -83,5 +83,8 @@ def test_flat_sheet_validates_directly(dcc_world):
 
 
 def test_nameless_traveler_validates_without_race_or_class():
-    ok, errs = validate_character({"name": "A nameless traveler", "level": 1})
+    # race/class stay optional (the nameless route fills them in later), but hp
+    # is required since the shape gate — every onboarding writer supplies it.
+    ok, errs = validate_character({"name": "A nameless traveler", "level": 1,
+                                   "hp": {"current": 10, "max": 10}})
     assert ok, errs

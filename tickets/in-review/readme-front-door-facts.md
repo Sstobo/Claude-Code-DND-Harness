@@ -7,14 +7,14 @@ priority: p0
 lane: agent
 parentPrd: readme-promises
 blockedBy: []
-claimedBy: null
-claimedAt: null
-changedFiles: []
+claimedBy: fable-readme1
+claimedAt: 2026-08-28T00:30:00Z
+changedFiles: [README.md, pyproject.toml, install.sh, uv.lock, CLAUDE.md, docs/playbooks/install-and-setup.md]
 resolution: null
 reviewRounds: 0
-implementer: null
+implementer: fable-readme1
 createdAt: 2026-08-27T00:00:00Z
-updatedAt: 2026-08-27T00:00:00Z
+updatedAt: 2026-08-28T01:10:00Z
 ---
 
 ## Parent
@@ -75,13 +75,13 @@ acceptance criteria below.
 
 ## Acceptance criteria
 
-- [ ] README:111-112 and `pyproject.toml:64-67` all name `Claude-Code-DND-Harness`
-- [ ] Prerequisites line names Node.js 18+, `curl`, `git`, and (Linux) Python 3.11+ and `jq`
-- [ ] Install paragraph states the macOS and Linux paths separately and says Claude Code is not installed by the script
-- [ ] Dependencies section lists only deps that are actually imported, and describes the `rag` extra as the default install answer rather than automatic
-- [ ] `anthropic`, `python-dotenv`, `requests` either removed from `pyproject.toml:27-34` or annotated with why they are pinned; same decision recorded for `elevenlabs`
-- [ ] `install.sh:15` header no longer claims it installs Claude Code
-- [ ] A clean-machine reading of the install section matches what the script does on that platform
+- [x] README:111-112 and `pyproject.toml:64-67` all name `Claude-Code-DND-Harness`
+- [x] Prerequisites line names Node.js 18+, `curl`, `git`, and (Linux) Python 3.11+ and `jq`
+- [x] Install paragraph states the macOS and Linux paths separately and says Claude Code is not installed by the script
+- [x] Dependencies section lists only deps that are actually imported, and describes the `rag` extra as the default install answer rather than automatic
+- [x] `anthropic`, `python-dotenv`, `requests` either removed from `pyproject.toml:27-34` or annotated with why they are pinned; same decision recorded for `elevenlabs`
+- [x] `install.sh:15` header no longer claims it installs Claude Code
+- [x] A clean-machine reading of the install section matches what the script does on that platform
 
 ## Out of scope
 
@@ -105,3 +105,4 @@ Nothing.
 ## History
 
 - 2026-08-27T00:00:00Z  created → needs-triage  [readme-audit]
+- 2026-08-28T01:10:00Z  in-progress → in-review  URLs fixed, install text truthful per-platform, 4 dead deps dropped, canary now pdfplumber  [fable-readme1]

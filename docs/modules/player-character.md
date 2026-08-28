@@ -6,7 +6,7 @@ sources:
   - { resource: /lib/character_schema.py }
   - { resource: /lib/player_manager.py }
   - { resource: /features/character-creation/save_character.py }
-generated: { by: cursor-grok-4.6, at: 2026-08-14T19:39:48Z }
+generated: { by: claude-fable-5, at: 2026-08-28T01:00:16Z }
 ---
 
 # The player character sheet
@@ -60,19 +60,26 @@ world's HP curve, so it persists 10/10. That used to be silent — a Conan death
 could save as an unplayable 10/10 with no signal. The fallback is still 10/10 (refusing
 would strand the save), but the return payload now carries a `warnings` list naming it.
 Author the vital; do not rely on the default. `race`/`class` are required only for
-`dnd5e`, matching `schemas.validate_character` (only `name` and `level` are universal).
+`dnd5e`, matching `schemas.validate_character` (`name`, `level`, and `hp` are universal).
 Declared kit vitals supplied at creation are carried onto the sheet. See
 [the schema reference](../schema-reference.md) for where the declaration lives.
 
 ## One validator: `schemas.validate_character`
 
 Shape-agnostic (normalizes via `to_flat`), kit-aware: given a `WorldKit`, stats outside
-the kit's declared `stat_schema.attributes` are reported. Only `name` and `level` are
-required — `race`/`class` are 5e-flavored and legitimately absent on a nameless traveler
-or a non-D&D character. Two caveats: an empty declared stat schema disables the kit check
-(which is what the auto-drafted ruleset ships with), and the open-vs-flat trap that once
-produced a duplicate validator still exists at the builder boundary — see
-[the shape trap](../gotchas/identity-onboarding-schema-drift.md).
+the kit's declared `stat_schema.attributes` are reported. Required: `name`, `level`, and
+an `hp` dict — `race`/`class` are 5e-flavored and legitimately absent on a nameless
+traveler. Containers are type-checked (`stats`/`saves`/`skills`/`visual_appearance` as
+dicts, `equipment`/`conditions` as lists) because the runtime indexes them unguarded.
+Since 2026-08-27 the check runs **at every write**, not just `/world-check`:
+`schemas.assert_valid_character` raises `CharacterShapeError` from
+`player_manager._save_character` (all mutation verbs + `become`),
+`identity_onboarding.save_character`, and create-character's `save_character` — a
+malformed sheet names its writer instead of surfacing sessions later. Caveats: an empty
+declared stat schema disables the kit check (what the auto-drafted ruleset ships with),
+an **empty** `stats` dict still passes (the live dcc PC has one; the backfill belongs to
+the sheet-one-constructor ticket), and the open-vs-flat trap at the builder boundary —
+see [the shape trap](../gotchas/identity-onboarding-schema-drift.md).
 
 ## XP delegates to the kit, then falls back
 

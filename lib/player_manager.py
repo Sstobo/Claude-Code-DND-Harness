@@ -746,6 +746,10 @@ class PlayerManager(EntityManager):
         new_char.pop('died_at', None)
         new_char.pop('cause', None)
 
+        # Gate BEFORE archiving: a malformed party sheet must refuse here, not
+        # after the fallen PC has already been moved aside.
+        assert_valid_character(new_char, source="gm-player.sh become")
+
         # Archive the fallen PC (if a character.json exists) before overwriting.
         archived_path = None
         if self.character_file.exists():

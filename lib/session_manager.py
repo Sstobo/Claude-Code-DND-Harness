@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from entity_manager import EntityManager, npcs_present
 from character_schema import to_flat
-from schemas import PLOT_TYPE_SORT
+from schemas import PLOT_TYPE_SORT, assert_valid_character
 
 
 class SessionManager(EntityManager):
@@ -582,6 +582,7 @@ class SessionManager(EntityManager):
         if self.character_file.exists():
             char_data = to_flat(self.json_ops.load_json("character.json"))
             char_data['current_location'] = location
+            assert_valid_character(char_data, source="gm-session.sh move")
             self.json_ops.save_json("character.json", char_data)
 
         result = {
