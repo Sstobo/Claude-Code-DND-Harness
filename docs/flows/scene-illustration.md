@@ -7,7 +7,7 @@ sources:
   - { resource: /lib/visual_appearance.py }
   - { resource: /tools/gm-image.sh }
   - { resource: /.claude/agents/scene-illustrator.md }
-generated: { by: claude-fable-5, at: 2026-08-28T01:19:13Z }
+generated: { by: claude-opus-5, at: 2026-08-28T02:22:39Z }
 ---
 
 # Illustrating a scene
@@ -35,8 +35,11 @@ look like one artist drew one cast is state on disk, injected into every prompt.
 
 - **each named character's canonical appearance**, from the 11-field `visual_appearance`
   block, as `Character (render exactly): …`
-- **the campaign's locked art style**, from `chronicler.json`, as
-  `Consistent art style (campaign signature): …`
+- **the campaign's locked art style**, from `chronicler.json`, **PREPENDED** so it
+  leads the prompt, with the caller's text following as `Scene: …`. It leads rather
+  than trails because image models weight the opening far more heavily than the tail;
+  a style appended after three sentences of scene description loses to the scene, and
+  that is how a locked signature quietly renders as generic art.
 
 Both are belt-and-braces: they fire even on a direct fallback call where the caller forgot.
 The art style injection is guarded on the style string not already appearing in the prompt,
@@ -118,8 +121,8 @@ that character a different person.
   improvised per image. `--no-style-lock` is the deliberate escape for a dream or
   flashback.
 
-`chronicler.json` is `{name, style, era, persona}`. `style` and `era` are both appended
-to every prompt by `build_prompt` and they do different jobs: style is the brush
+`chronicler.json` is `{name, style, era, persona}`. `build_prompt` prepends `style` and
+appends `era` and they do different jobs: style is the brush
 (references, medium, palette, light), era is the props (century, tech level, what may
 and may not appear in frame). Only `style` gates rendering; `era` is optional but is
 what stops a modern badge landing on a bronze-age sheriff.

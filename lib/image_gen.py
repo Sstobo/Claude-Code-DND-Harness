@@ -251,7 +251,11 @@ def build_prompt(prompt: str, characters=None, campaign_dir=None, *,
             chronicler = load_chronicler(campaign_dir)
         style = (chronicler or {}).get("style", "").strip()
         if style and style.lower() not in final.lower():
-            final = f"{final.rstrip()}\n\nConsistent art style (campaign signature): {style}."
+            # PREPENDED, not appended. Image models weight the opening of a prompt
+            # far more heavily than the tail, and a style trailing after three
+            # sentences of scene description loses to the scene every time — which
+            # is how a locked cartoon signature quietly renders as generic art.
+            final = f"{style}\n\nScene: {final.lstrip()}"
         # The era rail: without it the model reaches for its default century and
         # drops a modern badge or a Victorian lamp into a bronze-age scene.
         era = (chronicler or {}).get("era", "").strip()
@@ -297,6 +301,16 @@ def generate_image(prompt: str, *, title: str = "", quality: str = DEFAULT_QUALI
     # Author before render, never after. A character with no stored look would
     # be invented by the model and forgotten, so the SECOND image of them is a
     # different person. Fail closed and make the caller persist the block first.
+    # A figure described in prose instead of passed by name gets NO stored
+    # appearance block, so the model invents the look and the next image of them
+    # is a different person. The caller forgetting --character is the common way
+    # a locked cast drifts; say so loudly rather than rendering it silently.
+    if appearance_lock and not characters:
+        print("[WARNING] No --character passed. If a named PC or NPC is in this "
+              "frame, their stored visual_appearance was NOT injected and the "
+              "model is inventing their look. Re-run with --character \"<name>\".",
+              file=sys.stderr)
+
     if appearance_lock and characters:
         missing = [c for c in characters if not appearance_line(c, campaign_dir)]
         if missing:

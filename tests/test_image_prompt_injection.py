@@ -44,3 +44,28 @@ def test_unknown_character_injects_nothing(dcc_world):
     campaign, _ = _campaign_with_appearance(dcc_world)
     prompt = "a quiet vista"
     assert inject_appearances(prompt, ["Nobody Real"], campaign) == prompt
+
+
+def test_the_style_lock_leads_the_prompt(dcc_world, monkeypatch):
+    """The locked style must PREPEND, not trail the scene description.
+
+    Image models weight the opening of a prompt far more heavily than the tail.
+    A cartoon signature appended after three sentences of scene loses to the
+    scene, which is exactly how a locked style quietly renders as generic art.
+    """
+    from lib import image_gen
+
+    monkeypatch.setattr(image_gen, "load_chronicler",
+                        lambda *_a, **_k: {"style": "In the style of FLAT CARTOON PLATE"})
+    out = image_gen.build_prompt("A boy stands in a ruined hall.", campaign_dir=None)
+    assert out.startswith("In the style of FLAT CARTOON PLATE"), out[:80]
+    assert "Scene: A boy stands in a ruined hall." in out
+
+
+def test_style_is_not_doubled_when_the_caller_already_stated_it(dcc_world, monkeypatch):
+    from lib import image_gen
+
+    monkeypatch.setattr(image_gen, "load_chronicler",
+                        lambda *_a, **_k: {"style": "In the style of FLAT CARTOON PLATE"})
+    already = "In the style of FLAT CARTOON PLATE. A boy stands in a hall."
+    assert image_gen.build_prompt(already, campaign_dir=None).count("FLAT CARTOON PLATE") == 1
