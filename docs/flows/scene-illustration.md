@@ -7,7 +7,7 @@ sources:
   - { resource: /lib/visual_appearance.py }
   - { resource: /tools/gm-image.sh }
   - { resource: /.claude/agents/scene-illustrator.md }
-generated: { by: claude-opus-5, at: 2026-08-26T18:02:31Z }
+generated: { by: claude-fable-5, at: 2026-08-28T01:19:13Z }
 ---
 
 # Illustrating a scene
@@ -93,8 +93,14 @@ deliberately. `color` is skin/hide/chassis colour, "barefoot" belongs under `pan
 `short_description` is the silhouette that survives at thumbnail size (one shape, one
 colour, one prop). `format_line` emits `key: value` pairs in fixed order — a spec sheet,
 not prose — so the same character reaches the model as the same string every time. Legacy
-blocks migrate on read: `clothing` → `shirt`, `species` → `race` when race is empty; `age`
-and `demeanor` are dropped.
+blocks migrate on read: `clothing` → `shirt`, `species` → `race` when race is empty;
+`age` appends onto `face` and `demeanor` onto `short_description` (they used to be
+dropped — the d28fb34 regression that stripped Conan's age and movement on every render).
+The stored data was migrated in place on 2026-08-28 by `lib/appearance_migrate.py
+migrate` (idempotent; re-run it after restoring an old save). Any future field-set change
+MUST ship a `migrate` pass in the same commit — the read-time shim alone leaves every
+stored block losing content silently. `gm-npc.sh appearance-report` lists everyone whose
+block is still blank and therefore refuses to render.
 
 Author the block BEFORE the first image, never derived from one afterwards, and freeze it
 afterwards — it changes only on an explicit in-world event (new armour, a scar, a
@@ -125,11 +131,14 @@ Both exist because the failure is silent otherwise: an un-styled render inherits
 image model's house look, and an un-authored character is invented once and forgotten,
 so their next appearance is a different person.
 
-## Cost is estimated locally and can be unknown
+## Cost is estimated locally and every render carries a price
 
-`_COST` (`lib/image_gen.py:123`) is a hardcoded table keyed by quality × size, used only
-for the spend log — nothing is billed here, and an unrecognized combination logs `?`
-rather than failing. With `XAI_API_KEY` set the backend is xAI Grok Imagine (`XAI_IMAGE_MODEL`, default
+`_COST` (`lib/image_gen.py`) is a hardcoded gpt-image-2 table keyed by quality × size,
+used only for the spend log — nothing is billed here. The xAI path logs
+`XAI_DEFAULT_COST_USD` (0.04, the figure play is budgeted around; `XAI_IMAGE_COST_USD`
+overrides) — until 2026-08-28 it logged `None`, which the summer added as $0.00, so seven
+real paid renders totalled "free". `gm-image.sh log` now reports any remaining unpriced
+entries next to the total instead of silently folding them in. With `XAI_API_KEY` set the backend is xAI Grok Imagine (`XAI_IMAGE_MODEL`, default
 `grok-imagine-image-quality`; no size/quality knobs, 3 retries, 90s timeout, and one
 moderation-softening retry). Otherwise defaults are `gpt-image-2`, `medium`, `1536x1024`, each overridable
 by env var. `gm-image.sh log` reads the per-campaign `_gen-log.jsonl`.

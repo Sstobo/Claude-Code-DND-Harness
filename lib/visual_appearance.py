@@ -45,6 +45,15 @@ _LEGACY_MAP = {
     "species": "race",     # old biological kind → race, when race is empty
 }
 
+# Legacy fields whose content is EXTRA information, not a rename: folded in by
+# appending, so "young, late teens" (age) or a movement description (demeanor)
+# survives a schema change instead of being dropped (the d28fb34 regression —
+# 3 of 4 PCs lost these on every image render).
+_LEGACY_APPEND = {
+    "age": "face",                    # apparent age reads on the face
+    "demeanor": "short_description",  # how they carry themselves = silhouette
+}
+
 
 def empty_template() -> dict:
     """A fresh block with every field present and blank (authored later)."""
@@ -66,6 +75,10 @@ def normalize(va) -> dict:
     for old, new in _LEGACY_MAP.items():
         if not out[new] and src.get(old):
             out[new] = str(src[old]).strip()
+    for old, new in _LEGACY_APPEND.items():
+        v = str(src.get(old) or "").strip()
+        if v and v not in out[new]:
+            out[new] = f"{out[new]}, {v}".strip(", ")
     return out
 
 

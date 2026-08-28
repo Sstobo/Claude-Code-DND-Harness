@@ -7,14 +7,14 @@ priority: p0
 lane: agent
 parentPrd: readme-promises
 blockedBy: []
-claimedBy: null
-claimedAt: null
-changedFiles: []
+claimedBy: fable-readme1
+claimedAt: 2026-08-28T01:30:00Z
+changedFiles: [lib/image_gen.py, tools/gm-image.sh, docs/flows/scene-illustration.md]
 resolution: null
 reviewRounds: 0
-implementer: null
+implementer: fable-readme1
 createdAt: 2026-08-27T00:00:00Z
-updatedAt: 2026-08-27T00:00:00Z
+updatedAt: 2026-08-28T01:45:00Z
 ---
 
 ## Parent
@@ -51,10 +51,10 @@ total, because it reads as "free."
 
 ## Acceptance criteria
 
-- [ ] xAI renders log a real `est_cost_usd`; `XAI_IMAGE_COST_USD` becomes an override, not the only source
-- [ ] `gm-image.sh log` prints the count of unpriced entries alongside the total, so `$0.00` can never be mistaken for free
-- [ ] Existing null-cost entries are either backfilled or reported as "N unpriced" rather than silently summed as zero
-- [ ] The per-quality prices in `_COST` cover both providers, and CLAUDE.md's "~$0.04" figure matches whichever provider is actually default
+- [x] xAI renders log a real `est_cost_usd`; `XAI_IMAGE_COST_USD` becomes an override, not the only source
+- [x] `gm-image.sh log` prints the count of unpriced entries alongside the total, so `$0.00` can never be mistaken for free
+- [x] Existing null-cost entries are either backfilled or reported as "N unpriced" rather than silently summed as zero
+- [x] Pricing covers both providers — gpt-image-2 per quality×size, xAI a single default (it has no quality/size knobs), and CLAUDE.md's "~$0.04" figure matches whichever provider is actually default
 
 ## Out of scope
 
@@ -75,3 +75,4 @@ Nothing.
 ## History
 
 - 2026-08-27T00:00:00Z  created → needs-triage  [readme-audit]
+- 2026-08-28T01:45:00Z  in-progress → in-review  xAI renders log $0.04 by default (env override kept); log prints unpriced count beside the total; historical nulls reported not silently zeroed  [fable-readme1]

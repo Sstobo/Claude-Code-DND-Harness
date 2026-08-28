@@ -138,6 +138,11 @@ _COST = {
     "high":   {"1024x1024": 0.211, "1536x1024": 0.165, "1024x1536": 0.165},
 }
 
+# xAI's per-image estimate used when XAI_IMAGE_COST_USD is not set. An estimate,
+# not a published price — but a working number beats logging None, which the
+# spend summer used to sum as $0.00 (the "seven paid renders, total free" bug).
+XAI_DEFAULT_COST_USD = 0.04  # env override (XAI_IMAGE_COST_USD) applied at the call site
+
 
 def estimate_cost(quality: str, size: str):
     """Return the published per-image USD cost, or None if not in the table."""
@@ -346,13 +351,15 @@ def generate_image(prompt: str, *, title: str = "", quality: str = DEFAULT_QUALI
         # xAI has no size/quality knobs — don't log OpenAI's dials as if it did.
         quality, size = "-", "-"
 
-    # xAI publishes no per-image price we can pin here; log it as unknown unless
-    # the operator sets XAI_IMAGE_COST_USD.
+    # xAI publishes no per-image price we can pin from the API, so log the
+    # working estimate (the "~$0.04 an image" figure play is budgeted around)
+    # rather than None — seven real renders summing to $0.00 read as "free".
+    # XAI_IMAGE_COST_USD overrides when the operator knows the real rate.
     if xai_key:
         try:
             cost = float(os.environ["XAI_IMAGE_COST_USD"])
         except (KeyError, ValueError):
-            cost = None
+            cost = XAI_DEFAULT_COST_USD
     else:
         cost = estimate_cost(quality, size)
     record = {

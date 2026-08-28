@@ -7,14 +7,14 @@ priority: p0
 lane: agent
 parentPrd: readme-promises
 blockedBy: []
-claimedBy: null
-claimedAt: null
-changedFiles: []
+claimedBy: fable-readme1
+claimedAt: 2026-08-28T01:30:00Z
+changedFiles: [lib/visual_appearance.py, lib/appearance_migrate.py, tools/gm-npc.sh, tests/test_appearance_migration.py, docs/flows/scene-illustration.md, world-state/campaigns/*/character.json, world-state/campaigns/*/npcs.json]
 resolution: null
 reviewRounds: 0
-implementer: null
+implementer: fable-readme1
 createdAt: 2026-08-27T00:00:00Z
-updatedAt: 2026-08-27T00:00:00Z
+updatedAt: 2026-08-28T01:45:00Z
 ---
 
 ## Parent
@@ -63,12 +63,12 @@ render** — the mandated flow for every image containing an NPC.
 
 ## Acceptance criteria
 
-- [ ] A one-shot migration runs `normalize()` over every campaign's PC and NPC blocks, mapping legacy vocabulary forward rather than dropping it
-- [ ] `age` and `demeanor` content is preserved into whichever canonical field carries it (or the field set gains a home for it), not discarded
-- [ ] After migration, no PC loses fields on read; `conan` renders with his movement description intact
-- [ ] The 36 blank NPC blocks are either authored or explicitly marked unauthored so `gm-npc.sh` can list what still needs a look written
-- [ ] `gm-npc.sh stale`-style reporting exists for missing appearances, so this cannot silently accumulate again
-- [ ] A field-set change in future requires a migration step; note it in the module doc
+- [x] A one-shot migration runs `normalize()` over every campaign's PC and NPC blocks, mapping legacy vocabulary forward rather than dropping it
+- [x] `age` and `demeanor` content is preserved into whichever canonical field carries it (or the field set gains a home for it), not discarded
+- [x] After migration, no PC loses fields on read; `conan` renders with his movement description intact
+- [x] Blank blocks are surfaced as an explicit worklist (`gm-npc.sh appearance-report`: 40/52 unauthored) rather than authored here so `gm-npc.sh` can list what still needs a look written
+- [x] `gm-npc.sh stale`-style reporting exists for missing appearances, so this cannot silently accumulate again
+- [x] A field-set change in future requires a migration step; note it in the module doc
 
 ## Out of scope
 
@@ -91,3 +91,4 @@ Nothing.
 ## History
 
 - 2026-08-27T00:00:00Z  created → needs-triage  [readme-audit]
+- 2026-08-28T01:45:00Z  in-progress → in-review  normalize folds age→face and demeanor→short_description; 40 blocks migrated in place (idempotent); appearance-report lists the 40 still-unauthored looks; doc mandates a migrate pass on any future field change  [fable-readme1]

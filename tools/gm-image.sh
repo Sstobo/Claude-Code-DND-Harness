@@ -144,7 +144,7 @@ case "$ACTION" in
         fi
         $PYTHON_CMD - "$LOG_FILE" <<'PY'
 import json, sys
-total = 0.0
+total, unpriced = 0.0, 0
 with open(sys.argv[1]) as f:
     for line in f:
         try:
@@ -152,10 +152,17 @@ with open(sys.argv[1]) as f:
         except ValueError:
             continue
         c = r.get("est_cost_usd")
-        total += c or 0.0
+        if c is None:
+            unpriced += 1
+        else:
+            total += c
         print(f"{r.get('ts','?'):20}  {('$%.3f'%c) if c is not None else '   ?  ':>7}  "
               f"{r.get('quality','?'):6} {r.get('size','?'):10}  {r.get('file','?')}")
-print(f"\nTotal estimated spend: ${total:.2f}")
+if unpriced:
+    print(f"\nTotal estimated spend: ${total:.2f} + {unpriced} unpriced render(s) "
+          f"NOT included — real money was spent on those too")
+else:
+    print(f"\nTotal estimated spend: ${total:.2f}")
 PY
         ;;
 

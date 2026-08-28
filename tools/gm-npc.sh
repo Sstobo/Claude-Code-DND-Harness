@@ -74,6 +74,13 @@ if [ "$ACTION" = "stale" ]; then
     exit $?
 fi
 
+# Who has no authored look yet (image generation refuses them). Like `stale`,
+# but for visual_appearance instead of canon.
+if [ "$ACTION" = "appearance-report" ]; then
+    $PYTHON_CMD "$LIB_DIR/appearance_migrate.py" report "$@"
+    exit $?
+fi
+
 # All other actions require a name as first argument
 if [ "$#" -lt 1 ]; then
     echo "Error: Action '$ACTION' requires a name argument"
