@@ -212,3 +212,13 @@ def test_images_are_shown_bare():
     assert "STYLE LOCK, not a narrator" in craft
     assert "BEHOLD" not in _claude_md(), "the router must not still demand in-world framing"
     assert "SHOW THE IMAGE AND NOTHING ELSE" in _claude_md()
+
+
+def test_the_router_demands_the_staged_dice_block_not_a_summary():
+    """A live session ran a roll, saw the result, and then wrote fresh prose around
+    it instead of pasting the tool's actual output — losing the dead air and the
+    margin that make a roll feel real. The router already said not to; nothing
+    was anchoring that sentence, so nothing caught the drift."""
+    text = _claude_md()
+    assert "paste the tool's output straight into narration" in text
+    assert "never a one-liner" in text
