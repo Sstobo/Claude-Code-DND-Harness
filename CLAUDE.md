@@ -203,17 +203,21 @@ flows (play turn, import, new-game, death hand-off, illustration), modules (core
 scene context, memory, living world, RAG, entity graph, bible, sheets), conventions,
 gotchas, playbooks. Read the gotchas before debugging.
 
-## OKF — the documentation brain
-`docs/` carries OKF frontmatter; drift against code is machine-checked.
-- **Before editing code, ask which docs claim it:**
-  `node ~/.claude/skills/okf/scripts/okf.mjs status <files…>`.
-- **Update claiming docs in the SAME commit as the code.** Body rewritten →
-  `restamp --by <model-id>`. Re-read and still true → `restamp --by <model-id> --verify`.
-  Never hand-type stamps; never stamp a body you did not read.
-- **Every okf command uses the settled flags** in "## The settled command" in
-  `docs/log.md` (`check --root . docs`). Never invent flags per run.
+## OKF — the documentation layer
+
+Docs here carry `sources` frontmatter: the code files each doc is about. There is no
+staleness check and no stamps — a doc is verified by reading it against its sources when
+you are working in that area.
+
+- **Before editing code, ask which docs cover it:**
+  `node ~/.claude/skills/ship-it/scripts/doc-ground.mjs --repo . -- <files…>`,
+  or just `grep -rl --include='*.md' -- '<path>' docs/`. Working a ticket? Use
+  `/ship-it` — its Step 2 runs this for you.
+- **Fix the covering docs in the same commit as the code.** Re-read each against the
+  code as it now stands; correct what your change made wrong. A doc naming a source
+  path that no longer exists is fiction, and outranks everything else.
 - **Docs never replace code** — open the cited sources before asserting behavior. A doc
   that restates code gets deleted, not maintained.
-- Added/moved docs → rerun `okf.mjs index docs`. Drift is a work queue, never a gate.
-
-*Run `/gm` to play.*
+- **Corrections are dated history**, never present tense: "`x.ts:12` said X until
+  <date>", not "says X, which is wrong".
+- Never gate a build on documentation. Doc work is a queue, not a check.
