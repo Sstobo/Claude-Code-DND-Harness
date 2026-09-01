@@ -24,7 +24,7 @@ class SessionManager(EntityManager):
     """Manage D&D session operations. Inherits from EntityManager for common functionality."""
 
     # Per-campaign play-style defaults. `action_menu` controls whether the GM ends
-    # each beat with a few numbered choices (on) or an open prompt (off). Stored
+    # each beat with three numbered choices (on) or an open prompt (off). Stored
     # under overview.preferences; surfaced in get_full_context so the GM honors it.
     # `player_rolls` hands dice to the player (GM pauses and prompts instead of
     # rolling); `beat_length` picks the pacing line. Same storage + surfacing.
@@ -2139,7 +2139,7 @@ def main():
             print(f"Action menu is {state}.")
         else:
             print(f"Action menu turned {state}. "
-                  f"{'Beats will end with a few numbered choices.' if current else 'Beats will end with an open prompt.'}")
+                  f"{'Beats will end with three numbered choices, plus an out.' if current else 'Beats will end with an open prompt.'}")
 
     elif args.action == 'dice':
         val = getattr(args, 'value', 'show')

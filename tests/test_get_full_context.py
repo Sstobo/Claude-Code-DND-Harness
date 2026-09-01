@@ -46,8 +46,8 @@ def test_action_menu_on_is_three_options_plus_the_escape_hatch(dcc_world):
     assert "Or something else..." in ctx
 
 
-def test_choices_on_confirmation_has_no_digit_option_count(dcc_world, capsys, monkeypatch):
-    """The choices CLI confirmation must not re-inject a numeric option cap."""
+def test_choices_on_confirmation_matches_the_three_option_contract(dcc_world, capsys, monkeypatch):
+    """The toggle's confirmation must describe the same menu the context asks for."""
     import sys
     import lib.session_manager as sm_mod
 
@@ -55,8 +55,8 @@ def test_choices_on_confirmation_has_no_digit_option_count(dcc_world, capsys, mo
     monkeypatch.setattr(sm_mod, "SessionManager", lambda: SessionManager(dcc_world))
     sm_mod.main()
     out = capsys.readouterr().out
-    assert "a few numbered" in out
-    assert "3 numbered" not in out
+    assert "three numbered choices" in out
+    assert "a few numbered" not in out
 
 
 def test_adaptive_pacing_sets_no_numeric_cap(dcc_world):
