@@ -27,11 +27,10 @@ from lib.content_extractor import (
 )
 
 
-# The sample book lives outside the repo, so the live checks are skipped where it
-# is absent — and pointed at another copy by anyone who has one elsewhere.
-TEST_PDF = Path(os.environ.get(
-    "GM_TEST_MODULE_PDF", "/Users/seanstobo/Downloads/at-05-the-whispering-wood.pdf"
-))
+# The sample book is not redistributable, so it lives outside the repo: point
+# GM_TEST_MODULE_PDF at your own module PDF to run the live checks, otherwise
+# they skip.
+TEST_PDF = Path(os.environ.get("GM_TEST_MODULE_PDF", "source-material/_test-module.pdf"))
 
 PAGE_TEXT = """--- Page 1 ---
 Introduction

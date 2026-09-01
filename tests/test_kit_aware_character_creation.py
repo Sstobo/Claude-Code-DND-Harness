@@ -9,15 +9,15 @@ import json
 import re
 from pathlib import Path
 
+from lib.visual_appearance import VISUAL_FIELDS
 from tests.test_kit_vitals import _make_world, _save, _sheet
 
 ROOT = Path(__file__).resolve().parent.parent
 COMMAND = ROOT / ".claude" / "commands" / "create-character.md"
 AGENT = ROOT / ".claude" / "agents" / "create-character.md"
-VA_KEYS = (
-    "sex", "age", "race", "species", "hair", "face", "eyes",
-    "clothing", "gear", "demeanor", "size",
-)
+# The canonical look-of-a-character field set lives in one place; read it from
+# there so a schema change can't leave this test asserting a retired shape.
+VA_KEYS = VISUAL_FIELDS
 
 
 def _cmd():

@@ -69,6 +69,8 @@ features/dnd-api/cache/
 *.temp
 /tmp/
 *.log
+# scratch dirs tests mkdtemp into the project root (test_wrapper_cwd_anchoring.py)
+/tmp-*/
 
 # Coverage & Testing
 .coverage

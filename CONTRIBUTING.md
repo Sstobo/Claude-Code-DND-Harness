@@ -71,9 +71,10 @@ ruff check . --fix
 
 ##### Testing
 
-Run tests before submitting (pytest is in the `dev` extra):
+Run tests before submitting. The suite needs both extras — `dev` for pytest, and
+`rag` because `gm-extract.sh` refuses to run without it:
 ```bash
-uv pip install pytest   # first time
+uv sync --extra dev --extra rag   # first time
 uv run pytest
 ```
 
@@ -163,11 +164,11 @@ To add a new Claude agent:
 ### Documentation
 
 The docs under `docs/` are an [OKF](docs/log.md) knowledge bundle: every doc's
-frontmatter declares the source files whose change would make it wrong, and drift is
-machine-checked against git.
+frontmatter declares the source files whose change would make it wrong. There is no
+staleness engine — you verify a doc by reading it against its sources.
 
 - Before editing code, ask which docs cover it:
-  `docs/log.md`)
+  `grep -rl --include='*.md' -- '<path>' docs/`
 - Update the claiming docs **in the same commit** as the code
 - Docs hold what the code cannot state (the why, cross-file invariants, landmines) —
   a doc that restates code gets deleted, not maintained

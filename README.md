@@ -1,5 +1,9 @@
 # Game Master Claude
 
+[![tests](https://github.com/Sstobo/Claude-Code-DND-Harness/actions/workflows/tests.yml/badge.svg)](https://github.com/Sstobo/Claude-Code-DND-Harness/actions/workflows/tests.yml)
+[![license: CC BY-NC-SA 4.0](https://img.shields.io/badge/license-CC%20BY--NC--SA%204.0-lightgrey)](LICENSE)
+[![python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](pyproject.toml)
+
 A harness that turns Claude Code into a persistent D&D 5e Game Master. You sit down, the campaign picks up where it left off, and the world remembers what you did last week.
 
 It is not a chatbot with a fantasy prompt. Every campaign runs on real D&D 5e: attack rolls resolve against stored armor class, damage comes off fetched stat blocks, characters make death saves at 0 HP, and none of that arithmetic happens in the model's head. The dice, HP, and rules resolve in code; Claude narrates from what the code returns. Around that sit the three things a language model is missing when it tries to run a real campaign: durable memory, a rulebook written for your specific world, and a world that keeps moving between sessions.
@@ -274,13 +278,13 @@ Every campaign runs on D&D 5e, so the harness can always pull official rules, mo
 
 ### The documentation
 
-How the harness works lives in [`docs/`](docs/index.md), a knowledge layer where every doc declares the source files whose change would make it wrong, and staleness is machine-checked against git ([OKF](docs/log.md)). Start with the flows (a play turn, importing a book, authoring a world, the death hand-off) and read `docs/gotchas/` before debugging anything. Docs are updated in the same commit as the code they describe; `okf drift` reports when the two diverge.
+How the harness works lives in [`docs/`](docs/index.md), a knowledge layer where every doc declares the source files whose change would make it wrong ([OKF](docs/log.md)). Start with the flows (a play turn, importing a book, authoring a world, the death hand-off) and read `docs/gotchas/` before debugging anything. There is no staleness engine: a doc is verified by reading it against its sources while you work in that area, and updated in the same commit as the code it describes.
 
 ### Dependencies
 
 Installed during setup via [uv](https://docs.astral.sh/uv/). The list is short because most of the harness is stdlib: the Claude calls belong to Claude Code, and the HTTP the tools do is `urllib`.
 
-**Core:** `pdfplumber` + `pypdf2` (PDF extraction), `python-docx` (Word docs).
+**Core:** `pdfplumber` + `pypdf` (PDF extraction), `python-docx` (Word docs).
 
 **RAG (document import):** `sentence-transformers` (embeddings), `chromadb` (vector index for source lookups). These are the `rag` extra — the default answer at the install prompt, and always installed by `/setup`. Pick "core only" and PDF import will not work.
 

@@ -8,8 +8,8 @@ okf_version: "0.2"
 
 <!-- okf:keep -->
 The knowledge layer over the GM harness. It does not replace reading the code — it routes
-you to the right files, holds what no single file states, and reports (via `okf drift`)
-when the code moves out from under it.
+you to the right files and holds what no single file states. Each doc declares its sources
+in frontmatter; you verify one by reading it against those files while working in that area.
 
 The product: a holodeck door and a 1983 table. The book is the world; the campaign
 file is a journal. [The dream](conventions/the-dream.md).

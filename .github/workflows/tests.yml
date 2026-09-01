@@ -1,0 +1,19 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      # The rag extra is not optional for the suite: gm-extract.sh refuses to run
+      # without it, and recall's semantic path is exercised when it is present.
+      - run: uv sync --extra dev --extra rag
+      - run: uv run pytest

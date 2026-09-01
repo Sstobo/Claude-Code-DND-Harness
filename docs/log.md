@@ -1,17 +1,19 @@
 # Bundle log
 
-## The settled command
+## Finding the docs that cover a file
+
+No tooling is required, and none ships with the repo:
 
 ```bash
-node ~/.claude/skills/okf/scripts/okf.mjs check --root . docs
+grep -rl --include='*.md' -- 'lib/session_manager.py' docs/
 ```
 
-`--root .` so `sources` resolve as repo-relative paths; the scan set is `docs` only.
-No `--exclude` — verbatim material (`source-material/`, `world-state/campaigns/`,
-`tests/fixtures/`) is already outside the scan set. No `--index` — the repo has no
-hand-written docs router; `docs/index.md` is generated.
+Then read each hit against the code as it now stands and fix what your change made
+wrong, in the same commit. There is no staleness engine and no stamps.
 
-Swap `check` for `drift` / `noise` / `index` as needed; the flags never change.
+*(The author runs the optional OKF skill — `node ~/.claude/skills/okf/scripts/okf.mjs
+check --root . docs` — for conformance and noise reports. `--root .` so `sources`
+resolve repo-relative; the scan set is `docs` only. It is not needed to contribute.)*
 
 ---
 

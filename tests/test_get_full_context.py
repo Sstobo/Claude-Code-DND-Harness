@@ -38,11 +38,12 @@ def test_action_menu_off_changes_play_style_line(dcc_world):
     assert "action menu ON" not in ctx
 
 
-def test_action_menu_on_is_a_few_numbered_not_exactly_three(dcc_world):
+def test_action_menu_on_is_three_options_plus_the_escape_hatch(dcc_world):
+    """CLAUDE.md's Output Format: three numbered options, then "Or something else..."."""
     ctx = _context(dcc_world)
     assert "action menu ON" in ctx
-    assert "a few numbered" in ctx
-    assert "exactly 3" not in ctx
+    assert "exactly THREE" in ctx
+    assert "Or something else..." in ctx
 
 
 def test_choices_on_confirmation_has_no_digit_option_count(dcc_world, capsys, monkeypatch):
