@@ -11,6 +11,7 @@
 * [The combat rail](combat.md) - How a fight is adjudicated — the persisted initiative order, the attack resolver that owns every to-hit and damage roll, and the dying gate the PC's sheet shares with it.
 * [The entity graph and name resolution](entity-graph.md) - Why entities cross-reference by name, how the alias resolver keeps that from breaking, and the ordered repair passes an import runs before the gate.
 * [The living world — consequences, clocks, world tick](living-world.md) - The three systems that make the world move on its own, and which of them are actually wired to fire.
+* [The SRD lookup layer](srd-lookup.md) - How features/ answers a rules question — one cached HTTP host, one script per question a table asks, and the resolution rule every one of them has to follow.
 * [The NPC model](npc-model.md) - What an NPC carries beyond a description — inner life, canonical voice lines, party-member sheets, and proxy combat stats.
 * [The player character sheet](player-character.md) - Why the sheet has two shapes, which one is canonical, and how XP, death, and the spectacle award are persisted.
 * [The World Bible](world-bible.md) - The fidelity spine a world is played from — what it must contain, the draft-then-confirm gate, and the campaign rules drafted out of it.

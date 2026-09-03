@@ -105,6 +105,28 @@ All three doors converge on the same campaign shape: a folder under `world-state
 
 In every case the campaign file is a journal of where the table has been, not an encyclopedia of the source. The world grows outward from play, one stage at a time.
 
+### What happens to a document you import
+
+**What it accepts.** Drop the file in `source-material/`. PDF, `.docx`, `.md`, or `.txt`. PDFs go through a column-aware extractor: RPG books are typically two-column, and a naive read interleaves the columns into nonsense, so the page is split at the whitespace gutter and each column read in order. Titles and wide tables that span both columns are detected and kept whole.
+
+**Where the text goes.** The original file is never copied, moved, or modified. It is read where it sits, and everything derived from it is written under `world-state/campaigns/<name>/`:
+
+| | |
+|---|---|
+| `source/current-document.txt` | The full extracted text, kept for long-context reads |
+| `chunks/` | The same text split at section and paragraph boundaries, ~3,000 characters each |
+| `vectors/` | A local ChromaDB index of those chunks |
+
+That whole folder is gitignored, along with `source-material/` itself, so nothing about your book is ever committed. Note that the extracted text and vectors are deliberately durable: `/reset` clears the story but keeps them, because the world bible and long-context reads still need the book. To remove them, delete the campaign (`gm-campaign.sh delete <name>`), which takes the whole folder.
+
+**What runs locally.** Extraction, chunking, and search are local. Embeddings are computed on your machine by `all-MiniLM-L6-v2`, a 22 MB sentence-transformers model, which is downloaded once from HuggingFace on first use and then works offline. The vector index is a file on your disk. No document-hosting service is involved at any point, and the harness itself makes outbound calls to exactly three hosts: dnd5eapi.co for SRD rules, and api.x.ai or api.openai.com if you enabled scene images.
+
+**What does reach Anthropic.** Claude Code is Claude, so the passages retrieved for a scene, and the chunks read during import, go into the model's context like anything else it reads. The book is not uploaded anywhere as a file, but the parts of it that come into play do travel to the API as conversation. Import only what you are comfortable sending, and check your source's licence before importing it.
+
+**More than one book.** `/import` replaces the campaign's shelf; `gm-extract.sh add <file>` layers another book onto it. Chunk ids are namespaced per document and every chunk records where it came from, so a world book and a screenplay that shapes your character's voice can sit in the same campaign and be retrieved across at once.
+
+**Retrieval, not recall.** At the table, source lookups run through one front door, `gm-context.sh`, which returns campaign state plus grounded passages. Retrieved text is treated as texture and never as fact: chunks are cut across page columns and can splice two unrelated paragraphs into one fluent-sounding sentence, so a proper noun in a passage is always resolved against the campaign's own world index before it reaches the page. When the index and a passage disagree, the index wins.
+
 ---
 
 ## Getting started
@@ -272,9 +294,28 @@ You rolled
 
 The pause is real, because the message streams. Advantage, resistance (a raging barbarian halves three damage types), crits doubling the dice, death saves that persist across a resume: all of it resolves in the tool and is narrated from what comes back. One turn per reply, and when the dice are yours the swing waits for you to trigger it.
 
-### The D&D 5e API
+### Where a rule comes from
 
-Every campaign runs on D&D 5e, so the harness can always pull official rules, monsters, spells, and gear from the [D&D 5e API](https://www.dnd5eapi.co/), grounding numbers in real mechanics instead of guessing. The book you imported comes first: a creature or ruling the source covers is played the source's way, and the SRD fills in whatever the book leaves silent.
+When a rule question comes up mid-play, the answer is looked up, never recalled. There is a fixed order, and every specialist agent follows it:
+
+1. **Your imported book first.** `gm-search.sh "<term>" --rag-only` retrieves the passage from the source you imported. If the module names its own trap DC, that DC is the one played.
+2. **The campaign's own rules prose.** A world's signature systems live in `campaign_rules` and its `rules.md`, written at import or world creation. This is how a *Dune* campaign gets Dune's mechanics on top of 5e dice.
+3. **The SRD, via [dnd5eapi.co](https://www.dnd5eapi.co/).** Mandatory, not optional: whatever the book leaves silent is answered from official 5e rather than invented. This is one HTTP host, and it is the only one the game logic ever calls.
+
+The API is wrapped in small scripts under `features/`, one per question a table actually asks, and the agents call these rather than composing URLs:
+
+| Question | Script |
+|---|---|
+| What are this creature's stats? | `features/dnd-api/monsters/dnd_monster.py "goblin"` |
+| What does this spell do? | `features/spells/get_spell.py fireball` |
+| What is this item worth, and what does it do? | `features/gear/dnd_equipment.py longsword` · `dnd_magic_item.py "bag of holding"` |
+| How does this rule work? | `features/rules/get_rule.py cover` · `combat_rules.py "two weapon fighting"` |
+| What does this condition do? | `features/rules/conditions.py stunned` |
+| What can this class or race do? | `features/character-creation/api/get_classes.py` · `get_traits.py dwarf` |
+
+Every response is cached to disk on first fetch under `features/dnd-api/cache/`. SRD 2014 data is immutable, so there is no expiry: the second lookup of a goblin is a file read, and a session runs fine offline once its stat blocks are warm.
+
+Two things worth knowing about the scope. The API serves the **SRD**, which is the openly licensed subset of 5e, so it has the goblin and the fireball but not the contents of a specific published hardcover. That is what importing your own book is for. And it is the **2014** ruleset, which is what "D&D 5e" means everywhere else in this README.
 
 ### The documentation
 
