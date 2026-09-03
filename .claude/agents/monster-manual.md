@@ -241,7 +241,7 @@ uv run python features/dnd-api/monsters/dnd_encounter_v2.py --cr 20 --count 1
 
 These scripts output clean JSON, making them perfect for:
 - Piping to other tools: `uv run python features/dnd-api/monsters/dnd_monster.py goblin | jq .actions`
-- Saving for later: `uv run python features/dnd-api/monsters/dnd_encounter.py --cr 1 --count 3 > encounter.json`
+- Saving for later: `uv run python features/dnd-api/monsters/dnd_encounter_v2.py --cr 1 --count 3 > encounter.json`
 - Building automation: Parse the JSON output in your own scripts
 
 **Seamless Usage**: Never mention "API calls" to players. Present results naturally:

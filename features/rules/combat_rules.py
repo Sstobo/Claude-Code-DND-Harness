@@ -137,19 +137,25 @@ def get_combat_topic(topic):
     if topic_key in COMBAT_TOPICS:
         return COMBAT_TOPICS[topic_key]
     
-    # Try to find partial matches
-    matches = []
-    for key, data in COMBAT_TOPICS.items():
-        if topic.lower() in data["name"].lower() or topic.lower() in key:
-            matches.append(data["name"])
-    
+    # Partial matches, hyphen-blind: the keys are hyphenated ("two-weapon") and
+    # nobody types them that way, so "two weapon fighting" used to match nothing.
+    flat = topic.lower().replace('-', ' ')
+    matches = [(key, data) for key, data in COMBAT_TOPICS.items()
+               if flat in data["name"].lower().replace('-', ' ')
+               or flat in key.replace('-', ' ')
+               or key.replace('-', ' ') in flat]
+
+    # One match is the answer, not a suggestion.
+    if len(matches) == 1:
+        return matches[0][1]
     if matches:
         return {
-            "error": f"Topic '{topic}' not found. Did you mean:",
-            "suggestions": matches
+            "error": f"Topic '{topic}' matches several. Ask for one:",
+            "suggestions": [d["name"] for _, d in matches]
         }
-    
-    return {"error": f"Combat topic '{topic}' not found"}
+
+    return {"error": f"Combat topic '{topic}' not found",
+            "available": [d["name"] for d in COMBAT_TOPICS.values()]}
 
 def list_combat_topics():
     """List all available combat topics"""

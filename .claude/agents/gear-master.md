@@ -212,7 +212,7 @@ uv run python features/gear/dnd_weapon_properties.py finesse
 
 ### For Combat Preparation
 1. Quick weapon stats: `uv run python features/gear/dnd_equipment.py rapier --combat`
-2. Check armor AC: `uv run python features/gear/dnd_equipment.py "studded leather" --combat`
+2. Check armor AC: `uv run python features/gear/dnd_equipment.py "studded leather armor" --combat`
 3. Understand properties: `uv run python features/gear/dnd_weapon_properties.py thrown`
 4. Two-weapon fighting: Check light weapon options for dual wielding
 5. Ranged backup: Find thrown weapons or ammunition types

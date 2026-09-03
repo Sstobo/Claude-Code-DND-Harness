@@ -82,13 +82,28 @@ def main():
     
     # Fetch equipment data
     data = fetch(f"/equipment/{equipment_index}")
-    
+
+    # The SRD index rarely matches what anyone says out loud — "studded leather"
+    # is filed as "studded-leather-armor". On a miss, search the catalogue by
+    # name and RETURN the single match rather than telling the caller to guess
+    # again with no list to guess from.
+    if data.get("error") == "HTTP 404":
+        typed = args.equipment_name.lower()
+        catalogue = fetch("/equipment")
+        matches = [e for e in catalogue.get("results", [])
+                   if typed in e.get("name", "").lower()]
+        if len(matches) == 1:
+            data = fetch(f"/equipment/{matches[0]['index']}")
+        elif matches:
+            error_output(f"'{args.equipment_name}' matches several items. Ask for one:\n" +
+                         "\n".join(f"- {m['name']}" for m in matches[:10]))
+        else:
+            error_output(f"Equipment '{args.equipment_name}' not found. Browse with: "
+                         f"dnd_equipment_list.py --search <term>")
+
     # Check for errors
     if "error" in data:
-        if data.get("error") == "HTTP 404":
-            error_output(f"Equipment '{args.equipment_name}' not found. Try checking the exact name.")
-        else:
-            error_output(f"Failed to fetch equipment: {data.get('message', 'Unknown error')}")
+        error_output(f"Failed to fetch equipment: {data.get('message', 'Unknown error')}")
     
     # Output based on mode
     if args.combat:

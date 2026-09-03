@@ -41,17 +41,22 @@ def main():
     
     args = parser.parse_args()
     
-    # Fetch the appropriate endpoint
-    if args.sections:
-        data = fetch("/rule-sections")
-    else:
-        data = fetch("/rules")
-    
-    if "error" in data:
-        error_output(f"Failed to fetch rules: {data.get('message', 'Unknown error')}")
-    
-    rules = data.get("results", [])
-    
+    # /rules is six broad chapters; /rule-sections is the 33 specific ones. A
+    # bare --search used to look at the chapters only, so "--search stealth"
+    # (and almost anything else worth searching for) returned nothing. Searching
+    # spans both unless --sections narrows it.
+    endpoints = ["/rule-sections"] if args.sections else ["/rules"]
+    if args.search and not args.sections:
+        endpoints = ["/rules", "/rule-sections"]
+
+    rules, total = [], 0
+    for endpoint in endpoints:
+        data = fetch(endpoint)
+        if "error" in data:
+            error_output(f"Failed to fetch rules: {data.get('message', 'Unknown error')}")
+        total += data.get("count", 0)
+        rules.extend(data.get("results", []))
+
     # Apply filters
     if args.search:
         rules = filter_rules(rules, args)
@@ -63,7 +68,7 @@ def main():
     # Format output
     output({
         "count": len(rules),
-        "total": data.get("count", 0),
+        "total": total,
         "type": "rule-sections" if args.sections else "rules",
         "results": rules
     })

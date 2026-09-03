@@ -97,13 +97,18 @@ When rules questions arise or mechanics need clarification, you:
 uv run python features/rules/get_rule.py <rule-topic>
 ```
 
+It searches `/rules` (six broad chapters) AND `/rule-sections` (the 33 specific
+ones), so ask for the topic by name and take what comes back. A term matching
+nothing returns the full list of headings — the SRD files some topics inside a
+broader one, so "opportunity attacks" is answered by "Actions in Combat".
+
 **Examples**:
 ```bash
 # Core mechanic rules
 uv run python features/rules/get_rule.py advantage
 
-# Combat rules
-uv run python features/rules/get_rule.py "opportunity attacks"
+# Combat rules — the heading, not the manoeuvre
+uv run python features/rules/get_rule.py "Actions in Combat"
 
 # Ability check rules
 uv run python features/rules/get_rule.py "ability checks"
@@ -119,21 +124,24 @@ uv run python features/rules/list_rules.py [options]
 ```
 
 **Options**:
-- `--search <term>` - Search rules by keyword
-- `--category <type>` - Filter by rule category
-- `--limit <number>` - Limit results
+- `--search <term>` - Search names across both chapters and sections
+- `--sections` - The 33 specific sections only, instead of the 6 broad chapters
+- `--limit <number>` - Limit results (default 20)
 
 **Examples**:
 ```bash
-# List all rule sections
+# The six broad chapters
 uv run python features/rules/list_rules.py
 
-# Search for stealth rules
-uv run python features/rules/list_rules.py --search stealth
+# Every specific section
+uv run python features/rules/list_rules.py --sections
 
-# Combat rules only
-uv run python features/rules/list_rules.py --category combat
+# Find the heading that covers a topic
+uv run python features/rules/list_rules.py --search cover
 ```
+
+Searching matches HEADINGS, not body text. A skill like stealth has no heading
+of its own — use `skills.py stealth` for those.
 
 ### 3. conditions.py - Status Conditions
 
