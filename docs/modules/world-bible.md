@@ -107,7 +107,11 @@ entire book becomes one span, then gets cut into 20,000-character windows titled
 `Part N`. A marker is `Chapter N` / `Part N` / `1. ` at the **end of a line**, or a line
 that is a title in caps (`THE TOWER OF THE ELEPHANT`). A caps line that is the rest of a
 drop-capped sentence ("ORCHES FLARED MURKILY ON", preceded by the lone initial "T the
-revels…" and followed by lowercase) is not a marker at all. Short caps-title spans — the
+revels…" and followed by lowercase) is not a marker at all, and neither is a caps line
+sitting directly under running text or verse — that is an epigraph's attribution ("OLD
+BALLAD", "THE ROAD OF KINGS"), which until 2026-09-04 stood as a chapter of its own. The
+numbered form stops at three digits, so a front-matter "1935. Reprinted by permission…"
+is not chapter 1935. Short caps-title spans — the
 title line itself, an epigraph attribution — fold into the body that follows, keeping the
 first title; a chapter longer than a window is labelled `(i/n)`.
 

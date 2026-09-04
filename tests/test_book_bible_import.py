@@ -68,6 +68,28 @@ CAPS_BOOK = (
     + "forty-five miles west of Fort Worth. " * 100 + "\n"
 )
 
+EDGE_BOOK = (
+    "1935. Reprinted by permission of Conan Properties, Inc.\n"   # a year, not chapter 1935
+    "1936. Reprinted by permission of Conan Properties, Inc.\n"
+    "--- Page 1 ---\n"
+    "SHADOWS IN ZAMBOULA\n\n"
+    + "‘P house of Aram Baksh!’\n"                                  # quoted drop-cap initial
+    + "ERIL HIDES IN THE\n"
+    + "said the Zuagir. " * 200 + "\n\n"
+    + "Some prose closes the first story here.\n"
+    + "\n"
+    + "THE DEVIL IN IRON\n\n"                                       # title after a BLANK line
+    + "The fisherman loosened his knife. " * 200 + "\n"
+    + "With poison in my wine-cup, and daggers at my back.\n"
+    + "THE ROAD OF KINGS\n\n"                                       # attribution under verse
+    + "The king rode out at dawn. " * 200 + "\n"
+)
+
+
+def test_years_quoted_drop_caps_blank_preceded_titles_and_attributions():
+    titles = [c["title"] for c in book_bible.segment_into_chapters(EDGE_BOOK)]
+    assert titles == ["SHADOWS IN ZAMBOULA", "THE DEVIL IN IRON"], titles
+
 
 def test_caps_story_titles_are_chapter_markers_and_epigraphs_fold_forward():
     """A scanned collection names its stories in caps. Until 2026-09-04 those were

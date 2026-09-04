@@ -29,8 +29,10 @@ from overview_seed import seed_overview
 # its first sixty characters ("Count. There was an edge of").
 # "chapter"/"part" are anchored to the END of the line: unanchored, `part\s+\w+`
 # fired on every sentence-initial "part of the ..." — nine false breaks in Conan.
+# The numbered form takes at most three digits: "1935. Reprinted by permission
+# of ..." in the front matter is a year, not chapter 1935.
 _CHAPTER_RE = re.compile(
-    r"^\s*(chapter\s+\w+\s*$|part\s+\w+\s*$|\d+\.\s|[A-Z][A-Z'\u2019,:\-]*(?: [A-Z][A-Z'\u2019,:\-]*){1,9}\s*$)",
+    r"^\s*(chapter\s+\w+\s*$|part\s+\w+\s*$|\d{1,3}\.\s|[A-Z][A-Z'\u2019,:\-]*(?: [A-Z][A-Z'\u2019,:\-]*){1,9}\s*$)",
     re.IGNORECASE | re.MULTILINE)
 _ALLCAPS_TITLE = re.compile(r"^[A-Z][A-Z'\u2019,:\- ]+$")
 # A span shorter than this is a title, an epigraph or a drop-cap line, not a
@@ -52,7 +54,24 @@ def _is_drop_cap(text: str, start: int, end: int) -> bool:
     """
     prev = text[:start].rstrip("\n").rsplit("\n", 1)[-1].strip()
     nxt = text[end:].lstrip("\n").split("\n", 1)[0].strip()
-    return bool(re.match(r"^[A-Z] ", prev)) or bool(nxt[:1].islower())
+    return bool(re.match(r"^[\u2018\u201c'\"]?[A-Z] ", prev)) or bool(nxt[:1].islower())
+
+
+def _is_epigraph_attribution(text: str, start: int) -> bool:
+    """A caps line sitting DIRECTLY under a line of prose or verse — "OLD BALLAD"
+    under "If ever the Lion stalks again!", "THE ROAD OF KINGS" under a couplet —
+    names the source of the epigraph above it. It is not a chapter.
+
+    A real title sits under a page marker, a blank line, a bare chapter number,
+    or (a wrapped heading) another caps line — never under running text.
+    """
+    before = text[:start]           # `start` is the caps line's own first char
+    if not before.endswith("\n"):
+        return False                # text start
+    prev = before[:-1].rsplit("\n", 1)[-1].strip()   # the line DIRECTLY above
+    if not prev or prev.startswith("--- Page") or prev.isdigit() or prev.isupper():
+        return False
+    return True
 
 
 def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, Any]]:
@@ -70,9 +89,13 @@ def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, A
         g = m.group(1).strip()
         # startswith("part") is not enough — "particularly ..." is not Part N.
         explicit = not g[0].isalpha() or re.match(r"(chapter|part)\s+\w+\s*$", g, re.I) is not None
+        # m.start() may sit on a blank line the regex's leading \s* swallowed;
+        # the tells need the caps line's OWN start, which is the group's.
+        line_start = m.start(1)
         if explicit:
             marks.append((m.start(), False))
-        elif _ALLCAPS_TITLE.match(g) and not _is_drop_cap(text, m.start(), m.end()):
+        elif (_ALLCAPS_TITLE.match(g) and not _is_drop_cap(text, line_start, m.end())
+              and not _is_epigraph_attribution(text, line_start)):
             marks.append((m.start(), True))
     titled: List[Tuple[str, str, bool]] = []  # (title, text, foldable)
     if len(marks) >= 2:
