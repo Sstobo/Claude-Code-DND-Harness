@@ -4,9 +4,11 @@
 
 set -e
 
-# Get project root
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-WORLD_STATE="$PROJECT_ROOT/world-state"
+# common.sh supplies PROJECT_ROOT and WORLD_STATE_BASE (which honours
+# GM_WORLD_STATE_BASE, the isolation seam every other wrapper respects — this
+# one hardcoded the live tree and migrated it no matter what the env said).
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
+WORLD_STATE="$WORLD_STATE_BASE"
 CAMPAIGNS_DIR="$WORLD_STATE/campaigns"
 ACTIVE_FILE="$WORLD_STATE/active-campaign.txt"
 

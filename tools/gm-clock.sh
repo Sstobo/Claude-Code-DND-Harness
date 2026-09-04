@@ -15,6 +15,30 @@
 
 source "$(dirname "$0")/common.sh"
 
+if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    cat <<'EOF'
+Usage: gm-clock.sh <action> [args]
+
+Named pressure. A clock fills toward a beat; time-clocks advance on gm-time.sh,
+event-clocks by hand.
+
+  add <name> <segments> [--on time|event] [--consequence "..."] [--linked-plot "<plot>"]
+  advance <name> [--ticks N]       Move an event-clock by hand
+  tick-time [--ticks N]            Advance every time-clock (gm-time.sh does this)
+  list                             Every clock and where it stands
+  beats                            Full clocks = beats due now
+  choose "<prompt>" "<chosen>" [--trigger T --trigger-type on_npc|on_location|on_time|on_event --match M]
+                                   Record a dramatic-choice fork as a consequence
+  remove <name>
+
+Examples:
+  gm-clock.sh add "The Butcher hunts" 4 --on time --linked-plot "The Stairs"
+  gm-clock.sh advance "The Butcher hunts"
+  gm-clock.sh choose "Fight or flee?" "fight"
+EOF
+    exit 0
+fi
+
 require_active_campaign
 
 $PYTHON_CMD "$LIB_DIR/threat_clocks.py" "$@"

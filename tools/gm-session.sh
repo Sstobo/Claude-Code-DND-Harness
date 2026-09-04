@@ -14,7 +14,8 @@ show_usage() {
     echo "  context                  - Full session context (character, party, consequences, rules)"
     echo "  choices [on|off|toggle]  - Toggle the [A]-[E] action menu (no arg: show state)"
     echo "  dice [on|off|toggle]     - Toggle player rolling their own dice (no arg: show state)"
-    echo "  world-tick '<json>'      - Persist off-screen developments (warns if >3, rollback-able)"
+    echo "  world-tick '<json>'      - Persist off-screen developments (warns if >3, rollback-able)
+                             shape: '[{"text":"...","trigger":"...","trigger_type":"on_location|on_npc|on_time|on_event","match":"..."}]'"
     echo "  world-tick-rollback      - Undo the most recent world tick"
     echo "  world-tick-log           - Show world-tick history"
     echo ""

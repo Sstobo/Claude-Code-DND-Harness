@@ -413,13 +413,17 @@ def main():
         if block:
             print()
             print(block)
-    elif args.action == "stage":
-        print(json.dumps(apply_stage(cdir, args.world_state), indent=2, ensure_ascii=False))
     else:
-        print(json.dumps(
-            from_book(cdir, args.name, args.kind, args.description, args.attitude, args.world_state),
-            indent=2, ensure_ascii=False,
-        ))
+        if args.action == "stage":
+            result = apply_stage(cdir, args.world_state)
+        else:
+            result = from_book(cdir, args.name, args.kind, args.description,
+                               args.attitude, args.world_state)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        # {"ok": false} printed with exit 0 is how `stage` on an empty pack
+        # looked like success to a script — the envelope's contract
+        # (cli_output.py) is that ok:false means a nonzero exit.
+        sys.exit(0 if result.get("ok") else 1)
 
 
 if __name__ == "__main__":

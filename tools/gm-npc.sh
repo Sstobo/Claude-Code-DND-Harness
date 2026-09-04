@@ -43,6 +43,17 @@ if [ "$#" -lt 1 ]; then
     echo "  condition <name> add/remove <cond>      Manage conditions (poisoned, stunned, etc)"
     echo "  feature <name> add/remove <feature>     Manage features (Second Wind, etc)"
     echo ""
+    echo "=== Inner Life & Look ==="
+    echo "  set-inner <name> [--mood X] [--goal Y] [--secret Z]  Set what drives them"
+    echo "  mood <name> <mood>                      Quick mood change"
+    echo "  set-appearance <name> <json>            Lock the 11-field visual_appearance"
+    echo "  appearance-report                       Who still has no authored look"
+    echo ""
+    echo "=== Canon Drift (campaign-wide, no name) ==="
+    echo "  stale                                   NPCs improvised past their last canon check"
+    echo "  checked <name>                          Mark an NPC re-grounded in the book"
+    echo "  unify-tags                              Fold legacy location_tags into tags.locations"
+    echo ""
     echo "Examples:"
     echo "  gm-npc.sh create \"Carl\" \"A dungeon crawler\" \"friendly\""
     echo "  gm-npc.sh promote \"Carl\"                 # Make Carl a party member"
@@ -71,6 +82,14 @@ fi
 
 if [ "$ACTION" = "stale" ]; then
     $PYTHON_CMD "$LIB_DIR/npc_manager.py" stale "$@"
+    exit $?
+fi
+
+# Campaign-wide, no name: fold legacy location_tags into tags.locations.
+# The handler has been in npc_manager.py all along; the name gate below is
+# what kept the documented command from ever reaching it.
+if [ "$ACTION" = "unify-tags" ]; then
+    $PYTHON_CMD "$LIB_DIR/npc_manager.py" unify-tags
     exit $?
 fi
 

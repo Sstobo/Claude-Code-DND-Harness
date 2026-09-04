@@ -141,7 +141,9 @@ case "$ACTION" in
         ;;
 
     "gold")
-        if [ -z "$1" ]; then
+        # `gold +10` used to take "+10" as the NAME, show that nobody's gold,
+        # and exit 0 — the amount silently went nowhere.
+        if [ -z "$1" ] || [[ "$1" =~ ^[+-]?[0-9]+$ ]]; then
             echo "Usage: gm-player.sh gold <character_name> [+/-amount]"
             echo "Example: gm-player.sh gold theron +50  (gain 50 gold)"
             echo "Example: gm-player.sh gold theron -10  (spend 10 gold)"

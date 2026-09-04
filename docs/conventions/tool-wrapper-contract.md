@@ -25,7 +25,10 @@ wrapper is what supplies the campaign resolution below.
 
 ## What `common.sh` guarantees before a manager runs
 
-Every wrapper sources it, and inherits:
+Every wrapper sources it, and inherits (`gm-migrate-campaigns.sh` did not until
+2026-09-03 — it hardcoded the live tree, so a pinned test run migrated the player's
+campaign. `gm-statusline.sh` still reads the live tree directly: it is the terminal
+status line, not a game tool, and has no campaign to isolate):
 
 - **Environment files** — `.env` then `.env.local` are sourced with `set -a`, so their keys
   reach the Python side as real environment variables. `.env.local` loads second and wins;
@@ -88,6 +91,11 @@ adding an MCP process. The wiring pattern for a new manager is fixed —
 `wants_json()` to detect, `strip_json_flag()` before argparse (so argparse never sees
 `--json`), `emit()` / `emit_error()` to output. `emit_error` returns `1` so callers write
 `sys.exit(emit_error(...))`.
+
+The exit code is part of the envelope: `ok: false` means a nonzero exit, so a script can
+gate on `$?` without parsing. A manager that prints its own `{"ok": false}` dict (rather
+than going through `emit_error`) has to set the exit itself — `lib/play_pack.py` did not
+until 2026-09-03, so `gm-playpack.sh stage` on an empty pack printed a failure and exited 0.
 
 One trap the existing code already works around: a manager whose logic `print()`s human
 text must suppress that in JSON mode or the envelope is preceded by garbage.

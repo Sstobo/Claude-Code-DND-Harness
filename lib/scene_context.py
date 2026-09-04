@@ -96,6 +96,10 @@ def main():
         print(f"- {name}: {'found' if data else 'unknown'}")
     if ctx["rag_available"]:
         print(f"Source passages ({ctx['source']}): {len(ctx['passages'])}")
+    elif not ctx["location"]:
+        # Passages are retrieved FOR a location; with none set there is nothing
+        # to ground, whether or not the campaign has vectors.
+        print("Source passages: (no current location to ground — pass one)")
     else:
         print("Source passages: (no RAG vectors for this campaign)")
 

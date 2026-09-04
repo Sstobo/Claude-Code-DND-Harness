@@ -185,6 +185,13 @@ was never vectorized.** Neither logs. If passages are unexpectedly empty, check
 `rag_available` in `gm-context.sh --json`, then confirm the campaign actually has vectors
 rather than assuming the import worked. See [RAG stack](rag-stack.md).
 
+One case is now told apart in the human output: passages are retrieved *for* a location,
+so with no current location set (a fresh import, before any `move`) there is nothing to
+ground, vectors or not. Until 2026-09-03 that printed `(no RAG vectors for this campaign)`
+on a campaign whose vectors `gm-search.sh --rag-only` was happily reading; it now says
+`(no current location to ground — pass one)`. `--json` is unchanged: `rag_available` is
+false in both cases.
+
 ## Which search tool
 
 `gm-search.sh` is the free-text door and takes a mode flag: `--world-only`, `--rag-only`,

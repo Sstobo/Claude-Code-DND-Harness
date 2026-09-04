@@ -80,6 +80,14 @@ while [[ $# -gt 0 ]]; do
         *)
             if [ -z "$QUERY" ]; then
                 QUERY="$1"
+            elif [[ "$1" =~ ^[0-9]+$ ]]; then
+                # `--rag-only "<query>" 30` — the form the extractor agents use.
+                # This used to be silently dropped, so every such call got the
+                # default 4 passages while asking for 30.
+                RAG_COUNT="$1"
+            else
+                echo "Error: unexpected argument '$1' (the query is already \"$QUERY\")" >&2
+                exit 1
             fi
             shift
             ;;

@@ -84,6 +84,11 @@ uv run python lib/schemas.py                                        # validate w
 uv run python lib/world_bible.py validate                           # bible complete?
 ```
 
+`-n 20` and a trailing bare integer (`--rag-only "<phrase>" 20`, the form the extractor
+agents use) both set the passage count. Until 2026-09-03 the trailing form was silently
+dropped — every such call got the default 4 while asking for 30 or 50 — and a second
+non-flag word is now an error rather than ignored.
+
 An empty `--rag-only` result is ambiguous by design: no vectors, missing RAG dependencies,
 and a genuinely absent phrase all look identical. Check
 `bash tools/gm-context.sh --json` for `rag_available` before concluding the book is thin.
