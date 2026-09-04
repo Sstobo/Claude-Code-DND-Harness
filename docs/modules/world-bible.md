@@ -111,7 +111,9 @@ revels…" and followed by lowercase) is not a marker at all, and neither is a c
 sitting directly under running text or verse — that is an epigraph's attribution ("OLD
 BALLAD", "THE ROAD OF KINGS"), which until 2026-09-04 stood as a chapter of its own. The
 numbered form stops at three digits, so a front-matter "1935. Reprinted by permission…"
-is not chapter 1935. Short caps-title spans — the
+is not chapter 1935. A title the scan column broke across two lines
+("NOTES ON VARIOUS PEOPLES OF THE" / "HYBORIAN AGE") is rejoined, walking forward over
+consecutive caps lines and stopping at a drop-cap remainder. Short caps-title spans — the
 title line itself, an epigraph attribution — fold into the body that follows, keeping the
 first title; a chapter longer than a window is labelled `(i/n)`.
 

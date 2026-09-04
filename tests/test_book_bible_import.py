@@ -83,12 +83,40 @@ EDGE_BOOK = (
     + "With poison in my wine-cup, and daggers at my back.\n"
     + "THE ROAD OF KINGS\n\n"                                       # attribution under verse
     + "The king rode out at dawn. " * 200 + "\n"
+    + "--- Page 992 ---\n"
+    + "NOTES ON VARIOUS PEOPLES OF THE\n"                          # a heading the column
+    + "HYBORIAN AGE\n"                                              # broke across two lines
+    + "Aquilonians were a pure-blooded race. " * 200 + "\n"
 )
 
 
 def test_years_quoted_drop_caps_blank_preceded_titles_and_attributions():
     titles = [c["title"] for c in book_bible.segment_into_chapters(EDGE_BOOK)]
-    assert titles == ["SHADOWS IN ZAMBOULA", "THE DEVIL IN IRON"], titles
+    assert titles == [
+        "SHADOWS IN ZAMBOULA",
+        "THE DEVIL IN IRON",
+        "NOTES ON VARIOUS PEOPLES OF THE HYBORIAN AGE",
+    ], titles
+
+
+def test_a_wrapped_heading_joins_but_an_adjacent_sentence_does_not():
+    """Only the first line of a column-broken title survived until 2026-09-04.
+    The walk forward stops at a drop-cap remainder, so a caps SENTENCE under a
+    title is not swallowed into it — and a title that merely repeats a phrase
+    used elsewhere stays its own chapter."""
+    book = (
+        "--- Page 1 ---\n"
+        "THE HYBORIAN AGE\n"                       # standalone: next line is not caps
+        "(N is to be considered an attempt to advance any theory\n"
+        "OTHING IN THIS ARTICLE\n"                 # drop-cap remainder, not part of a title
+        + "in opposition to accepted history. " * 200 + "\n"
+        "--- Page 2 ---\n"
+        "NOTES ON VARIOUS PEOPLES OF THE\n"
+        "HYBORIAN AGE\n"
+        + "Aquilonians were a pure-blooded race. " * 200 + "\n"
+    )
+    titles = [c["title"] for c in book_bible.segment_into_chapters(book)]
+    assert titles == ["THE HYBORIAN AGE", "NOTES ON VARIOUS PEOPLES OF THE HYBORIAN AGE"], titles
 
 
 def test_caps_story_titles_are_chapter_markers_and_epigraphs_fold_forward():

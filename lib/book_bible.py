@@ -74,6 +74,42 @@ def _is_epigraph_attribution(text: str, start: int) -> bool:
     return True
 
 
+def _joined_heading(text: str, line_start: int) -> str:
+    """A heading that WRAPPED across lines, rejoined.
+
+    A narrow scan column breaks a long title in two ("NOTES ON VARIOUS PEOPLES
+    OF THE" / "HYBORIAN AGE", "THE COMPLETE CHRONICLES OF" / "CONAN"), and only
+    the first line survived as the title until 2026-09-04. Walks forward over
+    consecutive all-caps lines, stopping at a drop-cap remainder — that is a
+    sentence, not more heading.
+    """
+    parts = []
+    pos = line_start
+    while True:
+        nl = text.find("\n", pos)
+        line_end = len(text) if nl == -1 else nl
+        line = text[pos:line_end].strip()
+        if not line or not _ALLCAPS_TITLE.match(line):
+            break
+        if parts and _is_drop_cap(text, pos, line_end):
+            break
+        parts.append(line)
+        if nl == -1:
+            break
+        pos = nl + 1
+    return " ".join(parts)[:60]
+
+
+def _is_wrapped_continuation(text: str, line_start: int) -> bool:
+    """This caps line is the TAIL of the heading above it, not a heading of its
+    own — so it must not open a chapter."""
+    before = text[:line_start]
+    if not before.endswith("\n"):
+        return False
+    prev = before[:-1].rsplit("\n", 1)[-1]
+    return bool(prev.strip()) and bool(_ALLCAPS_TITLE.match(prev.strip()))
+
+
 def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, Any]]:
     """Split book text into large spans for long-context reading.
 
@@ -93,16 +129,16 @@ def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, A
         # the tells need the caps line's OWN start, which is the group's.
         line_start = m.start(1)
         if explicit:
-            marks.append((m.start(), False))
+            marks.append((m.start(), text[line_start:m.end(1)].strip()[:60], False))
         elif (_ALLCAPS_TITLE.match(g) and not _is_drop_cap(text, line_start, m.end())
-              and not _is_epigraph_attribution(text, line_start)):
-            marks.append((m.start(), True))
+              and not _is_epigraph_attribution(text, line_start)
+              and not _is_wrapped_continuation(text, line_start)):
+            marks.append((m.start(), _joined_heading(text, line_start), True))
     titled: List[Tuple[str, str, bool]] = []  # (title, text, foldable)
     if len(marks) >= 2:
-        bounds = [o for o, _ in marks] + [len(text)]
-        for i, (_, caps) in enumerate(marks):
-            span = text[bounds[i]:bounds[i + 1]]
-            titled.append((span.strip().splitlines()[0].strip()[:60], span, caps))
+        bounds = [o for o, _, _ in marks] + [len(text)]
+        for i, (_, title, caps) in enumerate(marks):
+            titled.append((title, text[bounds[i]:bounds[i + 1]], caps))
     else:
         titled = [("", text, False)]
 
