@@ -245,13 +245,11 @@ prepare_document() {
     fi
 
     echo
-    echo "Document prepared for extraction."
+    echo "The book is on the shelf (indexed + searchable)."
     echo
-    echo "Next steps:"
-    echo "1. Launch extraction agents to process chunks"
-    echo "2. Run: $0 merge [campaign-name]"
-    echo "3. Run: $0 review [campaign-name]"
-    echo "4. Run: $0 save [strategy] [campaign-name]"
+    echo "Next: bash tools/gm-campaign.sh switch <campaign-name>, then /import Step 3 —"
+    echo "ask who they came to meet and build ONE stage. Do not launch extractor"
+    echo "agents; merge/review/save is the census path (docs/import-guide.md)."
 }
 
 merge_results() {

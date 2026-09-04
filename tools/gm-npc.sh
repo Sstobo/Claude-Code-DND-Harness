@@ -46,7 +46,7 @@ if [ "$#" -lt 1 ]; then
     echo "=== Inner Life & Look ==="
     echo "  set-inner <name> [--mood X] [--goal Y] [--secret Z]  Set what drives them"
     echo "  mood <name> <mood>                      Quick mood change"
-    echo "  set-appearance <name> <json>            Lock the 11-field visual_appearance"
+    echo "  set-appearance <name> --race .. --sex .. --size .. --color .. --hair .. --eyes .. --face .. --shirt .. --pants .. --gear .. --short_description .."
     echo "  appearance-report                       Who still has no authored look"
     echo ""
     echo "=== Canon Drift (campaign-wide, no name) ==="

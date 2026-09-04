@@ -72,3 +72,11 @@ def test_clock_bare_call_shows_argument_shapes():
     r = _run("tools/gm-clock.sh")
     assert r.returncode == 0
     assert "add <name> <segments>" in r.stdout
+
+
+def test_enhance_apply_with_nothing_to_apply_is_a_failure(campaign):
+    """/import scripted `apply "<Name>"` bare, which applies nothing. The tool
+    already refused with exit 1; this pins that so the doc fix has teeth."""
+    r = _run("tools/gm-enhance.sh", "apply", "Carl")
+    assert r.returncode == 1
+    assert "--context or --description" in r.stdout

@@ -259,7 +259,9 @@ Enhance **only** the people in this room (so they speak in the book's words):
 
 ```bash
 bash tools/gm-enhance.sh query "<Name>"
-bash tools/gm-enhance.sh apply "<Name>"
+# read the passages, then write what they establish — apply is a no-op without these:
+bash tools/gm-enhance.sh apply "<Name>" --description "<one line, in the book's words>" \
+  --context "<a verbatim line they say or that is said of them>"
 ```
 
 Do **not** run `gm-enhance.sh batch`. Do **not** run the four extractors **as a
