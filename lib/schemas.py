@@ -41,22 +41,6 @@ PLOT_TYPES = set(PLOT_TYPE_SORT)
 # Valid plot statuses
 VALID_PLOT_STATUSES = {'active', 'completed', 'failed', 'dormant', 'available'}
 
-# Valid item types (broad categories - specific weapon/armor types allowed)
-VALID_ITEM_TYPES = {
-    'weapon', 'armor', 'potion', 'scroll', 'wondrous', 'treasure', 'equipment',
-    'prop', 'artifact', 'misc', 'consumable', 'ring', 'amulet', 'tool', 'vehicle',
-    'map', 'key', 'document', 'holy symbol', 'focus', 'container', 'clothing',
-    # Specific weapon types (D&D)
-    'sword', 'greatsword', 'longsword', 'shortsword', 'scimitar', 'rapier',
-    'dagger', 'axe', 'greataxe', 'handaxe', 'mace', 'warhammer', 'maul',
-    'spear', 'javelin', 'halberd', 'glaive', 'pike', 'trident', 'lance',
-    'bow', 'longbow', 'shortbow', 'crossbow', 'heavy crossbow', 'light crossbow',
-    'staff', 'quarterstaff', 'club', 'greatclub', 'flail', 'morningstar', 'whip',
-    # Specific armor types
-    'light armor', 'medium armor', 'heavy armor', 'shield',
-    # Fantasy types
-    'treasure hoard', 'ring (artifact)', 'various'
-}
 
 # Valid item rarities
 VALID_RARITIES = {'common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'}
@@ -123,9 +107,9 @@ def validate_location(name: str, data: Dict[str, Any]) -> Tuple[bool, List[str]]
     """
     errors = []
 
-    # Required fields
-    if not data.get('description') and not data.get('name'):
-        errors.append(f"Location '{name}': missing description")
+    # No description requirement: gm-session.sh move creates a location with
+    # description "" on purpose (it is written when play reaches it), so a
+    # healthy campaign carries many. Flagging them was noise (until 2026-09-04).
 
     # Validate connections
     connections = data.get('connections', [])
@@ -201,10 +185,10 @@ def validate_item(name: str, data: Dict[str, Any]) -> Tuple[bool, List[str]]:
     if not data.get('description') and not data.get('name'):
         errors.append(f"Item '{name}': missing description")
 
-    # Validate type if present
-    item_type = data.get('type', '').lower()
-    if item_type and item_type not in VALID_ITEM_TYPES:
-        errors.append(f"Item '{name}': invalid type '{item_type}' (valid: {', '.join(VALID_ITEM_TYPES)})")
+    # `type` is free text. Extraction writes whatever the book calls a thing
+    # ("explosive", "quest item", "spellbook"), nothing downstream branches on
+    # it, and the enum this used to enforce flagged 58 items in a healthy
+    # campaign (until 2026-09-04).
 
     # Validate rarity if present
     rarity = data.get('rarity', '').lower()

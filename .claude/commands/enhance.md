@@ -36,13 +36,16 @@ If no entity found, use **Option A: Exploratory Search** instead.
 Use when searching for general information:
 
 ```bash
-bash tools/gm-enhance.sh search "$ARGUMENTS" -n 15
+bash tools/gm-search.sh "$ARGUMENTS" --rag-only -n 15
 ```
 
+(`gm-enhance.sh` has no `search` verb — it looks entities up by NAME. Free text
+goes through `gm-search.sh`.)
+
 Examples:
-- `search "dungeon second level"` - Find dungeon content
-- `search "Grimjaw background personality"` - Learn about an NPC
-- `search "boss monster final encounter"` - Find boss info
+- `gm-search.sh "dungeon second level" --rag-only` - Find dungeon content
+- `gm-search.sh "Grimjaw background personality" --rag-only` - Learn about an NPC
+- `gm-search.sh "boss monster final encounter" --rag-only` - Find boss info
 
 **Process the results:**
 1. Read through returned passages
