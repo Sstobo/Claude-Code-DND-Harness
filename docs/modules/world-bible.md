@@ -102,11 +102,16 @@ validation but do **not** block play; only the confirm flag does.
 
 `segment_into_chapters` still lives in `lib/book_bible.py`, but as of 2026-08-15 it feeds
 only [the coarse index](rag-stack.md) (`lib/rag/coarse_index.py:47`) — it no longer
-populates the bible. It needs **two or more** chapter markers before it will split on them
-(`lib/book_bible.py:42`); with fewer, the entire book becomes one span, then gets cut into
-20,000-character windows. A PDF whose chapter headings didn't survive extraction therefore
-yields arbitrary windows with first-line titles — still usable for retrieval, useless for
-citing "chapter 4".
+populates the bible. It needs **two or more** chapter markers before it will split on them; with fewer, the
+entire book becomes one span, then gets cut into 20,000-character windows titled
+`Part N`. A marker is `Chapter N` / `Part N` / `1. ` at the **end of a line**, or a line
+that is a title in caps (`THE TOWER OF THE ELEPHANT`). Short caps-title spans — the title
+line itself, an epigraph attribution, a drop-cap first line — fold into the body that
+follows, keeping the first title; a chapter longer than a window is labelled `(i/n)`.
+
+Until 2026-09-04 caps titles were not markers and `part\s+\w+` was unanchored, so the Conan
+collection was one span in 20k windows, each titled by its first sixty characters
+("Count. There was an edge of") with nine false breaks on sentence-initial "part of the".
 
 ## Related
 

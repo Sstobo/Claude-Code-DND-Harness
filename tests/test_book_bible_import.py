@@ -48,3 +48,34 @@ def test_extractor_no_longer_deletes_source_text():
     text = src.read_text(encoding="utf-8")
     # current-document.txt must NOT be in the active cleanup list (retained now).
     assert "'current-document.txt',  # Source text" not in text
+
+
+CAPS_BOOK = (
+    "THE TOWER OF THE ELEPHANT\n\n"
+    + "Torches flared murkily on the revels in the Maul. " * 60 + "\n\n"
+    + "THE SCARLET CITADEL\n\n"
+    + "They trailed a wolf pack through the snow.\n"
+    + "OLD BALLAD\n\n"
+    + "HE ROAR OF THE\n"
+    + "battle had died away. " * 100 + "\n\n"
+    + "This part of the world is made up of tiny realms. " * 60 + "\n"
+)
+
+
+def test_caps_story_titles_are_chapter_markers_and_epigraphs_fold_forward():
+    """A scanned collection names its stories in caps. Until 2026-09-04 those were
+    not markers, so a whole book was one span cut into 20k windows titled by
+    their first sixty characters. A title-only span, an epigraph attribution
+    ("OLD BALLAD") and a drop-cap line ("HE ROAR OF THE") fold into the body
+    that follows, keeping the first title; a sentence-initial "part of the"
+    is not a Part marker."""
+    titles = [c["title"] for c in book_bible.segment_into_chapters(CAPS_BOOK)]
+    assert titles == ["THE TOWER OF THE ELEPHANT", "THE SCARLET CITADEL"], titles
+
+
+def test_explicit_chapters_never_fold_and_split_pieces_are_labelled():
+    chapters = book_bible.segment_into_chapters(SAMPLE)
+    assert [c["title"] for c in chapters] == ["Chapter One", "Chapter Two", "Chapter Three"]
+    big = "Chapter One\n" + "words " * 9000 + "\nChapter Two\nshort.\n"
+    titles = [c["title"] for c in book_bible.segment_into_chapters(big, max_chars=20000)]
+    assert titles[:2] == ["Chapter One (1/3)", "Chapter One (2/3)"] and titles[-1] == "Chapter Two"

@@ -16,13 +16,26 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Tuple, Any, Dict, List
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from overview_seed import seed_overview
 
-_CHAPTER_RE = re.compile(r'^\s*(chapter\s+\w+|part\s+\w+|\d+\.\s)', re.IGNORECASE | re.MULTILINE)
+# A marker is "Chapter N" / "Part N" / "1. " — or a line that is a TITLE IN
+# CAPS ("THE TOWER OF THE ELEPHANT"), which is how a scanned collection names
+# its stories. Before 2026-09-04 the caps form was not recognised, so a whole
+# 2.4M-char Conan collection was one span cut into 20k windows, each titled by
+# its first sixty characters ("Count. There was an edge of").
+# "chapter"/"part" are anchored to the END of the line: unanchored, `part\s+\w+`
+# fired on every sentence-initial "part of the ..." — nine false breaks in Conan.
+_CHAPTER_RE = re.compile(
+    r"^\s*(chapter\s+\w+\s*$|part\s+\w+\s*$|\d+\.\s|[A-Z][A-Z'\u2019,:\-]*(?: [A-Z][A-Z'\u2019,:\-]*){1,9}\s*$)",
+    re.IGNORECASE | re.MULTILINE)
+_ALLCAPS_TITLE = re.compile(r"^[A-Z][A-Z'\u2019,:\- ]+$")
+# A span shorter than this is a title, an epigraph or a drop-cap line, not a
+# chapter: it folds into the span that follows, keeping the earliest title.
+_MIN_SPAN = 2000
 
 
 class ConfirmedBibleError(RuntimeError):
@@ -37,19 +50,47 @@ def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, A
     """
     if not text:
         return []
-    marks = [m.start() for m in _CHAPTER_RE.finditer(text)]
-    spans: List[str] = []
+    # The regex is case-insensitive for "chapter"/"part"; the caps-title
+    # alternative must NOT be, or every sentence-initial line would match.
+    marks = []  # (offset, is_caps_title)
+    for m in _CHAPTER_RE.finditer(text):
+        g = m.group(1).strip()
+        # startswith("part") is not enough — "particularly ..." is not Part N.
+        explicit = not g[0].isalpha() or re.match(r"(chapter|part)\s+\w+\s*$", g, re.I) is not None
+        if explicit or _ALLCAPS_TITLE.match(g):
+            marks.append((m.start(), not explicit))
+    titled: List[Tuple[str, str, bool]] = []  # (title, text, foldable)
     if len(marks) >= 2:
-        bounds = marks + [len(text)]
-        for i in range(len(marks)):
-            spans.append(text[bounds[i]:bounds[i + 1]])
+        bounds = [o for o, _ in marks] + [len(text)]
+        for i, (_, caps) in enumerate(marks):
+            span = text[bounds[i]:bounds[i + 1]]
+            titled.append((span.strip().splitlines()[0].strip()[:60], span, caps))
     else:
-        spans = [text]
+        titled = [("", text, False)]
+
+    # Fold a short CAPS-TITLE span into what follows it, so "THE SCARLET
+    # CITADEL" + verse + "OLD BALLAD" + drop-cap line + body is ONE chapter
+    # titled by the first of those. An explicit "Chapter N" is never folded,
+    # however short — a one-line chapter is still the author's chapter.
+    merged: List[Tuple[str, str]] = []
+    carry_title, carry_text = "", ""
+    for title, span, foldable in titled:
+        carry_title = carry_title or title
+        carry_text += span
+        if not foldable or len(carry_text.strip()) >= _MIN_SPAN:
+            merged.append((carry_title, carry_text))
+            carry_title, carry_text = "", ""
+    if carry_text.strip():
+        if merged:
+            t0, x0 = merged[-1]
+            merged[-1] = (t0, x0 + carry_text)
+        else:
+            merged.append((carry_title, carry_text))
 
     # Further split any span that exceeds max_chars (keep spans large, not tiny).
     chapters: List[Dict[str, Any]] = []
     idx = 0
-    for span in spans:
+    for title, span in merged:
         span = span.strip()
         if not span:
             continue
@@ -57,9 +98,10 @@ def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, A
             pieces = [span]
         else:
             pieces = [span[i:i + max_chars] for i in range(0, len(span), max_chars)]
-        for piece in pieces:
-            first_line = piece.strip().splitlines()[0][:60] if piece.strip() else f"Span {idx + 1}"
-            chapters.append({"index": idx, "title": first_line, "text": piece})
+        for n, piece in enumerate(pieces, 1):
+            base = title or f"Part {idx + 1}"
+            label = base if len(pieces) == 1 else f"{base} ({n}/{len(pieces)})"
+            chapters.append({"index": idx, "title": label, "text": piece})
             idx += 1
     return chapters
 
