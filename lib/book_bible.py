@@ -42,6 +42,19 @@ class ConfirmedBibleError(RuntimeError):
     """Raised when drafting would clobber a bible a human already approved."""
 
 
+def _is_drop_cap(text: str, start: int, end: int) -> bool:
+    """A caps line that is the REST of a sentence whose first letter the printer
+    dropped into a big initial — "ORCHES FLARED MURKILY ON", "OBERT ERVIN HOWARD".
+
+    The extractor renders the initial as its own line just before ("T the revels
+    in the Maul", "R was born"), and the sentence carries on in lowercase just
+    after. Either tell is enough; a real title has neither.
+    """
+    prev = text[:start].rstrip("\n").rsplit("\n", 1)[-1].strip()
+    nxt = text[end:].lstrip("\n").split("\n", 1)[0].strip()
+    return bool(re.match(r"^[A-Z] ", prev)) or bool(nxt[:1].islower())
+
+
 def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, Any]]:
     """Split book text into large spans for long-context reading.
 
@@ -57,8 +70,10 @@ def segment_into_chapters(text: str, max_chars: int = 20000) -> List[Dict[str, A
         g = m.group(1).strip()
         # startswith("part") is not enough — "particularly ..." is not Part N.
         explicit = not g[0].isalpha() or re.match(r"(chapter|part)\s+\w+\s*$", g, re.I) is not None
-        if explicit or _ALLCAPS_TITLE.match(g):
-            marks.append((m.start(), not explicit))
+        if explicit:
+            marks.append((m.start(), False))
+        elif _ALLCAPS_TITLE.match(g) and not _is_drop_cap(text, m.start(), m.end()):
+            marks.append((m.start(), True))
     titled: List[Tuple[str, str, bool]] = []  # (title, text, foldable)
     if len(marks) >= 2:
         bounds = [o for o, _ in marks] + [len(text)]

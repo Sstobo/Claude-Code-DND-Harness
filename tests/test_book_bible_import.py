@@ -56,9 +56,16 @@ CAPS_BOOK = (
     + "THE SCARLET CITADEL\n\n"
     + "They trailed a wolf pack through the snow.\n"
     + "OLD BALLAD\n\n"
+    + "T battle had died away; the shout of victory mingled\n"
     + "HE ROAR OF THE\n"
-    + "battle had died away. " * 100 + "\n\n"
+    + "with the cries of the dying. " * 100 + "\n\n"
     + "This part of the world is made up of tiny realms. " * 60 + "\n"
+    # An afterword whose drop-cap opens a LONG section with no title above it:
+    # the caps remainder must not become that section's title.
+    + "By Stephen Jones\n"
+    + "R was born in the fading ex-cowtown of Peaster, Texas, about\n"
+    + "OBERT ERVIN HOWARD\n"
+    + "forty-five miles west of Fort Worth. " * 100 + "\n"
 )
 
 
@@ -66,9 +73,11 @@ def test_caps_story_titles_are_chapter_markers_and_epigraphs_fold_forward():
     """A scanned collection names its stories in caps. Until 2026-09-04 those were
     not markers, so a whole book was one span cut into 20k windows titled by
     their first sixty characters. A title-only span, an epigraph attribution
-    ("OLD BALLAD") and a drop-cap line ("HE ROAR OF THE") fold into the body
-    that follows, keeping the first title; a sentence-initial "part of the"
-    is not a Part marker."""
+    ("OLD BALLAD") fold into the body that follows, keeping the first title;
+    a drop-cap remainder ("HE ROAR OF THE", "OBERT ERVIN HOWARD") is never a
+    marker at all — it is the rest of a sentence whose initial the printer
+    dropped — so even a long untitled afterword does not get one as its title;
+    a sentence-initial "part of the" is not a Part marker."""
     titles = [c["title"] for c in book_bible.segment_into_chapters(CAPS_BOOK)]
     assert titles == ["THE TOWER OF THE ELEPHANT", "THE SCARLET CITADEL"], titles
 

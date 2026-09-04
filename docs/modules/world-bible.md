@@ -105,9 +105,11 @@ only [the coarse index](rag-stack.md) (`lib/rag/coarse_index.py:47`) — it no l
 populates the bible. It needs **two or more** chapter markers before it will split on them; with fewer, the
 entire book becomes one span, then gets cut into 20,000-character windows titled
 `Part N`. A marker is `Chapter N` / `Part N` / `1. ` at the **end of a line**, or a line
-that is a title in caps (`THE TOWER OF THE ELEPHANT`). Short caps-title spans — the title
-line itself, an epigraph attribution, a drop-cap first line — fold into the body that
-follows, keeping the first title; a chapter longer than a window is labelled `(i/n)`.
+that is a title in caps (`THE TOWER OF THE ELEPHANT`). A caps line that is the rest of a
+drop-capped sentence ("ORCHES FLARED MURKILY ON", preceded by the lone initial "T the
+revels…" and followed by lowercase) is not a marker at all. Short caps-title spans — the
+title line itself, an epigraph attribution — fold into the body that follows, keeping the
+first title; a chapter longer than a window is labelled `(i/n)`.
 
 Until 2026-09-04 caps titles were not markers and `part\s+\w+` was unanchored, so the Conan
 collection was one span in 20k windows, each titled by its first sixty characters
